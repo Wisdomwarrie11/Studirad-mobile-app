@@ -24,9 +24,9 @@ export const BottomTabBar: React.FC = () => {
   return (
     <nav 
       aria-label="Main Application Navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0B0F17]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-3 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] select-none safe-area-pb"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0B0F17]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-3 sm:px-6 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] select-none safe-area-pb lg:hidden"
     >
-      <div className="max-w-md sm:max-w-xl mx-auto flex items-center justify-between">
+      <div className="w-full max-w-7xl mx-auto flex items-center justify-between">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const IconComponent = tab.icon;

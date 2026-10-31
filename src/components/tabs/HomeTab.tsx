@@ -204,7 +204,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
   return (
     <div className="w-full min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex flex-col pb-28 select-none overflow-x-hidden">
-      <div className="w-full max-w-md sm:max-w-xl mx-auto px-4 sm:px-6 pt-5 space-y-6">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-7 space-y-6 sm:space-y-8">
         
         {/* ================= 1. PERSONALIZED DASHBOARD HEADER ================= */}
         <section className="text-left space-y-3">
@@ -400,7 +400,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           </div>
 
           {recommendedItems.length > 0 ? (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               {recommendedItems.map((item) => (
                 <div
                   key={item.id}
@@ -549,7 +549,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           </div>
 
           {upcomingClasses.length > 0 ? (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {upcomingClasses.map((cls) => (
                 <div
                   key={cls.id}
@@ -626,7 +626,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
           {/* Simple Cards with Little Snippets of Info from Firestore */}
           {liveOpps && liveOpps.length > 0 ? (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {liveOpps.slice(0, 3).map((job) => (
                 <div
                   key={job.id}

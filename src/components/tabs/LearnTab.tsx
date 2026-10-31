@@ -218,7 +218,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
 
   return (
     <div className="w-full min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex flex-col pb-28 select-none overflow-x-hidden text-left">
-      <div className="w-full max-w-md sm:max-w-xl mx-auto px-4 sm:px-6 pt-5 space-y-5">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-7 space-y-6 sm:space-y-8">
         
         {/* ================= MAIN NAVIGATION TABS ================= */}
         {/* Classes | Study Materials | Courses */}

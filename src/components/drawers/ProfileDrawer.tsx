@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useRequests, PrivateClassRequest } from '../../context/RequestContext';
+import { subscribeUserEnrolledCourses, EnrolledCourseRecord } from '../../services/firebaseDataService';
 import { 
   X, 
   Award, 
@@ -34,13 +36,40 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   onClose,
   onEditTopics,
 }) => {
-  const { currentUser, signOut, deleteAccount, setScreen, openAuthWithTab } = useAuth();
+  const { currentUser, signOut, deleteAccount, setScreen, openAuthWithTab, setActiveTab } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { requests } = useRequests();
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(true);
   const [offlineSync, setOfflineSync] = useState(true);
-  const [activeModalInfo, setActiveModalInfo] = useState<string | null>(null);
+  const [activeModalInfo, setActiveModalInfo] = useState<{ title: string; content: string } | null>(null);
+  const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourseRecord[]>([]);
+
+  // Real enrolled courses
+  useEffect(() => {
+    if (currentUser?.id) {
+      const unsub = subscribeUserEnrolledCourses(currentUser.id, (records) => {
+        setEnrolledCourses(records || []);
+      });
+      return () => unsub?.();
+    } else {
+      setEnrolledCourses([]);
+    }
+  }, [currentUser?.id]);
+
+  // Real scheduled 1-on-1 requests
+  const scheduledSessions = requests.filter((r: any): r is PrivateClassRequest => r?.category === 'private_class');
+
+  // Real saved opportunity IDs
+  const savedOppIds: string[] = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('studirad_saved_opps') || '[]');
+    } catch {
+      return [];
+    }
+  })();
 
   if (!isOpen) return null;
 
@@ -120,22 +149,45 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
               Learning & Records
             </span>
 
-            <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden shadow-2xs">
+            <div className="bg-white dark:bg-[#121824] rounded-2xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden shadow-2xs">
               {/* My Courses & Progress */}
               <div 
-                onClick={() => setActiveModalInfo('Enrolled Courses: Chest Radiography Mastery (65%), Advanced CT & MRI (20%)')}
-                className="p-3 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer"
+                onClick={() => {
+                  if (enrolledCourses.length === 0) {
+                    setActiveModalInfo({
+                      title: 'Enrolled Courses',
+                      content: 'You have not enrolled in any courses yet. Browse the Learn library to start accredited clinical imaging modules.',
+                      actionLabel: 'Browse Courses',
+                      onAction: () => {
+                        onClose();
+                        setActiveTab('learn');
+                      }
+                    });
+                  } else {
+                    const list = enrolledCourses.map((c, i) => `${i + 1}. ${c.title} — ${c.progressPercent}% complete`).join('\n');
+                    setActiveModalInfo({
+                      title: `Enrolled Courses (${enrolledCourses.length})`,
+                      content: list,
+                      actionLabel: 'Go to Learn',
+                      onAction: () => {
+                        onClose();
+                        setActiveTab('learn');
+                      }
+                    });
+                  }
+                }}
+                className="p-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-blue-50 text-[#002147] flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#002147] dark:text-[#38BDF8] flex items-center justify-center">
                     <BookOpen className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-slate-800 block">
-                      My Enrolled Courses (2)
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
+                      My Enrolled Courses ({enrolledCourses.length})
                     </span>
                     <span className="text-[10px] text-slate-400">
-                      View ongoing modules & progress
+                      {enrolledCourses.length === 0 ? 'No courses enrolled yet' : `${enrolledCourses.length} active course${enrolledCourses.length > 1 ? 's' : ''} in progress`}
                     </span>
                   </div>
                 </div>
@@ -145,18 +197,18 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
               {/* Edit Specialty Topics */}
               <button
                 onClick={onEditTopics}
-                className="w-full p-3 flex items-center justify-between text-left hover:bg-slate-50 transition-colors"
+                className="w-full p-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-orange-50 text-[#FF7F32] flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-orange-50 dark:bg-orange-950/50 text-[#FF7F32] flex items-center justify-center">
                     <GraduationCap className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-slate-800 block">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
                       Learning Interests ({currentUser?.selectedTopics?.length || 0})
                     </span>
                     <span className="text-[10px] text-slate-400">
-                      Modify recommended specialties
+                      {currentUser?.selectedTopics && currentUser.selectedTopics.length > 0 ? 'Modify selected specialties' : 'No interests selected yet'}
                     </span>
                   </div>
                 </div>
@@ -165,19 +217,22 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
 
               {/* Quiz History */}
               <div 
-                onClick={() => setActiveModalInfo('Quiz History: Clinical Radiography 101 (Score: 5/5, 100% on Oct 21)')}
-                className="p-3 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer"
+                onClick={() => setActiveModalInfo({
+                  title: 'Quiz & Practice History',
+                  content: 'No completed quiz attempts recorded yet. You can test your clinical knowledge and radiography recall directly from the Home or Learn tabs.'
+                })}
+                className="p-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-400 flex items-center justify-center">
                     <HelpCircle className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-slate-800 block">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
                       Quiz Scores & Practice History
                     </span>
                     <span className="text-[10px] text-slate-400">
-                      Latest: 5/5 on Diagnostic Challenge
+                      Real-time assessment tracking
                     </span>
                   </div>
                 </div>
@@ -186,19 +241,42 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
 
               {/* My Bookings */}
               <div 
-                onClick={() => setActiveModalInfo('My Bookings: 1 session booked with Dr. Marcus Thorne (Tomorrow at 17:00 BST). Join link active in Services tab.')}
-                className="p-3 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer"
+                onClick={() => {
+                  if (scheduledSessions.length === 0) {
+                    setActiveModalInfo({
+                      title: 'My 1-on-1 Sessions',
+                      content: 'No scheduled 1-on-1 sessions. You can submit bespoke tutorial and case critique requests in the Services tab.',
+                      actionLabel: 'Book a Session',
+                      onAction: () => {
+                        onClose();
+                        setActiveTab('services');
+                      }
+                    });
+                  } else {
+                    const list = scheduledSessions.map((s, i) => `${i + 1}. ${s.subjectTopic} (Status: ${s.status}, Ref: ${s.referenceCode})`).join('\n');
+                    setActiveModalInfo({
+                      title: `My 1-on-1 Sessions (${scheduledSessions.length})`,
+                      content: list,
+                      actionLabel: 'View in Services',
+                      onAction: () => {
+                        onClose();
+                        setActiveTab('services');
+                      }
+                    });
+                  }
+                }}
+                className="p-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
                     <Calendar className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-slate-800 block">
-                      My 1-on-1 Sessions (1)
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
+                      My 1-on-1 Sessions ({scheduledSessions.length})
                     </span>
                     <span className="text-[10px] text-slate-400">
-                      View meeting link & tutor notes
+                      {scheduledSessions.length === 0 ? 'No scheduled sessions' : `${scheduledSessions.length} active request${scheduledSessions.length > 1 ? 's' : ''}`}
                     </span>
                   </div>
                 </div>
@@ -207,19 +285,41 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
 
               {/* Saved Opportunities */}
               <div 
-                onClick={() => setActiveModalInfo('Saved Opportunities: Band 6 Rotational Radiographer at Guy\'s and St Thomas\' NHS')}
-                className="p-3 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer"
+                onClick={() => {
+                  if (savedOppIds.length === 0) {
+                    setActiveModalInfo({
+                      title: 'Saved Opportunities',
+                      content: 'No saved opportunities yet. You can bookmark locum shifts, hospital vacancies, and internships in the Opportunities tab.',
+                      actionLabel: 'Browse Opportunities',
+                      onAction: () => {
+                        onClose();
+                        setActiveTab('explore');
+                      }
+                    });
+                  } else {
+                    setActiveModalInfo({
+                      title: `Saved Opportunities (${savedOppIds.length})`,
+                      content: `You have ${savedOppIds.length} bookmarked opportunit${savedOppIds.length > 1 ? 'ies' : 'y'}. Visit the Opportunities tab to view details and apply.`,
+                      actionLabel: 'Go to Opportunities',
+                      onAction: () => {
+                        onClose();
+                        setActiveTab('explore');
+                      }
+                    });
+                  }
+                }}
+                className="p-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center">
                     <Bookmark className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-slate-800 block">
-                      Saved Locum & Job Vacancies
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
+                      Saved Locum & Job Vacancies ({savedOppIds.length})
                     </span>
                     <span className="text-[10px] text-slate-400">
-                      Bookmarked hospital postings
+                      {savedOppIds.length === 0 ? 'No saved vacancies' : `${savedOppIds.length} bookmarked`}
                     </span>
                   </div>
                 </div>
@@ -435,27 +535,42 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
       {activeModalInfo && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div 
-            className="w-full max-w-sm bg-white rounded-2xl p-5 shadow-2xl text-left space-y-3 animate-scaleIn"
+            className="w-full max-w-sm bg-white dark:bg-[#121824] rounded-2xl p-5 shadow-2xl text-left space-y-3 animate-scaleIn border border-slate-200 dark:border-slate-800"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#002147]">StudiRad Information</span>
+              <span className="text-xs font-bold text-[#002147] dark:text-[#38BDF8]">
+                {activeModalInfo.title}
+              </span>
               <button
                 onClick={() => setActiveModalInfo(null)}
-                className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-500"
+                className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              {activeModalInfo}
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+              {activeModalInfo.content}
             </p>
-            <button
-              onClick={() => setActiveModalInfo(null)}
-              className="w-full py-2 bg-[#002147] text-white text-xs font-bold rounded-xl"
-            >
-              Close
-            </button>
+            <div className="flex items-center gap-2 pt-1">
+              {activeModalInfo.actionLabel && (
+                <button
+                  onClick={() => {
+                    activeModalInfo.onAction?.();
+                    setActiveModalInfo(null);
+                  }}
+                  className="flex-1 py-2 bg-[#FF7F32] hover:bg-[#e06820] text-white text-xs font-bold rounded-xl transition-colors"
+                >
+                  {activeModalInfo.actionLabel}
+                </button>
+              )}
+              <button
+                onClick={() => setActiveModalInfo(null)}
+                className={`${activeModalInfo.actionLabel ? 'px-4' : 'w-full'} py-2 bg-[#002147] dark:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors`}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

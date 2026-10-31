@@ -39,19 +39,8 @@ export const MainAppShell: React.FC = () => {
   const [selectedTutor, setSelectedTutor] = useState<Tutor | null>(null);
   const [selectedResearchService, setSelectedResearchService] = useState<ResearchService | null>(null);
 
-  // Active bookings state
-  const [activeBookings, setActiveBookings] = useState<TutorBooking[]>([
-    {
-      id: 'bk_1',
-      tutorName: 'Dr. Marcus Thorne',
-      tutorRole: 'Consultant Thoracic Radiologist',
-      topic: 'Trauma C-Spine & Pelvic Clearing',
-      date: 'Tomorrow',
-      timeSlot: '17:00 - 17:45 BST',
-      status: 'Confirmed',
-      meetingUrl: 'https://meet.studirad.org/tutor/dr-thorne-session',
-    },
-  ]);
+  // Active bookings state (pure real data)
+  const [activeBookings, setActiveBookings] = useState<TutorBooking[]>([]);
 
   const handleConfirmBooking = (details: {
     tutorName: string;
