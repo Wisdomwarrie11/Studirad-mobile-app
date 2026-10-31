@@ -1,0 +1,8 @@
+{
+  "name": "StudiRad Mobile App",
+  "description": "Dedicated mobile-first educational and career application for radiography students, practitioners, and imaging professionals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

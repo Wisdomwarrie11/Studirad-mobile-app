@@ -1,0 +1,55 @@
+{
+  "id": "/",
+  "name": "StudiRad — Radiography Academy",
+  "short_name": "StudiRad",
+  "description": "Clinical radiography e-learning, live masterclass cohorts, CPD certification, and imaging reference materials.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#002147",
+  "background_color": "#002147",
+  "categories": ["education", "medical"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Live Classes",
+      "short_name": "Classes",
+      "description": "View live and upcoming clinical masterclasses",
+      "url": "/?tab=learn",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Study Materials",
+      "short_name": "Materials",
+      "description": "Access clinical protocols and video lectures",
+      "url": "/?tab=learn&view=materials",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

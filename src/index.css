@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-oxford: #002147;
+  --color-oxford-dark: #001630;
+  --color-oxford-light: #0A3266;
+  --color-oxford-accent: #1B447A;
+  --color-brand-orange: #FF7F32;
+  --color-brand-orange-hover: #E86B20;
+  --color-brand-orange-light: #FFF1E8;
+  --font-sans: Helvetica, Arial, sans-serif;
+}
+
+@layer base {
+  :root,
+  html.light,
+  [data-theme="light"] {
+    --bg-canvas: #F8FAFC;
+    --bg-surface: #FFFFFF;
+    --bg-surface-elevated: #F1F5F9;
+    --border-subtle: #E2E8F0;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #64748B;
+  }
+
+  html.dark,
+  .dark,
+  [data-theme="dark"] {
+    --bg-canvas: #0B0F17;
+    --bg-surface: #121824;
+    --bg-surface-elevated: #182232;
+    --border-subtle: #1E293B;
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+  }
+  
+  html {
+    font-family: Helvetica, Arial, sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    font-family: Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+  }
+
+  /* Accessible focus ring */
+  *:focus-visible {
+    outline: 2px solid #FF7F32;
+    outline-offset: 2px;
+  }
+}
+
+/* Custom scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom typography classes */
+.heading-display {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem); /* 28px - 40px */
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.heading-section {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: clamp(1.375rem, 2.5vw, 1.75rem); /* 22px - 28px */
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.heading-card {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: clamp(1.125rem, 2vw, 1.375rem); /* 18px - 22px */
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.body-large {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 1.0625rem; /* 17px */
+  line-height: 1.6;
+}
+
+.body-standard {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 1rem; /* 16px */
+  line-height: 1.6;
+}
+
+.body-secondary {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.9375rem; /* 15px */
+  line-height: 1.5;
+}
+
+.label-ui {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.4;
+  font-weight: 600;
+}

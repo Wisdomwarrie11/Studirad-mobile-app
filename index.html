@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    <title>StudiRad — Radiography Education & Clinical Career Hub</title>
+    <meta name="description" content="Dedicated mobile-first educational and career application for radiography students, practitioners, and clinical imaging professionals." />
+    <meta property="og:title" content="StudiRad — Radiography Education & Clinical Career Hub" />
+    <meta property="og:description" content="Dedicated mobile-first educational and career application for radiography students, practitioners, and clinical imaging professionals." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    
+    <!-- PWA & Google Play Store (TWA) Configuration -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#002147" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="application-name" content="StudiRad" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('studirad_theme_preference');
+          var isDark = saved ? saved === 'dark' : true; // Default to dark mode
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.style.colorScheme = 'dark';
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-slate-50 dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 antialiased selection:bg-[#FF7F32]/30 selection:text-white m-0 p-0 min-h-screen transition-colors duration-150">
+    <div id="root" class="min-h-screen w-full flex flex-col"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

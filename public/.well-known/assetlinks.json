@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "org.studirad.app",
+      "sha256_cert_fingerprints": [
+        "14:6D:E9:7C:02:CD:EA:9C:E1:16:40:90:EF:45:65:9F:40:22:96:4D:48:8A:F7:56:FE:5E:2A:43:03:7E:6F:A2"
+      ]
+    }
+  }
+]

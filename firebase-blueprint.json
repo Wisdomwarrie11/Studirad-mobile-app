@@ -1,0 +1,118 @@
+{
+  "entities": {
+    "opportunity": {
+      "title": "Opportunity",
+      "description": "Healthcare job, locum, fellowship, or scholarship opportunity",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "organisation": { "type": "string", "maxLength": 200 },
+        "location": { "type": "string", "maxLength": 200 },
+        "type": { "type": "string", "enum": ["NHS Locum", "Permanent", "Internship", "Scholarship"] },
+        "rate": { "type": "string", "maxLength": 100 },
+        "specialty": { "type": "string", "maxLength": 100 },
+        "deadline": { "type": "string", "maxLength": 100 },
+        "experienceLevel": { "type": "string", "maxLength": 100 },
+        "urgent": { "type": "boolean" },
+        "modality": { "type": "string", "enum": ["xray", "ct", "mri", "ultrasound", "anatomy", "hospital_practice", "rad_physics", "general"] },
+        "description": { "type": "string", "maxLength": 3000 },
+        "requirements": { "type": "array" },
+        "howToApply": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "organisation", "type", "description"]
+    },
+    "classItem": {
+      "title": "ClassItem",
+      "description": "Radiology masterclass, webinar, or course module",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "instructor": { "type": "string", "maxLength": 100 },
+        "instructorRole": { "type": "string", "maxLength": 150 },
+        "date": { "type": "string", "maxLength": 100 },
+        "time": { "type": "string", "maxLength": 100 },
+        "duration": { "type": "string", "maxLength": 100 },
+        "modality": { "type": "string", "enum": ["xray", "ct", "mri", "ultrasound", "anatomy", "hospital_practice", "rad_physics", "general"] },
+        "description": { "type": "string", "maxLength": 2000 },
+        "meetingLink": { "type": "string", "maxLength": 500 },
+        "cpdCredits": { "type": "string", "maxLength": 100 },
+        "isLiveNow": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "instructor", "modality"]
+    },
+    "webinar": {
+      "title": "Webinar",
+      "description": "Recorded clinical radiography webinar or masterclass",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "speaker": { "type": "string", "maxLength": 100 },
+        "speakerRole": { "type": "string", "maxLength": 150 },
+        "duration": { "type": "string", "maxLength": 100 },
+        "date": { "type": "string", "maxLength": 100 },
+        "views": { "type": "string", "maxLength": 50 },
+        "rating": { "type": "number" },
+        "cpdCredits": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "thumbnail": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "speaker"]
+    },
+    "userProfile": {
+      "title": "UserProfile",
+      "description": "User account and radiography learning profile",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string", "maxLength": 150 },
+        "role": { "type": "string", "maxLength": 100 },
+        "selectedTopics": { "type": "array" },
+        "cpdCredits": { "type": "number" },
+        "avatarUrl": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fullName"]
+    },
+    "userCompletedClass": {
+      "title": "UserCompletedClass",
+      "description": "Record of a class or webinar completed by a user for CPD certification",
+      "type": "object",
+      "properties": {
+        "classId": { "type": "string", "maxLength": 100 },
+        "title": { "type": "string", "maxLength": 200 },
+        "modality": { "type": "string", "maxLength": 100 },
+        "cpdCredits": { "type": "string", "maxLength": 50 },
+        "completedAt": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["classId", "title"]
+    }
+  },
+  "firestore": {
+    "/opportunities/{opportunityId}": {
+      "schema": "opportunity",
+      "description": "Available jobs, NHS locums, internships, and scholarships"
+    },
+    "/classes/{classId}": {
+      "schema": "classItem",
+      "description": "Live, upcoming, and archive classes"
+    },
+    "/webinars/{webinarId}": {
+      "schema": "webinar",
+      "description": "Recorded clinical webinars and case presentations"
+    },
+    "/users/{userId}": {
+      "schema": "userProfile",
+      "description": "User profile document keyed by auth UID"
+    },
+    "/users/{userId}/completedClasses/{classId}": {
+      "schema": "userCompletedClass",
+      "description": "Completed classes and CPD accreditation log for the user"
+    }
+  }
+}

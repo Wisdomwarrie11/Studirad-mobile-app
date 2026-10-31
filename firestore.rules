@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Collection: Courses (Recorded clinical courses & embedded videos)
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write, delete: if isValidId(courseId);
+    }
+
+    // Collection: Classes (Masterclasses, cohorts, and tutorials)
+    match /classes/{classId} {
+      allow read: if true;
+      allow write, delete: if isValidId(classId);
+    }
+
+    // Collection: Materials (Clinical protocols, checklists, guidelines)
+    match /materials/{materialId} {
+      allow read: if true;
+      allow write, delete: if isValidId(materialId);
+    }
+
+    // Collection: Videos (Recorded clinical session lectures)
+    match /videos/{videoId} {
+      allow read: if true;
+      allow write, delete: if isValidId(videoId);
+    }
+
+    // Collection: Opportunities (Jobs, NHS locums, internships, scholarships)
+    match /opportunities/{opportunityId} {
+      allow read: if true;
+      allow write, delete: if isValidId(opportunityId);
+    }
+
+    // Collection: Jobs
+    match /jobs/{jobId} {
+      allow read: if true;
+      allow write, delete: if isValidId(jobId);
+    }
+
+    // Collection: Internships
+    match /internships/{internshipId} {
+      allow read: if true;
+      allow write, delete: if isValidId(internshipId);
+    }
+
+    // Collection: Scholarships
+    match /scholarships/{scholarshipId} {
+      allow read: if true;
+      allow write, delete: if isValidId(scholarshipId);
+    }
+
+    // Collection: Locum Profiles (Locum network & availability)
+    match /locum_profiles/{profileId} {
+      allow read: if true;
+      allow write, delete: if isValidId(profileId);
+    }
+
+    // Collection: Webinars (Recorded webinars and clinical presentations)
+    match /webinars/{webinarId} {
+      allow read: if true;
+      allow write, delete: if isValidId(webinarId);
+    }
+
+    // Collection: Service & Research Requests
+    match /requests/{requestId} {
+      allow read, write: if isValidId(requestId);
+    }
+
+    // Collection: Tutor & One-on-One Bookings
+    match /bookings/{bookingId} {
+      allow read, write: if isValidId(bookingId);
+    }
+
+    // Collection: Users (User profile isolated per UID)
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isValidId(userId);
+
+      // Subcollection: Completed Classes & CPD records
+      match /completedClasses/{classDocId} {
+        allow read, write: if isValidId(classDocId);
+      }
+
+      // Subcollection: Saved Opportunities
+      match /saved_opportunities/{oppDocId} {
+        allow read, write: if isValidId(oppDocId);
+      }
+
+      // Subcollection: Enrolled Courses
+      match /enrolled_courses/{courseDocId} {
+        allow read, write: if isValidId(courseDocId);
+      }
+    }
+
+    // Collection: Admin registry
+    match /admins/{adminId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
