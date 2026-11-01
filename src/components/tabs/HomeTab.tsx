@@ -312,19 +312,19 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#FF7F32] flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
-                  Ready to Grow
+                  Ready to Grow?
                 </span>
               </div>
 
               <h3 className="text-base font-bold text-white leading-snug">
-                Join an Upcoming Live Cohort
+                Join an Upcoming Live Class
               </h3>
               <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                Connect live with leading specialists, register for upcoming cohorts, and earn accredited CPD hours.
+                Connect live with leading instructors, register and enjoy upcoming classes.
               </p>
 
               <div className="mt-3 pt-2.5 border-t border-white/15 flex items-center justify-between text-xs">
-                <span className="text-slate-300">Live cohorts available in Learn tab</span>
+                <span className="text-slate-300">Live classs available in Learn tab</span>
                 <span className="font-bold text-[#FF7F32] flex items-center gap-1">
                   <span>Browse Classes</span>
                   <ChevronRight className="w-3.5 h-3.5" />

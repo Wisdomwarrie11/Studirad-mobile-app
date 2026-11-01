@@ -327,23 +327,7 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
             </div>
           </div>
 
-          {/* Clinical Highlights / Focus Points */}
-          <div className="p-3.5 rounded-2xl bg-[#002147]/5 dark:bg-[#161F30] border border-[#002147]/15 dark:border-slate-800 space-y-1.5">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#002147] dark:text-[#38BDF8] uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5 text-[#FF7F32]" />
-              <span>Study Notes & In-App Radiography Learning</span>
-            </div>
-            <ul className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                <span>Rendered directly in-app without external browser redirection.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                <span>Reviewed and validated by the StudiRad Academic Board.</span>
-              </li>
-            </ul>
-          </div>
+  
         </div>
 
         {/* Bottom Actions (Clean In-App Controls - No External Redirection) */}
@@ -377,13 +361,6 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
                 <Download className={`w-3.5 h-3.5 ${isDownloading ? 'animate-bounce' : ''}`} />
                 <span>{isDownloading ? 'Downloading...' : 'Save File'}</span>
               </button>
-            )}
-
-            {isYouTube && (
-              <div className="py-2 px-3 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#002147] dark:text-[#38BDF8] text-xs font-bold flex items-center gap-1.5 border border-blue-200 dark:border-blue-900/50">
-                <Video className="w-3.5 h-3.5 text-[#FF7F32]" />
-                <span>In-App Video Stream</span>
-              </div>
             )}
           </div>
         </div>
