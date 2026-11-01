@@ -42,9 +42,23 @@ export const SplashScreen: React.FC = () => {
         <div className="absolute bottom-1/3 left-1/2 -translate-x-1/2 w-64 h-64 bg-[#FF7F32]/10 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Pure StudiRad Brand - No other write-up */}
-      <div className="relative z-10 flex flex-col items-center justify-center">
+      {/* Pure StudiRad Brand with Fancy Brand Loader */}
+      <div className="relative z-10 flex flex-col items-center justify-center space-y-8">
         <Wordmark size="hero" theme="dark" withSubtitle={false} />
+
+        {/* Fancy Clinical Brand Spinner */}
+        <div className="relative flex items-center justify-center">
+          {/* Subtle ambient glow */}
+          <div className="absolute w-16 h-16 bg-[#FF7F32]/25 rounded-full blur-md animate-pulse"></div>
+
+          {/* Outer Rotating Gradient Ring */}
+          <div className="w-12 h-12 rounded-full border-2 border-slate-800/80 border-t-[#FF7F32] border-r-[#FF7F32]/70 animate-spin"></div>
+
+          {/* Inner Counter-Pulsing Orbit */}
+          <div className="absolute w-6 h-6 rounded-full bg-[#002147]/90 border border-[#FF7F32]/50 flex items-center justify-center shadow-inner">
+            <div className="w-2 h-2 rounded-full bg-[#FF7F32] animate-ping"></div>
+          </div>
+        </div>
       </div>
     </div>
   );

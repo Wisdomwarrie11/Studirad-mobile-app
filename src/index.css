@@ -122,3 +122,28 @@
   line-height: 1.4;
   font-weight: 600;
 }
+
+/* Mobile Readability & Legibility Scaling */
+@media (max-width: 640px) {
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Elevate micro-text to comfortable legible sizes on mobile displays */
+  .text-\[9px\],
+  .text-\[10px\] {
+    font-size: 0.75rem !important; /* Minimum 12px for badges and tags */
+    line-height: 1.15rem !important;
+  }
+
+  .text-\[11px\] {
+    font-size: 0.8125rem !important; /* 13px */
+    line-height: 1.25rem !important;
+  }
+
+  .text-xs {
+    font-size: 0.8125rem; /* 13px */
+    line-height: 1.25rem;
+  }
+}

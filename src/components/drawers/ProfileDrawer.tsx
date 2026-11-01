@@ -44,7 +44,12 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(true);
   const [offlineSync, setOfflineSync] = useState(true);
-  const [activeModalInfo, setActiveModalInfo] = useState<{ title: string; content: string } | null>(null);
+  const [activeModalInfo, setActiveModalInfo] = useState<{
+    title: string;
+    content: string;
+    actionLabel?: string;
+    onAction?: () => void;
+  } | null>(null);
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourseRecord[]>([]);
 
   // Real enrolled courses
@@ -435,7 +440,10 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
 
             <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden shadow-2xs">
               <div 
-                onClick={() => setActiveModalInfo('Help & Academic Support: Reach our clinical education team at support@studirad.org for curriculum questions, CPD certificate verification, and locum recruitment inquiries.')}
+                onClick={() => setActiveModalInfo({
+                  title: 'Help & Academic Support',
+                  content: 'Reach our clinical education team at support@studirad.org for curriculum questions, CPD certificate verification, and locum recruitment inquiries.'
+                })}
                 className="p-3 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 <span className="text-xs font-semibold text-slate-800">
@@ -445,7 +453,10 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
               </div>
 
               <div 
-                onClick={() => setActiveModalInfo('StudiRad Privacy Policy & Terms: We adhere to GDPR and NHS clinical information standards. Your learner records and diagnostic quiz attempts are confidential and protected.')}
+                onClick={() => setActiveModalInfo({
+                  title: 'Privacy Policy & Terms of Service',
+                  content: 'StudiRad adheres to GDPR, NDPR, and healthcare clinical information standards. Only individuals 17 years of age or older are authorized to use the platform. Your learner records and diagnostic quiz attempts are confidential and protected.'
+                })}
                 className="p-3 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 <span className="text-xs font-semibold text-slate-800">

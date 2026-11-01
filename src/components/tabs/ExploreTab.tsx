@@ -118,7 +118,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
   return (
     <div className="w-full min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex flex-col pb-28 select-none text-left">
-      <div className="w-full max-w-md sm:max-w-xl mx-auto px-4 sm:px-6 pt-5 space-y-5">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-7 space-y-6 sm:space-y-8">
         
         {/* Header */}
         <header className="space-y-1">
@@ -273,7 +273,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {currentFilteredList.map((job) => {
                   const isSaved = savedOppIds.includes(job.id);
                   const status = getDeadlineStatus(job.deadline);
@@ -394,7 +394,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {currentFilteredList.map((intern) => {
                   const isSaved = savedOppIds.includes(intern.id);
                   const status = getDeadlineStatus(intern.deadline);
@@ -509,7 +509,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {currentFilteredList.map((scholar) => {
                   const isSaved = savedOppIds.includes(scholar.id);
                   const status = getDeadlineStatus(scholar.deadline);

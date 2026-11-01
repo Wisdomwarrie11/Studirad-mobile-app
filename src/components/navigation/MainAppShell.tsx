@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Course, LiveClass, Opportunity, Tutor, ResearchService, TutorBooking } from '../../types';
 import { MOCK_COURSES, MOCK_LIVE_CLASSES, MOCK_QUIZ } from '../../data/mockData';
@@ -25,6 +25,17 @@ import { ResearchRequestModal } from '../modals/ResearchRequestModal';
 
 export const MainAppShell: React.FC = () => {
   const { activeTab, setActiveTab, setScreen } = useAuth();
+  const mainScrollRef = useRef<HTMLElement>(null);
+
+  // Automatically reset scroll position to top whenever user switches tabs
+  useEffect(() => {
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTop = 0;
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [activeTab]);
 
   // Drawer states
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -71,7 +82,7 @@ export const MainAppShell: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full flex flex-col relative overflow-y-auto no-scrollbar">
+      <main ref={mainScrollRef} className="flex-1 w-full flex flex-col relative overflow-y-auto no-scrollbar">
         {activeTab === 'home' && (
           <HomeTab
             onSelectCourse={(course) => setSelectedCourse(course)}

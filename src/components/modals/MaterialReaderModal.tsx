@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 interface MaterialReaderModalProps {
-  isOpen: boolean;
+  isOpen?: boolean;
   onClose: () => void;
   material: StudyMaterial | null;
 }
@@ -43,7 +43,7 @@ const COURSE_COLORS: Record<string, { main: string; light: string; border: strin
 };
 
 export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
-  isOpen,
+  isOpen = true,
   onClose,
   material,
 }) => {
@@ -96,7 +96,8 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
 
   // In-app silent download helper (saves file without redirecting or opening new windows)
   const handleDownloadInApp = async () => {
-    if (!rawLink || isDownloading) return;
+    // Strictly prevent downloading YouTube links to avoid external browser navigation
+    if (!rawLink || isDownloading || isYouTube) return;
     setIsDownloading(true);
     try {
       const response = await fetch(rawLink, { mode: 'cors' }).catch(() => null);
@@ -112,18 +113,16 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
       } else {
-        // Fallback hidden anchor with download attribute
+        // Fallback hidden anchor with download attribute without window.location navigation
         const a = document.createElement('a');
         a.href = rawLink;
         a.download = material.title;
-        a.target = '_self';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
       }
     } catch {
-      // Fallback
-      window.location.href = rawLink;
+      // Never redirect to external URLs
     } finally {
       setIsDownloading(false);
     }
@@ -368,7 +367,7 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
               </button>
             )}
 
-            {rawLink && (
+            {rawLink && !isYouTube && (
               <button
                 type="button"
                 onClick={handleDownloadInApp}
@@ -378,6 +377,13 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
                 <Download className={`w-3.5 h-3.5 ${isDownloading ? 'animate-bounce' : ''}`} />
                 <span>{isDownloading ? 'Downloading...' : 'Save File'}</span>
               </button>
+            )}
+
+            {isYouTube && (
+              <div className="py-2 px-3 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#002147] dark:text-[#38BDF8] text-xs font-bold flex items-center gap-1.5 border border-blue-200 dark:border-blue-900/50">
+                <Video className="w-3.5 h-3.5 text-[#FF7F32]" />
+                <span>In-App Video Stream</span>
+              </div>
             )}
           </div>
         </div>

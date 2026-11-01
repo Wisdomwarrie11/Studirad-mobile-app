@@ -150,12 +150,12 @@ export const SearchTab: React.FC<SearchTabProps> = ({
 
   return (
     <div className="w-full min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F17] text-slate-800 dark:text-slate-100 flex flex-col pb-28 select-none overflow-x-hidden">
-      <div className="w-full max-w-md sm:max-w-xl mx-auto px-4 sm:px-6 pt-4 space-y-4">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-7 space-y-6 sm:space-y-8">
         
         {/* Header */}
         <header className="flex items-center justify-between pt-1">
           <div>
-            <h1 className="text-2xl font-extrabold text-[#002147] dark:text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#002147] dark:text-white tracking-tight">
               Clinical Search
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -276,7 +276,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({
                   Courses ({matchingCourses.length})
                 </span>
               </div>
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {matchingCourses.map((c) => (
                   <div
                     key={c.id}
@@ -314,7 +314,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({
                 <Video className="w-3.5 h-3.5 text-[#FF7F32]" />
                 Live Classes & Masterclasses ({matchingClasses.length})
               </span>
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {matchingClasses.map((lc) => (
                   <div
                     key={lc.id}
@@ -352,7 +352,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({
                 <Briefcase className="w-3.5 h-3.5 text-blue-600 dark:text-[#38BDF8]" />
                 Opportunities & Vacancies ({matchingOpportunities.length})
               </span>
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {matchingOpportunities.map((opp) => (
                   <div
                     key={opp.id}
@@ -394,7 +394,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({
                 <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 Clinical Materials & Protocols ({matchingResources.length})
               </span>
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {matchingResources.map((res) => {
                   const isDownloaded = downloadedResources.includes(res.id);
                   return (

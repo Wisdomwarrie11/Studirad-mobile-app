@@ -16,7 +16,7 @@ export const AiTutorTab: React.FC = () => {
 
   return (
     <div className="flex-1 w-full bg-[#F8FAFC] dark:bg-[#0B0F17] flex flex-col justify-between text-left text-slate-900 dark:text-slate-100 select-none pb-24 overflow-y-auto no-scrollbar">
-      <div className="max-w-lg w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
         
         {/* Top Header */}
         <div className="flex items-center gap-3">
@@ -52,8 +52,8 @@ export const AiTutorTab: React.FC = () => {
               Your Personal Radiography Clinical Mentor
             </h2>
 
-            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed max-w-md">
-              We are fine-tuning our specialized AI tutoring engine on standardized radiographic positioning protocols, anatomy critique, physics principles, and board exam vica prep.
+            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed max-w-2xl">
+              We are fine-tuning our specialized AI tutoring engine on standardized radiographic positioning protocols, anatomy critique, physics principles, and board exam viva prep.
             </p>
 
             <div className="pt-2">
@@ -88,7 +88,7 @@ export const AiTutorTab: React.FC = () => {
             What's Coming in AI Tutor
           </h3>
 
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 shadow-xs flex items-start gap-3.5">
               <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#002147] dark:text-[#38BDF8] flex items-center justify-center shrink-0 mt-0.5">
                 <Scan className="w-5 h-5" />

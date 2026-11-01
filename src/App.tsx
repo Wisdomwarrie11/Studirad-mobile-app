@@ -20,6 +20,13 @@ import { AdminProtectedRoute } from './components/admin/AdminProtectedRoute';
 const AppContent: React.FC = () => {
   const { currentScreen } = useAuth();
 
+  // Reset scroll to top on every screen transition
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [currentScreen]);
+
   return (
     <div className="min-h-screen w-full bg-[var(--bg-canvas)] text-[var(--text-primary)] transition-colors duration-200 flex flex-col">
       {currentScreen === 'splash' && <SplashScreen />}

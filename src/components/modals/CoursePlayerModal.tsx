@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Course, Lesson, CourseMaterialLink, CourseQuizQuestion } from '../../types';
+import { Course, Lesson, CourseMaterialLink, CourseQuizQuestion, StudyMaterial } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { enrollUserInCourse } from '../../services/firebaseDataService';
 import { getYouTubeEmbedUrl, extractYouTubeId } from '../../utils/youtube';
+import { MaterialReaderModal } from './MaterialReaderModal';
 import { 
   X, 
   ChevronLeft, 
@@ -75,6 +76,7 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
   // In-app interactive quiz state
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [submittedQuiz, setSubmittedQuiz] = useState(false);
+  const [readingMaterial, setReadingMaterial] = useState<StudyMaterial | null>(null);
 
   const currentLesson = allLessons[currentLessonIndex] || allLessons[0];
   const isCurrentCompleted = completedLessonIds.includes(currentLesson.id);
@@ -462,15 +464,25 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                               </div>
                             </div>
 
-                            <a
-                              href={mat.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-3 py-1.5 rounded-xl bg-[#002147] text-white hover:bg-[#0A3266] text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors"
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const isVid = mat.type === 'video' || mat.url.includes('youtube') || mat.url.includes('youtu.be');
+                                setReadingMaterial({
+                                  id: mat.id || `mat_${idx}`,
+                                  title: mat.title,
+                                  course: course.title,
+                                  type: isVid ? 'video' : 'document',
+                                  fileSize: mat.size || 'In-App Material',
+                                  link: mat.url,
+                                  uploader: course.instructor || 'StudiRad Faculty',
+                                });
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-[#002147] text-white hover:bg-[#0A3266] text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
                             >
-                              <Download className="w-3.5 h-3.5 text-[#FF7F32]" />
-                              <span>Open</span>
-                            </a>
+                              <BookOpen className="w-3.5 h-3.5 text-[#FF7F32]" />
+                              <span>View In-App</span>
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -502,15 +514,25 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                               </div>
                             </div>
 
-                            <a
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 shrink-0 transition-colors"
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const isVid = link.url.includes('youtube') || link.url.includes('youtu.be');
+                                setReadingMaterial({
+                                  id: link.id || `link_${idx}`,
+                                  title: link.title,
+                                  course: course.title,
+                                  type: isVid ? 'video' : 'document',
+                                  fileSize: 'Clinical Resource',
+                                  link: link.url,
+                                  uploader: course.instructor || 'StudiRad Faculty',
+                                });
+                              }}
+                              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
                             >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              <span>Visit</span>
-                            </a>
+                              <BookOpen className="w-3.5 h-3.5 text-[#002147] dark:text-[#38BDF8]" />
+                              <span>Open In-App</span>
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -719,6 +741,13 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
           </button>
         </div>
       </div>
+
+      {readingMaterial && (
+        <MaterialReaderModal
+          material={readingMaterial}
+          onClose={() => setReadingMaterial(null)}
+        />
+      )}
     </div>
   );
 };

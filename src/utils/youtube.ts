@@ -54,12 +54,18 @@ export function getYouTubeEmbedUrl(url?: string | null, autoplay = false): strin
   const videoId = extractYouTubeId(url);
   if (!videoId) return null;
 
+  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+
   const params = new URLSearchParams({
     rel: '0',
     modestbranding: '1',
     playsinline: '1',
     enablejsapi: '1',
-    origin: typeof window !== 'undefined' ? window.location.origin : '',
+    iv_load_policy: '3',
+    controls: '1',
+    fs: '1',
+    origin: currentOrigin,
+    widget_referrer: currentOrigin,
   });
 
   if (autoplay) {
