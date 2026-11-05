@@ -12,7 +12,7 @@ import {
   CourseModule,
   Lesson 
 } from '../../types';
-import { getYouTubeEmbedUrl, extractYouTubeId, getYouTubeThumbnail } from '../../utils/youtube';
+import { getYouTubeEmbedUrl, extractYouTubeId, getYouTubeThumbnail, getVideoEmbedUrl, isPlayableVideoUrl } from '../../utils/youtube';
 import { 
   subscribeCourses, 
   subscribeClasses, 
@@ -803,11 +803,11 @@ export const AdminDashboardScreen: React.FC = () => {
                     const res = await pushOfficialClassesToFirestore();
                     setIsSyncing(false);
                     if (res.success) {
-                      triggerSuccess(`Successfully synchronized ${res.count} official classes (Artifacts in Ultrasound, Chest Critique, Foundation Ultrasound) to Firestore!`);
+                      triggerSuccess(`Successfully synchronized ${res.count} official classes (Artifacts in Ultrasound, Chest Critique, Foundation Ultrasound) to StudiRad Cloud!`);
                     }
                   }}
                   className="flex items-center gap-1.5 px-3 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border border-slate-700"
-                  title="Push official completed and future cohorts to Firestore"
+                  title="Push official completed and future cohorts to StudiRad Cloud"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 text-[#FF7F32] ${isSyncing ? 'animate-spin' : ''}`} />
                   <span className="hidden sm:inline">Push Official Classes</span>
@@ -1483,15 +1483,15 @@ export const AdminDashboardScreen: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <label className="font-bold text-white flex items-center gap-1.5">
                         <Tv className="w-4 h-4 text-[#FF7F32]" />
-                        <span>Primary Course Video (YouTube URL)</span>
+                        <span>Primary Course Video (YouTube or Google Drive URL)</span>
                       </label>
                       {courseForm.videoUrl && (
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                          extractYouTubeId(courseForm.videoUrl)
+                          isPlayableVideoUrl(courseForm.videoUrl)
                             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : 'bg-rose-500/10 text-rose-400'
                         }`}>
-                          {extractYouTubeId(courseForm.videoUrl) ? 'Valid YouTube Link' : 'Invalid Link'}
+                          {isPlayableVideoUrl(courseForm.videoUrl) ? 'Valid Video Link' : 'Invalid Link'}
                         </span>
                       )}
                     </div>
@@ -1500,18 +1500,18 @@ export const AdminDashboardScreen: React.FC = () => {
                       type="text"
                       value={courseForm.videoUrl}
                       onChange={(e) => setCourseForm({ ...courseForm, videoUrl: e.target.value })}
-                      placeholder="Paste YouTube link: https://www.youtube.com/watch?v=... or /shorts/..."
+                      placeholder="Paste YouTube or Google Drive link: https://youtube.com/... or https://drive.google.com/file/d/..."
                       className="w-full h-10 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
                     />
 
-                    {courseForm.videoUrl && extractYouTubeId(courseForm.videoUrl) && (
+                    {courseForm.videoUrl && isPlayableVideoUrl(courseForm.videoUrl) && (
                       <div className="pt-1">
                         <span className="text-[11px] text-slate-400 block mb-1">In-App Live Preview:</span>
                         <div className="w-full max-w-sm aspect-video rounded-xl overflow-hidden border border-slate-800 bg-black">
                           <iframe
-                            className="w-full h-full"
-                            src={getYouTubeEmbedUrl(courseForm.videoUrl) || ''}
-                            title="YouTube Preview"
+                            className="w-full h-full border-0"
+                            src={getVideoEmbedUrl(courseForm.videoUrl) || ''}
+                            title="Video Preview"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
                           />
@@ -1670,7 +1670,7 @@ export const AdminDashboardScreen: React.FC = () => {
                                 type="text"
                                 value={newLessonDraft.videoUrl}
                                 onChange={(e) => setNewLessonDraft({ ...newLessonDraft, videoUrl: e.target.value })}
-                                placeholder="Specific YouTube URL (optional, uses course video if empty)"
+                                placeholder="Specific YouTube or Google Drive video URL (optional, uses course video if empty)"
                                 className="w-full h-8 px-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
                               />
 

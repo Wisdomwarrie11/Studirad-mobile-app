@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StudyMaterial } from '../../types';
-import { getYouTubeEmbedUrl } from '../../utils/youtube';
+import { getVideoEmbedUrl } from '../../utils/youtube';
 import { isResourceCached, cacheEducationalResource, uncacheEducationalResource } from '../../utils/offlineStorage';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { 
@@ -66,7 +66,9 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
 
   // Identify file types
   const isYouTube = rawLink.includes('youtube.com') || rawLink.includes('youtu.be');
-  const isDirectVideo = !isYouTube && (
+  const isGoogleDrive = rawLink.includes('drive.google.com');
+  const isEmbedVideo = isYouTube || isGoogleDrive;
+  const isDirectVideo = !isEmbedVideo && (
     material.type === 'video' ||
     /\.(mp4|webm|ogg|mov)($|\?)/i.test(rawLink) ||
     rawLink.includes('/video/upload/') ||
@@ -75,10 +77,10 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
   const isPDF = material.type === 'pdf' || /\.pdf($|\?)/i.test(rawLink) || rawLink.includes('.pdf');
   const isImage = /\.(jpg|jpeg|png|webp|gif|svg)($|\?)/i.test(rawLink) || rawLink.includes('/image/upload/');
   const isOfficeDoc = /\.(docx?|pptx?|xlsx?)($|\?)/i.test(rawLink);
-  const isLink = material.type === 'link' && !isYouTube && !isDirectVideo && !isPDF && !isImage && !isOfficeDoc;
+  const isLink = material.type === 'link' && !isEmbedVideo && !isDirectVideo && !isPDF && !isImage && !isOfficeDoc;
 
   // In-app embedded URLs
-  const youtubeEmbed = isYouTube ? getYouTubeEmbedUrl(rawLink, false) : null;
+  const videoEmbedUrl = isEmbedVideo ? getVideoEmbedUrl(rawLink, false) : null;
   const googleDocsViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(rawLink)}&embedded=true`;
 
   // Check if resource is cached in the service worker educational cache
@@ -287,11 +289,11 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
           )}
 
           {/* ================= 1. IN-APP CONTENT VIEWER ================= */}
-          {isYouTube ? (
-            /* In-App YouTube Player */
+          {isEmbedVideo ? (
+            /* In-App Video Player (YouTube & Google Drive) */
             <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-lg">
               <iframe
-                src={youtubeEmbed || rawLink}
+                src={videoEmbedUrl || rawLink}
                 title={material.title}
                 className="w-full h-full border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

@@ -112,7 +112,7 @@ export const OfflineStudyPackModal: React.FC<OfflineStudyPackModalProps> = ({
                   {selectedModule ? selectedModule.title : 'Offline Radiography Study Pack'}
                 </h2>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 shrink-0">
-                  Cached in SW
+                  Available Offline
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
@@ -306,9 +306,9 @@ export const OfflineStudyPackModal: React.FC<OfflineStudyPackModalProps> = ({
         <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#121824] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
           <div className="flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span>Service Worker Cache Active</span>
+            <span>Saved for Offline Study</span>
           </div>
-          <span>{cachedCount > 0 ? `${cachedCount} items cached` : 'Full core pack cached'}</span>
+          <span>{cachedCount > 0 ? `${cachedCount} items saved` : 'Ready offline'}</span>
         </div>
 
       </div>

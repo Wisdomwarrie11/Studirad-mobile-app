@@ -162,8 +162,7 @@ export const AdminAuthScreen: React.FC = () => {
 
         {/* Footer info */}
         <div className="mt-6 pt-4 border-t border-slate-800/80 text-center text-[11px] text-slate-500">
-          Connected to Firestore project <span className="font-mono text-slate-400">graphical-silicon-1s6r9</span>.
-          Changes push live immediately.
+          Connected to StudiRad Secure Cloud. Changes update across the platform immediately.
         </div>
       </div>
     </div>

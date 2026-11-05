@@ -85,6 +85,54 @@ export function getYouTubeThumbnail(url?: string | null): string | null {
 }
 
 /**
+ * Extracts Google Drive file ID from any standard Google Drive URL:
+ * - https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+ * - https://drive.google.com/file/d/FILE_ID/preview
+ * - https://drive.google.com/open?id=FILE_ID
+ */
+export function extractGoogleDriveId(url?: string | null): string | null {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  const fileMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (fileMatch && fileMatch[1]) {
+    return fileMatch[1];
+  }
+  const idMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (idMatch && idMatch[1]) {
+    return idMatch[1];
+  }
+  return null;
+}
+
+/**
+ * Returns the Google Drive in-app embedded video preview URL
+ */
+export function getGoogleDriveEmbedUrl(url?: string | null): string | null {
+  const fileId = extractGoogleDriveId(url);
+  if (!fileId) return null;
+  return `https://drive.google.com/file/d/${fileId}/preview`;
+}
+
+/**
+ * Universal video embedder supporting both YouTube and Google Drive
+ */
+export function getVideoEmbedUrl(url?: string | null, autoplay = false): string | null {
+  if (!url) return null;
+  if (url.includes('drive.google.com')) {
+    return getGoogleDriveEmbedUrl(url);
+  }
+  return getYouTubeEmbedUrl(url, autoplay);
+}
+
+/**
+ * Checks if a URL is a playable video (YouTube or Google Drive)
+ */
+export function isPlayableVideoUrl(url?: string | null): boolean {
+  if (!url) return false;
+  return Boolean(extractYouTubeId(url) || extractGoogleDriveId(url));
+}
+
+/**
  * Comprehensive parser returning parsed details
  */
 export function parseYouTubeVideo(url?: string | null, autoplay = false): ParsedYouTube {

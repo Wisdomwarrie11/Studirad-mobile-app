@@ -200,7 +200,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
       const matchesCourse = selectedMaterialCourse === 'All' || mat.course === selectedMaterialCourse;
 
       // Type match (all vs reading vs videos)
-      const isVideo = mat.type === 'video' || mat.link?.includes('youtube.com') || mat.link?.includes('youtu.be');
+      const isVideo = mat.type === 'video' || mat.link?.includes('youtube.com') || mat.link?.includes('youtu.be') || mat.link?.includes('drive.google.com');
       const matchesType = 
         materialTypeFilter === 'all'
           ? true
@@ -467,35 +467,6 @@ export const LearnTab: React.FC<LearnTabProps> = ({
               </div>
             </div>
 
-            {/* Offline Radiography Study Pack Banner */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#002147] via-[#0A3266] to-[#002147] text-white border border-slate-700 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
-                  <WifiOff className="w-5 h-5 animate-pulse" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-white">Offline Radiography Study Pack</h3>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                      Service Worker Active
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-300">
-                    Emergency chest rules, contrast algorithms, CRITOE chronology & board past questions cached for offline study.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-                <button
-                  onClick={() => setShowOfflinePackModal(true)}
-                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  <span>Open Offline Pack</span>
-                </button>
-              </div>
-            </div>
 
             {/* Course Category Chips (Matching MaterialsPage) */}
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
@@ -544,7 +515,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {filteredMaterials.map((mat) => {
                   const config = MATERIAL_COLORS[mat.course] || MATERIAL_COLORS.All;
-                  const isVideo = mat.type === 'video' || mat.link?.includes('youtube.com') || mat.link?.includes('youtu.be');
+                  const isVideo = mat.type === 'video' || mat.link?.includes('youtube.com') || mat.link?.includes('youtu.be') || mat.link?.includes('drive.google.com');
                   const isLink = mat.type === 'link';
 
                   return (

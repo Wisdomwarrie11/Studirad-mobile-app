@@ -59,45 +59,9 @@ interface RequestContextType {
   cancelRequest: (id: string) => void;
 }
 
-const STORAGE_KEY_REQUESTS = 'studirad_user_requests';
+import { subscribeUserRequests, pushResearchRequestToFirestore } from '../services/firebaseDataService';
 
-// Initial pre-loaded real request sample so user can immediately see their request log in action
-const INITIAL_REQUESTS: UserRequest[] = [
-  {
-    id: 'req_init_1',
-    referenceCode: 'SR-REQ-84920',
-    category: 'private_class',
-    userName: 'Alex Morgan',
-    userEmail: 'alex.morgan@nhs.uk',
-    subjectTopic: 'Trauma Radiography & C-Spine Peg Clearing',
-    currentKnowledgeLevel: 'Qualified Band 5 Radiographer',
-    learningObjectives: 'Improve diagnostic confidence when evaluating lateral cervical spine odontoid pegs and identifying occult facet subluxations.',
-    preferredFormat: 'Online 1-on-1',
-    preferredSchedule: 'Weekday Evenings (after 18:00 BST)',
-    tutorPreference: 'Consultant Radiographer or Superintendent',
-    specialNeeds: 'Focus on pediatric and geriatric trauma cases',
-    submittedAt: new Date(Date.now() - 86400000).toISOString(),
-    status: 'Scheduled',
-    statusNotes: 'Session confirmed with Dr. Marcus Thorne for Thursday 18:30 BST.',
-  },
-  {
-    id: 'req_init_2',
-    referenceCode: 'SR-RES-71932',
-    category: 'research',
-    userName: 'Alex Morgan',
-    userEmail: 'alex.morgan@nhs.uk',
-    researchTitle: 'Evaluation of Automated Tube Voltage Selection in Low-Dose Chest CT',
-    discipline: 'Diagnostic Computed Tomography',
-    assistanceType: 'SPSS Biostatistics & Methodology',
-    currentStage: 'Data Collection & Statistical Analysis',
-    supportDetails: 'Need guidance running two-way ANOVA and Bland-Altman plots comparing radiation dose metrics (CTDIvol, DLP) with image quality scores across 120 patients.',
-    deadline: 'Within 3 Weeks',
-    methodologyNotes: 'Hospital IRB approved; anonymized SPSS .sav file prepared.',
-    submittedAt: new Date(Date.now() - 172800000).toISOString(),
-    status: 'Under Review',
-    statusNotes: 'Academic advisor reviewing data structure and test selection.',
-  },
-];
+const STORAGE_KEY_REQUESTS = 'studirad_user_requests';
 
 const RequestContext = createContext<RequestContextType | undefined>(undefined);
 
@@ -106,11 +70,23 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [requests, setRequests] = useState<UserRequest[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_REQUESTS);
-      return saved ? JSON.parse(saved) : INITIAL_REQUESTS;
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return INITIAL_REQUESTS;
+      return [];
     }
   });
+
+  // Real-time synchronization with Firestore requests collection
+  useEffect(() => {
+    if (currentUser?.id || currentUser?.email) {
+      const unsub = subscribeUserRequests(currentUser.id || currentUser.email || '', (realRequests) => {
+        setRequests(realRequests);
+      });
+      return () => unsub?.();
+    } else {
+      setRequests([]);
+    }
+  }, [currentUser?.id, currentUser?.email]);
 
   useEffect(() => {
     try {
@@ -128,8 +104,7 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const submitServiceRequest = async (
     data: Omit<ServiceRequest, 'id' | 'referenceCode' | 'category' | 'submittedAt' | 'status'>
   ) => {
-    // Artificial delay to mimic server submission
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    await new Promise((resolve) => setTimeout(resolve, 400));
 
     if (!data.serviceType || !data.description.trim()) {
       return { success: false, error: 'Please specify the service category and detailed requirements.' };
@@ -144,7 +119,7 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
       userId: currentUser?.id,
       submittedAt: new Date().toISOString(),
       status: 'Submitted',
-      statusNotes: 'Your service request has been logged. Our clinical team will assess requirements within 24 hours.',
+      statusNotes: 'Your service request has been logged. Our team will assess requirements within 24 hours.',
     };
 
     setRequests((prev) => [newRequest, ...prev]);
@@ -154,26 +129,39 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const submitResearchRequest = async (
     data: Omit<ResearchRequest, 'id' | 'referenceCode' | 'category' | 'submittedAt' | 'status'>
   ) => {
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
-    if (!data.researchTitle.trim() || !data.supportDetails.trim()) {
-      return { success: false, error: 'Please provide your research topic title and specific support needed.' };
+    if (!data.researchTitle.trim()) {
+      return { success: false, error: 'Please provide your research topic or title.' };
     }
 
-    const ref = generateRefCode('RES');
-    const newRequest: ResearchRequest = {
-      ...data,
-      id: 'req_' + Date.now(),
-      referenceCode: ref,
-      category: 'research',
-      userId: currentUser?.id,
-      submittedAt: new Date().toISOString(),
-      status: 'Submitted',
-      statusNotes: 'Research inquiry received. An academic supervisor will review your project brief.',
-    };
+    try {
+      // Write to real Firestore collection and trigger admin notification
+      const res = await pushResearchRequestToFirestore({
+        ...data,
+        userId: currentUser?.id,
+        userName: data.userName || currentUser?.fullName || 'Researcher',
+        userEmail: data.userEmail || currentUser?.email || 'scholar@studirad.org',
+        supportDetails: data.supportDetails?.trim() || 'Not specified',
+      });
 
-    setRequests((prev) => [newRequest, ...prev]);
-    return { success: true, referenceCode: ref };
+      if (res.success && res.referenceCode) {
+        const newRequest: ResearchRequest = {
+          ...data,
+          id: 'req_' + Date.now(),
+          referenceCode: res.referenceCode,
+          category: 'research',
+          userId: currentUser?.id,
+          submittedAt: new Date().toISOString(),
+          status: 'Submitted',
+          statusNotes: 'Research inquiry received. An academic supervisor will review your project brief.',
+        };
+        setRequests((prev) => [newRequest, ...prev.filter(r => r.referenceCode !== res.referenceCode)]);
+        return { success: true, referenceCode: res.referenceCode };
+      }
+      return { success: false, error: res.error || 'Failed to submit research request.' };
+    } catch (err) {
+      console.error('Error submitting research request:', err);
+      return { success: false, error: 'Could not connect to service. Please check your internet connection.' };
+    }
   };
 
   const submitPrivateClassRequest = async (

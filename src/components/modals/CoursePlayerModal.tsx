@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Course, Lesson, CourseMaterialLink, CourseQuizQuestion, StudyMaterial } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { enrollUserInCourse } from '../../services/firebaseDataService';
-import { getYouTubeEmbedUrl, extractYouTubeId } from '../../utils/youtube';
+import { getVideoEmbedUrl, extractYouTubeId, extractGoogleDriveId } from '../../utils/youtube';
 import { MaterialReaderModal } from './MaterialReaderModal';
 import { 
   X, 
@@ -81,10 +81,11 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
   const currentLesson = allLessons[currentLessonIndex] || allLessons[0];
   const isCurrentCompleted = completedLessonIds.includes(currentLesson.id);
 
-  // Extract active YouTube video URL: prefers lesson's videoUrl, then course.videoUrl
+  // Extract active video URL (supports both YouTube and Google Drive): prefers lesson's videoUrl, then course.videoUrl
   const activeVideoUrl = currentLesson.videoUrl || course.videoUrl || '';
-  const embedUrl = getYouTubeEmbedUrl(activeVideoUrl, false);
+  const embedUrl = getVideoEmbedUrl(activeVideoUrl, false);
   const youtubeId = extractYouTubeId(activeVideoUrl);
+  const driveId = extractGoogleDriveId(activeVideoUrl);
 
   // Aggregate all course and lesson materials & links
   const accompanyingMaterials: CourseMaterialLink[] = useMemo(() => {
@@ -210,8 +211,8 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                   </h4>
                   <p className="text-xs text-slate-400 max-w-sm">
                     {activeVideoUrl 
-                      ? 'Could not parse YouTube link. Please check video URL in the Admin Portal.'
-                      : 'No YouTube lecture video attached yet. You can embed the YouTube link from the Admin Portal.'}
+                      ? 'Could not parse video link. Please verify the YouTube or Google Drive link in the Admin Portal.'
+                      : 'No lecture video attached yet. You can embed a YouTube or Google Drive video link from the Admin Portal.'}
                   </p>
                 </div>
               </div>

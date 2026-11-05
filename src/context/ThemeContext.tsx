@@ -14,7 +14,7 @@ const STORAGE_KEY_THEME = 'studirad_theme_preference';
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Default to 'dark' mode as explicitly requested by user, unless an existing preference was saved
+  // Default to 'light' mode for anyone visiting for the first time
   const [theme, setThemeState] = useState<Theme>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_THEME);
@@ -24,7 +24,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {
       // Fallback
     }
-    return 'dark'; // Dark mode is default
+    return 'light'; // Light mode is default
   });
 
   useEffect(() => {

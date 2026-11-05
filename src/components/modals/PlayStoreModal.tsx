@@ -38,6 +38,8 @@ export const PlayStoreModal: React.FC<PlayStoreModalProps> = ({ isOpen, onClose 
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
   }, []);
 
+  const [manualGuideVisible, setManualGuideVisible] = useState(false);
+
   if (!isOpen) return null;
 
   const handleInstallClick = async () => {
@@ -49,7 +51,7 @@ export const PlayStoreModal: React.FC<PlayStoreModalProps> = ({ isOpen, onClose 
       }
       setDeferredPrompt(null);
     } else {
-      alert('To install StudiRad on Android:\n1. Open your browser menu (⋮)\n2. Tap "Install App" or "Add to Home screen"');
+      setManualGuideVisible(true);
     }
   };
 
@@ -72,17 +74,17 @@ export const PlayStoreModal: React.FC<PlayStoreModalProps> = ({ isOpen, onClose 
               <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 Google Play Store Ready
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/60">
-                  TWA Compliant
+                  Android Ready
                 </span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Install as a native app or package for Google Play
+                Install as a mobile app or publish to Google Play
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -99,8 +101,8 @@ export const PlayStoreModal: React.FC<PlayStoreModalProps> = ({ isOpen, onClose 
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 {isInstalled
-                  ? 'Running in full standalone native container mode.'
-                  : 'Install StudiRad directly on Android or Chrome OS without Play Store.'}
+                  ? 'Running in full standalone app mode on your device.'
+                  : 'Install StudiRad directly on Android or Chrome OS without opening the app store.'}
               </p>
             </div>
             {!isInstalled && (
@@ -114,26 +116,34 @@ export const PlayStoreModal: React.FC<PlayStoreModalProps> = ({ isOpen, onClose 
             )}
           </div>
 
+          {manualGuideVisible && !isInstalled && (
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 space-y-1">
+              <span className="font-bold block">How to install manually:</span>
+              <p>1. Open your browser menu (tap the 3 dots ⋮ in Chrome or Safari share button)</p>
+              <p>2. Tap <strong>"Install App"</strong> or <strong>"Add to Home Screen"</strong></p>
+            </div>
+          )}
+
           {/* Compliance Checklist */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5 flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              TWA (Trusted Web Activity) Readiness
+              Android Application Standards
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-[#1A2333] border border-slate-200/80 dark:border-slate-800 flex items-center gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                 <div>
-                  <div className="font-semibold text-slate-900 dark:text-slate-200">Web App Manifest</div>
-                  <div className="text-[10px] text-slate-400">/manifest.json configured</div>
+                  <div className="font-semibold text-slate-900 dark:text-slate-200">App Configuration</div>
+                  <div className="text-[10px] text-slate-400">Branding, splash, and navigation icons configured</div>
                 </div>
               </div>
 
               <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-[#1A2333] border border-slate-200/80 dark:border-slate-800 flex items-center gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                 <div>
-                  <div className="font-semibold text-slate-900 dark:text-slate-200">Active Service Worker</div>
-                  <div className="text-[10px] text-slate-400">/sw.js (v2.0) with educational resources offline cache</div>
+                  <div className="font-semibold text-slate-900 dark:text-slate-200">Offline Study Ready</div>
+                  <div className="text-[10px] text-slate-400">Educational resources saved for offline study</div>
                 </div>
               </div>
 

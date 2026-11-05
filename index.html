@@ -1,16 +1,16 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en" class="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
     <title>StudiRad — Radiography Education & Clinical Career Hub</title>
-    <meta name="description" content="Dedicated mobile-first educational and career application for radiography students, practitioners, and clinical imaging professionals." />
+    <meta name="description" content="E-learning and opportunity Sourcing platform for Radiography students and professionals" />
     <meta property="og:title" content="StudiRad — Radiography Education & Clinical Career Hub" />
-    <meta property="og:description" content="Dedicated mobile-first educational and career application for radiography students, practitioners, and clinical imaging professionals." />
+    <meta property="og:description" content="E-learning and opportunity Sourcing platform for Radiography students and professionals" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     
-    <!-- PWA & Google Play Store (TWA) Configuration -->
+    <!-- PWA & Mobile App Configuration -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#002147" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -23,7 +23,7 @@
       (function() {
         try {
           var saved = localStorage.getItem('studirad_theme_preference');
-          var isDark = saved ? saved === 'dark' : true; // Default to dark mode
+          var isDark = saved ? saved === 'dark' : false; // Default to light mode
           if (isDark) {
             document.documentElement.classList.add('dark');
             document.documentElement.classList.remove('light');

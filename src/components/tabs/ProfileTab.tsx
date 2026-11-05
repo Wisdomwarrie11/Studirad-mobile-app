@@ -176,42 +176,107 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
           </p>
         </header>
 
-        {/* Responsive Full-Width Layout: 2 Columns on Tablet / Laptop, 1 Column on Mobile */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* ================= LEFT COLUMN (Profile Card, CPD, Interests, Locum, Settings) ================= */}
-          <div className="lg:col-span-5 space-y-5">
-            {/* 1. User Identity Card */}
-            {!currentUser ? (
-              <div className="w-full bg-gradient-to-br from-[#002147] to-[#0A3266] text-white rounded-2xl p-5 border border-slate-700 shadow-md relative overflow-hidden space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center font-bold text-lg text-white">
-                    G
-                  </div>
-                  <div>
-                    <h2 className="text-base font-extrabold text-white">Guest Explorer Mode</h2>
-                    <p className="text-xs text-slate-300">Explore courses, masterclasses & clinical hub</p>
-                  </div>
+        {/* If guest (no account), display concise inviting profile layout */}
+        {!currentUser ? (
+          <div className="max-w-2xl mx-auto space-y-6">
+            {/* 1. Guest Identity Card */}
+            <div className="w-full bg-gradient-to-br from-[#002147] via-[#0A3266] to-[#002147] text-white rounded-3xl p-6 sm:p-8 border border-slate-700 shadow-md relative overflow-hidden space-y-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center font-bold text-xl text-white shadow-inner">
+                  G
                 </div>
-                <p className="text-xs text-slate-200 leading-relaxed">
-                  Sign in or create a free StudiRad account to enroll in live masterclasses, save courses, track certified CPD credits, and receive locum alerts.
-                </p>
-                <div className="flex items-center gap-2 pt-1">
-                  <button
-                    onClick={() => setScreen('auth')}
-                    className="flex-1 py-2.5 px-3 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs shadow-sm transition-all text-center cursor-pointer"
-                  >
-                    Create Free Account
-                  </button>
-                  <button
-                    onClick={() => setScreen('auth')}
-                    className="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all text-center cursor-pointer"
-                  >
-                    Sign In
-                  </button>
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#FF7F32]">Welcome Guest</span>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-white">Join StudiRad</h2>
                 </div>
               </div>
-            ) : (
+              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                Sign in or create your free account to enroll in live masterclasses, save courses, track certified CPD hours, and request academic research assistance.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
+                <button
+                  onClick={() => setScreen('auth')}
+                  className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs sm:text-sm shadow-sm transition-all text-center cursor-pointer"
+                >
+                  Create Free Account
+                </button>
+                <button
+                  onClick={() => setScreen('auth')}
+                  className="w-full sm:flex-initial py-3 px-6 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all text-center cursor-pointer"
+                >
+                  Sign In
+                </button>
+              </div>
+            </div>
+
+            {/* 2. Member Features Preview */}
+            <div className="w-full bg-white dark:bg-[#121824] rounded-3xl p-6 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Member Features
+              </h3>
+              <div className="grid grid-cols-1 gap-3.5">
+                <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-[#1A2234] border border-slate-100 dark:border-slate-800">
+                  <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-[#FF7F32] flex items-center justify-center shrink-0 mt-0.5">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Curriculum & Video Classes</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Watch structured radiography modules, revision slides, and exam guides.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-[#1A2234] border border-slate-100 dark:border-slate-800">
+                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0 mt-0.5">
+                    <Award className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Certified CPD Tracking</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Record verified professional hours for annual radiography board licensing.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-[#1A2234] border border-slate-100 dark:border-slate-800">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
+                    <GraduationCap className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Academic Research Guidance</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Get expert review on dissertation topics, methodology, and biostatistics.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Settings & App Preferences */}
+            <div className="w-full bg-white dark:bg-[#121824] rounded-3xl p-6 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Preferences
+              </h3>
+              <ThemeToggle variant="expanded" />
+              <button
+                onClick={() => setShowPlayStoreModal(true)}
+                className="w-full py-3 px-4 rounded-xl hover:bg-slate-50 dark:hover:bg-[#1E293B] text-slate-700 dark:text-slate-300 font-semibold text-xs flex items-center justify-between transition-colors cursor-pointer border border-slate-100 dark:border-slate-800"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Smartphone className="w-4 h-4 text-[#FF7F32]" />
+                  <span>Download App on Android</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+                    Ready
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </div>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Responsive Full-Width Layout: 2 Columns on Tablet / Laptop, 1 Column on Mobile */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            {/* ================= LEFT COLUMN (Profile Card, CPD, Interests, Locum, Settings) ================= */}
+            <div className="lg:col-span-5 space-y-5">
+              {/* 1. User Identity Card */}
               <div className="w-full bg-white dark:bg-[#121824] rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#002147] to-[#0A3266] text-white flex items-center justify-center font-bold text-xl shadow-sm shrink-0 ring-4 ring-white dark:ring-[#1E293B]">
@@ -243,9 +308,8 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                   </span>
                 </div>
               </div>
-            )}
 
-            {/* 2. Verified CPD Credits Card */}
+              {/* 2. Verified CPD Credits Card */}
             <div className="w-full bg-white dark:bg-[#121824] rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -680,6 +744,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
             </div>
           </div>
         </div>
+      )}
       </div>
 
       {/* Delete Confirmation Modal */}

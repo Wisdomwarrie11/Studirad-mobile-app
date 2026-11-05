@@ -16,7 +16,8 @@ import {
   ShieldCheck,
   Building2,
   Trash2,
-  Eye
+  Eye,
+  MessageCircle
 } from 'lucide-react';
 
 interface ServicesTabProps {
@@ -35,25 +36,16 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
     cancelRequest 
   } = useRequests();
 
-  const [activeFormTab, setActiveFormTab] = useState<'private_class' | 'research' | 'service' | 'my_requests'>('private_class');
+  const [activeFormTab, setActiveFormTab] = useState<'private_class' | 'research' | 'my_requests'>('research');
 
   // Form feedback states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successReference, setSuccessReference] = useState<string | null>(null);
+  const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null);
   const [selectedDetailRequest, setSelectedDetailRequest] = useState<UserRequest | null>(null);
 
-  // A. Private Class Form State
-  const [pcName, setPcName] = useState(currentUser?.fullName || '');
-  const [pcEmail, setPcEmail] = useState(currentUser?.email || '');
-  const [pcSubject, setPcSubject] = useState('');
-  const [pcKnowledgeLevel, setPcKnowledgeLevel] = useState('Qualified Radiographer');
-  const [pcLearningObjectives, setPcLearningObjectives] = useState('');
-  const [pcFormat, setPcFormat] = useState<'Online 1-on-1' | 'Group Tutorial' | 'Case Study Review'>('Online 1-on-1');
-  const [pcSchedule, setPcSchedule] = useState('Weekday Evenings (after 18:00 BST)');
-  const [pcSpecialNeeds, setPcSpecialNeeds] = useState('');
-
-  // B. Research Assistance Form State
+  // A. Research Assistance Form State (Primary)
   const [resName, setResName] = useState(currentUser?.fullName || '');
   const [resEmail, setResEmail] = useState(currentUser?.email || '');
   const [resTitle, setResTitle] = useState('');
@@ -64,53 +56,6 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
   const [resDeadline, setResDeadline] = useState('Within 2 to 3 Weeks');
   const [resNotes, setResNotes] = useState('');
 
-  // C. Clinical Services Form State
-  const [srvName, setSrvName] = useState(currentUser?.fullName || '');
-  const [srvEmail, setSrvEmail] = useState(currentUser?.email || '');
-  const [srvCategory, setSrvCategory] = useState('Clinical Audit & DRL Dose Review');
-  const [srvDescription, setSrvDescription] = useState('');
-  const [srvTimeline, setSrvTimeline] = useState('Standard (within 14 days)');
-  const [srvHospital, setSrvHospital] = useState('');
-  const [srvNotes, setSrvNotes] = useState('');
-
-  // Submit Handlers
-  const handlePrivateClassSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!requireAuth({
-      title: 'Sign In to Request Tutoring',
-      message: 'Sign in or create an account to submit your private 1-on-1 tutoring request and track tutor matching.',
-      actionText: 'Sign In to Request'
-    })) return;
-
-    setErrorMessage(null);
-    if (!pcSubject.trim() || !pcLearningObjectives.trim()) {
-      setErrorMessage('Please fill in the required topic and learning objectives.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    const res = await submitPrivateClassRequest({
-      userName: pcName || currentUser?.fullName || 'Radiographer',
-      userEmail: pcEmail || currentUser?.email || 'contact@studirad.org',
-      subjectTopic: pcSubject.trim(),
-      currentKnowledgeLevel: pcKnowledgeLevel,
-      learningObjectives: pcLearningObjectives.trim(),
-      preferredFormat: pcFormat,
-      preferredSchedule: pcSchedule,
-      specialNeeds: pcSpecialNeeds.trim() || undefined,
-    });
-    setIsSubmitting(false);
-
-    if (res.success && res.referenceCode) {
-      setSuccessReference(res.referenceCode);
-      setPcSubject('');
-      setPcLearningObjectives('');
-      setPcSpecialNeeds('');
-    } else {
-      setErrorMessage(res.error || 'Failed to submit request.');
-    }
-  };
-
   const handleResearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!requireAuth({
@@ -120,20 +65,23 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
     })) return;
 
     setErrorMessage(null);
-    if (!resTitle.trim() || !resSupportDetails.trim()) {
-      setErrorMessage('Please fill in your research proposed title and support requirements.');
+    if (!resTitle.trim()) {
+      setErrorMessage('Please fill in your research topic or working title.');
       return;
     }
 
     setIsSubmitting(true);
+    const applicantName = resName || currentUser?.fullName || 'Researcher';
+    const applicantEmail = resEmail || currentUser?.email || 'scholar@studirad.org';
+
     const res = await submitResearchRequest({
-      userName: resName || currentUser?.fullName || 'Researcher',
-      userEmail: resEmail || currentUser?.email || 'contact@studirad.org',
+      userName: applicantName,
+      userEmail: applicantEmail,
       researchTitle: resTitle.trim(),
       discipline: resDiscipline,
       assistanceType: resAssistanceType,
       currentStage: resCurrentStage,
-      supportDetails: resSupportDetails.trim(),
+      supportDetails: resSupportDetails.trim() || 'Not specified',
       deadline: resDeadline,
       methodologyNotes: resNotes.trim() || undefined,
     });
@@ -141,46 +89,26 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
 
     if (res.success && res.referenceCode) {
       setSuccessReference(res.referenceCode);
+
+      // Forward a direct message on WhatsApp to StudiRad (+2349029729621)
+      const waText = `*New Research Assistance Request - StudiRad*\n\n` +
+        `• *Reference:* ${res.referenceCode}\n` +
+        `• *Topic:* ${resTitle.trim()}\n` +
+        `• *Discipline:* ${resDiscipline}\n` +
+        `• *Support Type:* ${resAssistanceType}\n` +
+        `• *Current Stage:* ${resCurrentStage}\n` +
+        `• *Target Deadline:* ${resDeadline}\n` +
+        `• *Applicant:* ${applicantName}\n` +
+        `• *Email:* ${applicantEmail}\n` +
+        (resSupportDetails.trim() ? `• *Support Details:* ${resSupportDetails.trim()}\n` : '') +
+        (resNotes.trim() ? `• *Notes:* ${resNotes.trim()}\n` : '');
+
+      const waUrl = `https://wa.me/2349029729621?text=${encodeURIComponent(waText)}`;
+      setWhatsappUrl(waUrl);
+
       setResTitle('');
       setResSupportDetails('');
       setResNotes('');
-    } else {
-      setErrorMessage(res.error || 'Failed to submit request.');
-    }
-  };
-
-  const handleServiceSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!requireAuth({
-      title: 'Sign In to Request Clinical Service',
-      message: 'Sign in or create an account to submit department audit, protocol review, and clinical requests.',
-      actionText: 'Sign In to Request'
-    })) return;
-
-    setErrorMessage(null);
-    if (!srvDescription.trim()) {
-      setErrorMessage('Please describe the service required.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    const res = await submitServiceRequest({
-      userName: srvName || currentUser?.fullName || 'Clinician',
-      userEmail: srvEmail || currentUser?.email || 'contact@studirad.org',
-      serviceType: srvCategory,
-      description: srvDescription.trim(),
-      timeline: srvTimeline,
-      departmentOrHospital: srvHospital.trim() || undefined,
-      additionalNotes: srvNotes.trim() || undefined,
-    });
-    setIsSubmitting(false);
-
-    if (res.success && res.referenceCode) {
-      setSuccessReference(res.referenceCode);
-      setSuccessReference(res.referenceCode);
-      setSrvDescription('');
-      setSrvHospital('');
-      setSrvNotes('');
     } else {
       setErrorMessage(res.error || 'Failed to submit request.');
     }
@@ -191,35 +119,18 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
       {/* Title & Introduction */}
       <div className="space-y-2">
         <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FF7F32]">
-          Clinical & Academic Request Center
+          Academic & Research Center
         </span>
         <h1 className="heading-display text-[var(--text-primary)]">
           Submit & Track Requests
         </h1>
         <p className="body-large text-[var(--text-secondary)] max-w-3xl">
-          Request bespoke 1-on-1 tutoring from consultant radiographers, academic assistance for dissertation and statistics, or clinical audit review for your department.
+          Request academic assistance for dissertation, SPSS biostatistics, and research methodology review, or check upcoming 1-on-1 private tutoring cohorts.
         </p>
       </div>
 
       {/* Segmented Navigation Tabs */}
       <div className="w-full bg-[var(--bg-surface)] p-1.5 rounded-2xl border border-[var(--border-subtle)] flex items-center overflow-x-auto no-scrollbar gap-1 shadow-xs">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveFormTab('private_class');
-            setSuccessReference(null);
-            setErrorMessage(null);
-          }}
-          className={`flex-1 min-w-[140px] py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center gap-2 ${
-            activeFormTab === 'private_class'
-              ? 'bg-[#002147] dark:bg-[#1B447A] text-white shadow-sm'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-elevated)]'
-          }`}
-        >
-          <GraduationCap className="w-4 h-4 text-[#FF7F32]" />
-          <span>Private Classes</span>
-        </button>
-
         <button
           type="button"
           onClick={() => {
@@ -240,18 +151,19 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
         <button
           type="button"
           onClick={() => {
-            setActiveFormTab('service');
+            setActiveFormTab('private_class');
             setSuccessReference(null);
             setErrorMessage(null);
           }}
           className={`flex-1 min-w-[140px] py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center gap-2 ${
-            activeFormTab === 'service'
+            activeFormTab === 'private_class'
               ? 'bg-[#002147] dark:bg-[#1B447A] text-white shadow-sm'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-elevated)]'
           }`}
         >
-          <FileSpreadsheet className="w-4 h-4 text-[#FF7F32]" />
-          <span>Clinical Services</span>
+          <GraduationCap className="w-4 h-4 text-[#FF7F32]" />
+          <span>Private Classes</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-500">Soon</span>
         </button>
 
         <button
@@ -259,7 +171,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
           onClick={() => {
             if (!requireAuth({
               title: 'Sign In to View Requests',
-              message: 'Sign in to access your request dashboard and track your submitted tutoring, clinical, and research requests.',
+              message: 'Sign in to access your request dashboard and track your submitted research inquiries.',
               actionText: 'Sign In to View Requests'
             })) return;
             setActiveFormTab('my_requests');
@@ -279,7 +191,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
 
       {/* Success Notification Alert */}
       {successReference && (
-        <div className="p-6 rounded-3xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-fadeIn">
+        <div className="p-6 rounded-3xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm animate-fadeIn">
           <div className="flex items-start gap-3">
             <CheckCircle2 className="w-8 h-8 text-emerald-400 shrink-0 mt-0.5" />
             <div>
@@ -287,21 +199,35 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                 Request Successfully Logged!
               </h3>
               <p className="body-standard text-emerald-300/90 pt-1">
-                Your tracking reference is <strong className="font-mono text-white text-base">{successReference}</strong>. Our clinical coordinator will review your specifications.
+                Your tracking reference is <strong className="font-mono text-white text-base">{successReference}</strong>. Our clinical team has been notified.
               </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setActiveFormTab('my_requests');
-              setSuccessReference(null);
-            }}
-            className="px-5 h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shrink-0 transition-colors"
-          >
-            Track in My Requests →
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0 w-full md:w-auto">
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-5 h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl transition-colors shadow-sm"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Message on WhatsApp</span>
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveFormTab('my_requests');
+                setSuccessReference(null);
+                setWhatsappUrl(null);
+              }}
+              className="flex-1 md:flex-initial inline-flex items-center justify-center px-4 h-11 bg-white/10 hover:bg-white/20 text-white font-medium text-sm rounded-xl transition-colors"
+            >
+              Track in My Requests →
+            </button>
+          </div>
         </div>
       )}
 
@@ -313,165 +239,59 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
         </div>
       )}
 
-      {/* 1. PRIVATE CLASSES REQUEST FORM */}
+      {/* 1. PRIVATE CLASSES (COMING SOON) */}
       {activeFormTab === 'private_class' && (
-        <form onSubmit={handlePrivateClassSubmit} className="bg-[var(--bg-surface)] rounded-3xl p-6 sm:p-10 border border-[var(--border-subtle)] shadow-sm space-y-6">
-          <div className="border-b border-[var(--border-subtle)] pb-4">
+        <div className="bg-[var(--bg-surface)] rounded-3xl p-8 sm:p-12 border border-[var(--border-subtle)] text-center space-y-6 shadow-sm">
+          <div className="w-20 h-20 rounded-3xl bg-[#FF7F32]/10 border border-[#FF7F32]/20 flex items-center justify-center mx-auto text-[#FF7F32]">
+            <GraduationCap className="w-10 h-10" />
+          </div>
+
+          <div className="max-w-xl mx-auto space-y-2">
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FF7F32]/15 text-[#FF7F32]">
+              Coming Soon
+            </span>
             <h2 className="heading-section text-[var(--text-primary)]">
-              Book a Private Tutoring Class
+              1-on-1 & Small Group Private Classes
             </h2>
-            <p className="body-standard text-[var(--text-secondary)] mt-1">
-              Match 1-on-1 with accredited university educators and consultant radiographers for case critiques, examination preparation, or specialized imaging modalities.
+            <p className="body-standard text-[var(--text-secondary)]">
+              We are finalizing our cohort of accredited senior radiography educators for specialized 1-on-1 tutoring and board exam preparations.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {/* Full Name */}
-            <div className="flex flex-col gap-1.5">
-              <label className="label-ui text-[var(--text-primary)]">
-                Full Name <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={pcName}
-                onChange={(e) => setPcName(e.target.value)}
-                placeholder="e.g. Chukwudi Okafor, BSc Radiography"
-                className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-              />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto pt-2 text-left">
+            <div className="p-4 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
+              <span className="text-sm font-bold text-[var(--text-primary)] block">Personalized Tutoring</span>
+              <p className="text-xs text-[var(--text-secondary)] mt-1">Focus on difficult modalities: MRI physics, CT pathology, or ultrasound.</p>
             </div>
-
-            {/* Email */}
-            <div className="flex flex-col gap-1.5">
-              <label className="label-ui text-[var(--text-primary)]">
-                Email Address <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="email"
-                required
-                value={pcEmail}
-                onChange={(e) => setPcEmail(e.target.value)}
-                placeholder="c.okafor@uch-ibadan.org.ng"
-                className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-              />
+            <div className="p-4 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
+              <span className="text-sm font-bold text-[var(--text-primary)] block">Exam Preparation</span>
+              <p className="text-xs text-[var(--text-secondary)] mt-1">Targeted coaching for university vivas and professional licensing exams.</p>
             </div>
-
-            {/* Current Knowledge Level */}
-            <div className="flex flex-col gap-1.5">
-              <label className="label-ui text-[var(--text-primary)]">
-                Current Level of Knowledge <span className="text-red-400">*</span>
-              </label>
-              <select
-                value={pcKnowledgeLevel}
-                onChange={(e) => setPcKnowledgeLevel(e.target.value)}
-                className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-              >
-                <option value="1st Year Radiography Student">1st Year Radiography Student</option>
-                <option value="Final Year / Pre-Registration Student">Final Year / Pre-Registration Student</option>
-                <option value="Qualified Band 5 Radiographer">Qualified Band 5 Radiographer</option>
-                <option value="Senior Band 6 Radiographer (CT/MRI Specialist)">Senior Band 6 Radiographer (CT/MRI Specialist)</option>
-                <option value="Advanced Clinical Practitioner / Registrar">Advanced Clinical Practitioner / Registrar</option>
-              </select>
-            </div>
-
-            {/* Preferred Format */}
-            <div className="flex flex-col gap-1.5">
-              <label className="label-ui text-[var(--text-primary)]">
-                Preferred Class Format <span className="text-red-400">*</span>
-              </label>
-              <select
-                value={pcFormat}
-                onChange={(e) => setPcFormat(e.target.value as any)}
-                className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-              >
-                <option value="Online 1-on-1">Online 1-on-1 (Video Call & Screen Share)</option>
-                <option value="Case Study Review">Case Study Review (PACS Image Critique)</option>
-                <option value="Group Tutorial">Group Tutorial (Max 4 Learners)</option>
-              </select>
+            <div className="p-4 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
+              <span className="text-sm font-bold text-[var(--text-primary)] block">PACS Image Critique</span>
+              <p className="text-xs text-[var(--text-secondary)] mt-1">Hands-on case reviews with clinical specialists.</p>
             </div>
           </div>
 
-          {/* Subject or Topic */}
-          <div className="flex flex-col gap-1.5">
-            <label className="label-ui text-[var(--text-primary)]">
-              Subject or Topic to Learn <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={pcSubject}
-              onChange={(e) => setPcSubject(e.target.value)}
-              placeholder="e.g. Trauma Radiography: Clearing the Cervical Spine & Pelvic Ring Fractures"
-              className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-            />
-          </div>
-
-          {/* Learning Objectives */}
-          <div className="flex flex-col gap-1.5">
-            <label className="label-ui text-[var(--text-primary)]">
-              Specific Learning Objectives & Goals <span className="text-red-400">*</span>
-            </label>
-            <textarea
-              required
-              rows={3}
-              value={pcLearningObjectives}
-              onChange={(e) => setPcLearningObjectives(e.target.value)}
-              placeholder="What specific clinical questions, imaging artifacts, or exam viva topics would you like the tutor to focus on?"
-              className="w-full p-4 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-            />
-          </div>
-
-          {/* Preferred Schedule */}
-          <div className="flex flex-col gap-1.5">
-            <label className="label-ui text-[var(--text-primary)]">
-              Preferred Schedule & Availability <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={pcSchedule}
-              onChange={(e) => setPcSchedule(e.target.value)}
-              placeholder="e.g. Weekdays after 18:00 WAT, or Saturday mornings"
-              className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-            />
-          </div>
-
-          {/* Additional Learning Needs */}
-          <div className="flex flex-col gap-1.5">
-            <label className="label-ui text-[var(--text-primary)]">
-              Additional Notes or Special Learning Requirements (Optional)
-            </label>
-            <input
-              type="text"
-              value={pcSpecialNeeds}
-              onChange={(e) => setPcSpecialNeeds(e.target.value)}
-              placeholder="e.g. Preparing for Radiographers Registration Board exams, need anonymized DICOM files"
-              className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-            />
-          </div>
-
-          {/* Submit Action */}
-          <div className="pt-6 pb-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-t border-[var(--border-subtle)]">
-            <span className="text-xs text-[var(--text-muted)] max-w-sm">
-              All requests are reviewed by our clinical academic dean.
-            </span>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full sm:w-auto min-h-[48px] px-8 py-3.5 rounded-xl bg-[#FF7F32] hover:bg-[#E86B20] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-[#FF7F32]/25 active:scale-[0.98] transition-all disabled:opacity-60 cursor-pointer shrink-0"
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a
+              href="https://wa.me/2349029729621?text=Hello%20StudiRad%2C%20I%20am%20interested%20in%20upcoming%20Private%20Classes"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm inline-flex items-center justify-center gap-2 transition-all shadow-md"
             >
-              {isSubmitting ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <Send className="w-4 h-4 text-white" />
-                  <span>Submit Class Request</span>
-                </>
-              )}
+              <MessageCircle className="w-4 h-4" />
+              <span>Inquire via WhatsApp (+2349029729621)</span>
+            </a>
+            <button
+              type="button"
+              onClick={() => setActiveFormTab('research')}
+              className="w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl bg-[var(--bg-canvas)] hover:bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] font-medium text-sm transition-all"
+            >
+              Explore Research Assistance →
             </button>
           </div>
-        </form>
+        </div>
       )}
 
       {/* 2. RESEARCH ASSISTANCE REQUEST FORM */}
@@ -610,14 +430,13 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
           {/* Description of Support Needed */}
           <div className="flex flex-col gap-1.5">
             <label className="label-ui text-[var(--text-primary)]">
-              Description of Specific Support Needed <span className="text-red-400">*</span>
+              Description of Specific Support Needed <span className="text-xs text-[var(--text-muted)] font-normal">(Optional)</span>
             </label>
             <textarea
-              required
               rows={4}
               value={resSupportDetails}
               onChange={(e) => setResSupportDetails(e.target.value)}
-              placeholder="Detail your sample size, specific statistical tests (e.g. Cohen's kappa, ANOVA), data variables, or university rubric guidelines..."
+              placeholder="Detail your sample size, specific statistical tests, data variables, or university rubric guidelines (optional)..."
               className="w-full p-4 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
             />
           </div>

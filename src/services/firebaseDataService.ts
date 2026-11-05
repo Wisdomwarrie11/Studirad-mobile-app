@@ -911,7 +911,7 @@ export function subscribeStudyMaterials(
     const u1 = onSnapshot(matsRef, (snapshot) => {
       snapshot.docs.forEach((docSnap) => {
         const data = docSnap.data();
-        const isVid = data.type === 'video' || data.link?.includes('youtube.com') || data.link?.includes('youtu.be');
+        const isVid = data.type === 'video' || data.link?.includes('youtube.com') || data.link?.includes('youtu.be') || data.link?.includes('drive.google.com');
         matsMap.set(`mat_${docSnap.id}`, {
           id: docSnap.id,
           title: data.title || 'Study Material',
@@ -1274,4 +1274,146 @@ export async function seedFirestoreIfEmpty(): Promise<void> {
   } catch (err) {
     console.warn('Initial classes push notice:', err);
   }
+}
+
+/**
+ * Real-time listener for user requests (research assistance, tutoring, etc.)
+ */
+export function subscribeUserRequests(
+  userEmailOrId: string,
+  onUpdate: (requests: any[]) => void
+): () => void {
+  const collRef = collection(db, 'requests');
+  
+  const unsubscribe = onSnapshot(
+    collRef,
+    (snapshot) => {
+      const all: any[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (
+          !userEmailOrId ||
+          data.userId === userEmailOrId ||
+          data.userEmail?.toLowerCase() === userEmailOrId.toLowerCase()
+        ) {
+          all.push({
+            id: docSnap.id,
+            ...data,
+          });
+        }
+      });
+      all.sort((a, b) => new Date(b.submittedAt || b.createdAt || 0).getTime() - new Date(a.submittedAt || a.createdAt || 0).getTime());
+      onUpdate(all);
+    },
+    (err) => {
+      console.warn('Requests subscription notice:', err);
+      try {
+        const saved = JSON.parse(localStorage.getItem('studirad_user_requests') || '[]');
+        onUpdate(saved);
+      } catch {
+        onUpdate([]);
+      }
+    }
+  );
+
+  return unsubscribe;
+}
+
+/**
+ * Real-time listener for all requests for admin dashboard
+ */
+export function subscribeAllRequests(
+  onUpdate: (requests: any[]) => void
+): () => void {
+  const collRef = collection(db, 'requests');
+  return onSnapshot(
+    collRef,
+    (snapshot) => {
+      const all: any[] = [];
+      snapshot.forEach((docSnap) => {
+        all.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      all.sort((a, b) => new Date(b.submittedAt || b.createdAt || 0).getTime() - new Date(a.submittedAt || a.createdAt || 0).getTime());
+      onUpdate(all);
+    },
+    (err) => console.warn('Admin requests subscription notice:', err)
+  );
+}
+
+/**
+ * Push a new research request to Firestore and create an admin notification
+ */
+export async function pushResearchRequestToFirestore(requestData: {
+  userName: string;
+  userEmail: string;
+  userId?: string;
+  researchTitle: string;
+  discipline: string;
+  assistanceType: string;
+  currentStage: string;
+  supportDetails?: string;
+  deadline: string;
+  methodologyNotes?: string;
+}): Promise<{ success: boolean; referenceCode: string; error?: string }> {
+  try {
+    const randomNum = Math.floor(10000 + Math.random() * 90000);
+    const referenceCode = `SR-RES-${randomNum}`;
+    const reqId = 'req_' + Date.now();
+
+    const payload = {
+      ...requestData,
+      id: reqId,
+      referenceCode,
+      category: 'research',
+      status: 'Submitted',
+      statusNotes: 'Research inquiry received. An academic supervisor will review your project brief.',
+      submittedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+
+    await setDoc(doc(db, 'requests', reqId), payload, { merge: true });
+    await setDoc(doc(adminDb, 'requests', reqId), payload, { merge: true }).catch(() => {});
+
+    // Save notification for admin side
+    const notifId = 'notif_' + Date.now();
+    const notifPayload = {
+      id: notifId,
+      type: 'research_request',
+      title: `New Research Request: ${requestData.researchTitle}`,
+      message: `${requestData.userName} (${requestData.userEmail}) requested support for ${requestData.assistanceType}.`,
+      referenceCode,
+      applicantName: requestData.userName,
+      applicantEmail: requestData.userEmail,
+      discipline: requestData.discipline,
+      assistanceType: requestData.assistanceType,
+      createdAt: new Date().toISOString(),
+      read: false,
+    };
+    await setDoc(doc(db, 'admin_notifications', notifId), notifPayload, { merge: true }).catch(() => {});
+    await setDoc(doc(adminDb, 'admin_notifications', notifId), notifPayload, { merge: true }).catch(() => {});
+
+    return { success: true, referenceCode };
+  } catch (error) {
+    console.error('Error pushing research request:', error);
+    return { success: false, referenceCode: '', error: 'Could not submit request. Please check your internet connection.' };
+  }
+}
+
+/**
+ * Real-time listener for admin notifications
+ */
+export function subscribeAdminNotifications(
+  onUpdate: (notifications: any[]) => void
+): () => void {
+  const collRef = collection(db, 'admin_notifications');
+  return onSnapshot(
+    collRef,
+    (snapshot) => {
+      const list: any[] = [];
+      snapshot.forEach((d) => list.push({ id: d.id, ...d.data() }));
+      list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      onUpdate(list);
+    },
+    (err) => console.warn('Admin notifications subscription notice:', err)
+  );
 }
