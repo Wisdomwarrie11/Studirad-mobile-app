@@ -1,0 +1,190 @@
+{
+  "version": "2.0.0",
+  "name": "StudiRad Core Offline Radiography Study Pack",
+  "description": "Essential clinical imaging protocols, radiation protection standards, trauma positioning rules, and exam revision guides cached for full offline access.",
+  "lastUpdated": "2026-11-05T00:00:00.000Z",
+  "modules": [
+    {
+      "id": "edu_chest_rules",
+      "title": "Emergency Chest Radiography: Silhouette Sign & Pneumothorax Rules",
+      "category": "General Radiography",
+      "course": "Rad Tech",
+      "modality": "xray",
+      "summary": "Rapid bedside interpretation rules for acute plain film chest radiographs.",
+      "sections": [
+        {
+          "heading": "1. The Silhouette Sign Localization",
+          "content": "An intrathoracic lesion touching a cardiac border, aorta, or diaphragm will obliterate its visual silhouette on a plain chest radiograph. \n• Right heart border loss: Indicates pathology in the Right Middle Lobe (medial segment).\n• Left heart border loss: Indicates pathology in the Lingular segments of the Left Upper Lobe.\n• Right hemidiaphragm loss: Indicates pathology in the Right Lower Lobe (basal segments).\n• Left hemidiaphragm loss: Indicates pathology in the Left Lower Lobe.\n• Ascending aorta loss: Indicates Right Upper Lobe anterior segment consolidation."
+        },
+        {
+          "heading": "2. Tension Pneumothorax vs Skin Folds",
+          "content": "• True visceral pleural line: Sharp, thin white line with complete absence of peripheral lung vascular markings beyond the line. Does not cross the chest wall.\n• Skin fold / Mach band: Broad band rather than a hairline, vascular markings often visible through or beyond the artifact, typically extends beyond the bony rib cage.\n• Tension signs: Contralateral tracheal and mediastinal shift, ipsilateral diaphragm depression, flattening of the cardiac silhouette, widened intercostal spaces. Immediate needle decompression required before formal cross-sectional imaging."
+        },
+        {
+          "heading": "3. Critical Line & Tube Verifications",
+          "content": "• Endotracheal Tube (ETT): Tip must reside 5 cm (± 2 cm) above the carina in neutral neck position (level of T2-T4).\n• Nasogastric (NG) Tube: Must bisect the carina, descend down the midline, cross the left hemidiaphragm, and the tip and all side-holes must lie at least 10 cm beyond the gastroesophageal junction into the gastric bubble.\n• Central Venous Catheter (CVC): Tip should terminate in the lower third of the Superior Vena Cava (SVC) or cavoatrial junction (level of T5-T6 / right tracheobronchial angle)."
+        }
+      ],
+      "keyTakeaways": [
+        "Always count 8-10 posterior ribs on full inspiration.",
+        "Check subtle apical pneumothoraces on inverted LUT display.",
+        "Differentiate deep sulcus sign on supine ICU trauma views."
+      ]
+    },
+    {
+      "id": "edu_radiation_safety",
+      "title": "Radiation Protection & IR(ME)R 2017 Diagnostic Reference Levels",
+      "category": "Radiation Protection",
+      "course": "Rad Equipment",
+      "modality": "xray",
+      "summary": "Statutory dose constraints, ALARA/ALARP optimization, and clinical DRL benchmarks.",
+      "sections": [
+        {
+          "heading": "1. Cardinal Principles of Radiation Safety",
+          "content": "• Time: Minimize fluoroscopy exposure duration; use pulse fluoroscopy (e.g., 7.5 pulses/sec instead of 30) and last-image-hold.\n• Distance: Obey the Inverse Square Law (I1/I2 = d2^2 / d1^2). Doubling the distance from the patient reduces scatter exposure by a factor of 4.\n• Shielding: Lead aprons (minimum 0.35 mm Pb equivalent for < 100 kVp, 0.5 mm Pb for interventional suites), thyroid collars, lead acrylic ceiling suspensions."
+        },
+        {
+          "heading": "2. Diagnostic Reference Levels (National DRLs)",
+          "content": "• Adult PA Chest: 0.15 mGy Dose Area Product (DAP) ~ 0.02 mSv effective dose.\n• Adult AP Pelvis: 1.5 - 2.0 Gy·cm² DAP (~ 0.7 mSv).\n• Adult Lumbar Spine AP/Lat: 2.5 - 3.5 Gy·cm² DAP (~ 1.3 mSv).\n• Head CT (CTDIvol): 50 - 60 mGy (DLP: 900 - 1000 mGy·cm).\n• Chest-Abdomen-Pelvis (CAP) CT: 8 - 12 mGy CTDIvol (DLP: 650 - 800 mGy·cm)."
+        },
+        {
+          "heading": "3. Justification & Pregnancy Protocols",
+          "content": "• The 10-Day / 28-Day Rule: Enquire about potential pregnancy in women of childbearing age (12-55 years) for examinations involving the beam directly irradiating the lower abdomen and pelvis.\n• Conceptus dose under 100 mGy is not considered an indication for pregnancy termination; routine radiography rarely exceeds 1-5 mGy to the conceptus."
+        }
+      ],
+      "keyTakeaways": [
+        "ALARP: As Low As Reasonably Practicable.",
+        "Collimation directly reduces patient absorbed dose and improves radiographic contrast by cutting Compton scatter.",
+        "Ensure primary beam never exposes gonad shields unnecessarily without collimation."
+      ]
+    },
+    {
+      "id": "edu_contrast_emergency",
+      "title": "Acute Contrast Allergy & Extravasation Emergency Protocol",
+      "category": "Clinical Protocols",
+      "course": "Pathology",
+      "modality": "ct",
+      "summary": "Step-by-step emergency medical intervention for severe reactions during intravenous contrast injection.",
+      "sections": [
+        {
+          "heading": "1. Mild vs Moderate vs Severe Classification",
+          "content": "• Mild (Self-limiting): Nausea, metallic taste, flushing, mild urticaria (< 10 hives). Action: Reassurance, observation for 30 minutes.\n• Moderate: Marked facial or periorbital edema, widespread urticaria, bronchospasm / wheezing with preserved SaO2 > 92%. Action: Stop injection, call supervising clinician, administer oral or IV H1-antihistamine (Cetirizine 10mg or Chlorphenamine 10mg) and nebulized Salbutamol 2.5mg.\n• Severe (Life-threatening): Laryngeal edema / stridor, profound hypotensive shock, cardiac arrest. Immediate Emergency Resuscitation Call."
+        },
+        {
+          "heading": "2. Severe Anaphylaxis Emergency Drug Dosing",
+          "content": "1. Call Medical Emergency Team / Cardiac Arrest (999 / 2222).\n2. High-flow oxygen via non-rebreather mask (15 L/min).\n3. Adrenaline (Epinephrine) Intramuscular (IM) into mid-anterolateral thigh:\n   • Adult: 0.5 mg (0.5 mL of 1:1,000 solution).\n   • Child 6-12 years: 0.3 mg (0.3 mL of 1:1,000).\n   • Child < 6 years: 0.15 mg (0.15 mL of 1:1,000).\n   Repeat after 5 minutes if no clinical improvement.\n4. Rapid IV Fluid Bolus: 500 - 1000 mL 0.9% Normal Saline or Hartmann's solution.\n5. Chlorphenamine 10 mg IV and Hydrocortisone 200 mg IV (slow bolus)."
+        },
+        {
+          "heading": "3. Extravasation Protocol (High-Pressure CT Injector)",
+          "content": "• Stop injection immediately and disconnect tubing.\n• Aspirate as much extravasated contrast as possible through the cannula before removing.\n• Elevate the affected limb above the level of the heart.\n• Apply cold dry compress for 15-20 minutes 4 times daily to reduce swelling.\n• Urgent plastic surgery / surgical consult if volume > 100 mL, blistering, altered motor/sensory function, or signs of compartment syndrome."
+        }
+      ],
+      "keyTakeaways": [
+        "Never administer Adrenaline 1:1,000 intravenously (IV); IM injection into anterolateral thigh is mandatory.",
+        "Document contrast batch number, volume extravasated, and baseline peripheral pulses."
+      ]
+    },
+    {
+      "id": "edu_critoe_pediatric",
+      "title": "Pediatric Skeletal Ossification Centers (CRITOE Chronology)",
+      "category": "Anatomy",
+      "course": "Anatomy",
+      "modality": "anatomy",
+      "summary": "Chronology of elbow secondary ossification centers to differentiate pediatric fractures from normal physis.",
+      "sections": [
+        {
+          "heading": "1. The CRITOE Mnemonic & Ages of Appearance",
+          "content": "• C - Capitellum: 1 year old (always first)\n• R - Radial Head: 3 years old\n• I - Internal (Medial) Epicondyle: 5 years old\n• T - Trochlea: 7 years old\n• O - Olecranon: 9 years old\n• E - External (Lateral) Epicondyle: 11 years old\n(Mnemonic: Odd numbers 1, 3, 5, 7, 9, 11 years)."
+        },
+        {
+          "heading": "2. High-Yield Clinical Rule: The Medial Epicondyle Avulsion",
+          "content": "• Because the Trochlea (7 yrs) and Olecranon (9 yrs) ossify AFTER the Internal/Medial Epicondyle (5 yrs), you MUST NEVER see a visible Trochlea without first seeing the Medial Epicondyle.\n• If a patient shows a Trochlea or Olecranon but the Medial Epicondyle appears missing, suspect an incarcerated avulsed medial epicondyle trapped inside the joint space following a reduction of elbow dislocation!"
+        },
+        {
+          "heading": "3. Radiographic Alignment Lines on Pediatric Elbow",
+          "content": "• Anterior Humeral Line: A line drawn down the anterior cortex of the humeral shaft on a true lateral view must intersect the middle third of the capitellum. In supracondylar fracture, the capitellum displaces posteriorly.\n• Radiocapitellar Line: A line through the center of the radial shaft and head must point directly at the center of the capitellum in ALL radiographic projections."
+        }
+      ],
+      "keyTakeaways": [
+        "The sail sign (anterior and posterior fat pad elevation) indicates occult pediatric intra-articular fracture.",
+        "A posterior fat pad is ALWAYS pathological on a true 90-degree lateral elbow radiograph."
+      ]
+    },
+    {
+      "id": "edu_efast_ultrasound",
+      "title": "FAST & Extended FAST (eFAST) Sonography Pocket Reference",
+      "category": "Ultrasound",
+      "course": "USS",
+      "modality": "ultrasound",
+      "summary": "Bedside sonographic windows for trauma resuscitation and hemoperitoneum grading.",
+      "sections": [
+        {
+          "heading": "1. The 5 Core eFAST Acoustic Windows",
+          "content": "1. Perihepatic (Morison's Pouch): Probe in 8th-11th intercostal space right midaxillary line. Detects free fluid in hepatorenal space and right pleural costophrenic angle.\n2. Perisplenic (Koller's Pouch): Probe in 9th-10th intercostal space left posterior axillary line. Detects splenorenal free fluid.\n3. Pelvic (Suprapubic): Probe transverse and sagittal superior to pubic symphysis. Detects dependent fluid in pouch of Douglas (rectouterine) or retrovesical pouch.\n4. Pericardial (Subxiphoid): Low-frequency phased array probe angled toward left shoulder. Rules out cardiac tamponade and pericardial effusion.\n5. Anterior Thoracic (Pneumothorax): Probe 2nd-4th intercostal spaces midclavicular line. Examines for lung sliding and lung pulse."
+        },
+        {
+          "heading": "2. Sonographic Signs of Pneumothorax",
+          "content": "• Normal lung: 'Sea-shore sign' on M-mode (granular sand appearance beneath linear parietal pleura) and visible shimmering lung sliding on B-mode.\n• Pneumothorax: Complete loss of lung sliding. M-mode shows 'Barcode sign' or 'Stratosphere sign' (parallel horizontal lines throughout the depth).\n• Lung Point: Pathognomonic junction between sliding lung and absent sliding lung on real-time respiration."
+        }
+      ],
+      "keyTakeaways": [
+        "FAST detects as little as 100-200 mL of intraperitoneal blood.",
+        "Curvilinear probe (3.5 - 5 MHz) preferred for abdominal windows; high-frequency linear probe (7.5 - 12 MHz) ideal for pleural sliding."
+      ]
+    },
+    {
+      "id": "edu_mri_safety_zones",
+      "title": "MRI Safety Screening & 4-Zone Facility Architecture",
+      "category": "Magnetic Resonance",
+      "course": "MRI",
+      "modality": "mri",
+      "summary": "ACR 4-zone access governance, projectile physics, and implant safety codes.",
+      "sections": [
+        {
+          "heading": "1. ACR MRI 4-Zone Facility Governance",
+          "content": "• Zone I: Accessible to general public (hospital reception, exterior hallways).\n• Zone II: Supervised buffer area (patient registration, change cubicles, initial screening questionnaire completion).\n• Zone III: Strictly restricted access controlled by Level 2 MR personnel with keycard/intercom. Risk of projectile interaction.\n• Zone IV: The MR Scanner magnet room itself. Strong static magnetic field (B0) is ALWAYS ON (24/7/365), even when no imaging is taking place."
+        },
+        {
+          "heading": "2. ASTM International Implant Labeling",
+          "content": "• MR Safe (Green square): Completely non-magnetic, non-metallic, non-conducting item (e.g. plastic syringe, pure silicone catheter). Poses zero hazard.\n• MR Conditional (Yellow triangle): Demonstrated safe under strictly defined operating conditions (specific B0 field strength, spatial field gradient, SAR limit, scan duration).\n• MR Unsafe (Red crossed circle): Ferromagnetic items (e.g. standard steel scissors, gas cylinders, older non-MR pacemakers) strictly prohibited from Zone IV."
+        },
+        {
+          "heading": "3. Emergency Quench Procedure",
+          "content": "• A quench boils off liquid helium cryogenic coolant (causing rapid boil-off from -269°C) to shut down the superconductor electromagnet.\n• ONLY activate the Quench button for severe life-threatening emergencies (e.g., patient pinned against bore by a heavy ferromagnetic projectile with asphyxiation).\n• If helium vents into the scan room (quench pipe failure): immediately evacuate patient low to the ground to avoid asphyxiation from oxygen displacement."
+        }
+      ],
+      "keyTakeaways": [
+        "The fringe magnetic field is always active.",
+        "Specific Absorption Rate (SAR) in W/kg governs patient radiofrequency heating.",
+        "Always perform orbital radiographic screening if patient has history of metallic foreign body welding/grinding."
+      ]
+    },
+    {
+      "id": "edu_pq_flashcards",
+      "title": "Professional Radiography Board Exams: High-Yield Past Questions",
+      "category": "Professional Exams PQ",
+      "course": "Professional Exams PQ",
+      "modality": "xray",
+      "summary": "Verified board past questions covering physics, digital radiography, anatomy, and pathology.",
+      "sections": [
+        {
+          "heading": "Question 1: Grid Cut-Off Physics",
+          "content": "Q: A radiographer accidentally places a focused grid upside down during a bedside pelvis examination. What is the resulting radiographic appearance?\n\nAnswer: Severe bilateral peripheral cut-off with normal density in the center of the image.\n\nRationale: In an upside-down focused grid, only the central beam matches the angled grid lead strips. The divergent peripheral rays hit the strips at steep angles and are completely absorbed, leaving the lateral fields heavily underexposed."
+        },
+        {
+          "heading": "Question 2: Digital Exposure Indicators",
+          "content": "Q: On an indirect digital radiography system, the target Exposure Index (EI) is 200. The acquired radiograph displays an EI of 400 and a Deviation Index (DI) of +3.0. How should the radiographer evaluate this result?\n\nAnswer: The detector received approximately 2× the target radiation dose (+3 DI indicates overexposure by a factor of 2).\n\nRationale: DI is logarithmic; each +1.0 represents a 25% increase in dose, and +3.0 represents a 100% (2×) overexposure. While the post-processing algorithm will adjust image brightness correctly, the patient received unnecessary radiation dose in violation of ALARP."
+        },
+        {
+          "heading": "Question 3: Acute Bowel Obstruction Rules",
+          "content": "Q: What is the maximum normal luminal diameter on plain abdominal radiographs for the small bowel, colon, and cecum?\n\nAnswer: The 3-6-9 Rule: \n• Small bowel: 3 cm\n• Large bowel / Colon: 6 cm\n• Cecum: 9 cm\n\nRationale: Diameters exceeding 3 cm in small bowel loops indicate ileus or mechanical obstruction. A cecal diameter exceeding 9-10 cm carries an imminent risk of perforation requiring immediate surgical referral."
+        }
+      ],
+      "keyTakeaways": [
+        "Master the 3-6-9 rule for all plain abdominal image critiques.",
+        "Understand grid ratios: Grid factor = 1 / (1 - bucky factor).",
+        "Contrast-to-Noise Ratio (CNR) vs Signal-to-Noise Ratio (SNR) in DR systems."
+      ]
+    }
+  ]
+}

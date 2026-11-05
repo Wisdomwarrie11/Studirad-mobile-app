@@ -133,7 +133,7 @@ export const PlayStoreModal: React.FC<PlayStoreModalProps> = ({ isOpen, onClose 
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                 <div>
                   <div className="font-semibold text-slate-900 dark:text-slate-200">Active Service Worker</div>
-                  <div className="text-[10px] text-slate-400">/sw.js with offline cache</div>
+                  <div className="text-[10px] text-slate-400">/sw.js (v2.0) with educational resources offline cache</div>
                 </div>
               </div>
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LiveClass } from '../../types';
+import { useAuth } from '../../context/AuthContext';
 import { 
   X, 
   Calendar, 
@@ -27,12 +28,20 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
   liveClass,
   onClose,
 }) => {
+  const { requireAuth } = useAuth();
   if (!liveClass) return null;
 
   const [isRegistered, setIsRegistered] = useState(liveClass.isRegistered || false);
   const [calendarAdded, setCalendarAdded] = useState(false);
 
   const handleRegister = () => {
+    if (!requireAuth({
+      title: 'Sign In to Register for Classes',
+      message: 'Sign in or create a free account to register for live cohorts, access class materials, and earn accredited CPD credits.',
+      actionText: 'Register for Live Class',
+    })) {
+      return;
+    }
     setIsRegistered(true);
     const targetLink = liveClass.registrationLink || liveClass.registerLink || liveClass.meetingLink;
     if (targetLink && targetLink.startsWith('http')) {
@@ -41,6 +50,13 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
   };
 
   const handleAddToCalendar = () => {
+    if (!requireAuth({
+      title: 'Sign In to Sync Calendar',
+      message: 'Sign in to add cohort schedules and lecture reminders to your calendar.',
+      actionText: 'Add to Calendar',
+    })) {
+      return;
+    }
     setCalendarAdded(true);
     setTimeout(() => setCalendarAdded(false), 2500);
   };
@@ -238,6 +254,13 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
           {isCompleted ? (
             <button
               onClick={() => {
+                if (!requireAuth({
+                  title: 'Sign In to Access Class Room',
+                  message: 'Sign in or register to access completed masterclass recordings and cohort slides.',
+                  actionText: 'Class Room & Materials',
+                })) {
+                  return;
+                }
                 const target = liveClass.meetingLink || liveClass.registerLink || liveClass.registrationLink;
                 if (target && target.startsWith('http')) {
                   window.open(target, '_blank');
@@ -253,6 +276,13 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
           ) : isRegistered ? (
             <button
               onClick={() => {
+                if (!requireAuth({
+                  title: 'Sign In to Join Class',
+                  message: 'Sign in to access your registered cohort meeting invitation.',
+                  actionText: 'Join Live Class',
+                })) {
+                  return;
+                }
                 const target = liveClass.meetingLink || liveClass.registerLink || liveClass.registrationLink;
                 if (target && target.startsWith('http')) {
                   window.open(target, '_blank');

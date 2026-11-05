@@ -7,7 +7,7 @@ import path from 'path';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json());
 
@@ -111,9 +111,11 @@ async function startServer() {
     app.use(vite.middlewares);
   }
 
-  app.listen(port, () => {
+  app.listen(port, '0.0.0.0', () => {
     console.log(`StudiRad server running on http://0.0.0.0:${port}`);
   });
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error('Fatal error starting server:', err);
+});

@@ -73,7 +73,10 @@ export const OnboardingScreen: React.FC = () => {
     if (activeIndex < SLIDES.length - 1) {
       setActiveIndex((prev) => prev + 1);
     } else {
-      setScreen('auth');
+      try {
+        localStorage.setItem('studirad_onboarded', 'true');
+      } catch {}
+      setScreen('app');
     }
   };
 
@@ -84,7 +87,10 @@ export const OnboardingScreen: React.FC = () => {
   };
 
   const handleSkip = () => {
-    setScreen('auth');
+    try {
+      localStorage.setItem('studirad_onboarded', 'true');
+    } catch {}
+    setScreen('app');
   };
 
   const currentSlide = SLIDES[activeIndex];

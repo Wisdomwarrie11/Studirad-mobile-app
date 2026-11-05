@@ -26,7 +26,7 @@ interface ServicesTabProps {
 }
 
 export const ServicesTab: React.FC<ServicesTabProps> = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, requireAuth } = useAuth();
   const { 
     requests, 
     submitServiceRequest, 
@@ -76,6 +76,12 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
   // Submit Handlers
   const handlePrivateClassSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requireAuth({
+      title: 'Sign In to Request Tutoring',
+      message: 'Sign in or create an account to submit your private 1-on-1 tutoring request and track tutor matching.',
+      actionText: 'Sign In to Request'
+    })) return;
+
     setErrorMessage(null);
     if (!pcSubject.trim() || !pcLearningObjectives.trim()) {
       setErrorMessage('Please fill in the required topic and learning objectives.');
@@ -84,8 +90,8 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
 
     setIsSubmitting(true);
     const res = await submitPrivateClassRequest({
-      userName: pcName || 'Radiographer',
-      userEmail: pcEmail || 'contact@studirad.org',
+      userName: pcName || currentUser?.fullName || 'Radiographer',
+      userEmail: pcEmail || currentUser?.email || 'contact@studirad.org',
       subjectTopic: pcSubject.trim(),
       currentKnowledgeLevel: pcKnowledgeLevel,
       learningObjectives: pcLearningObjectives.trim(),
@@ -107,6 +113,12 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
 
   const handleResearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requireAuth({
+      title: 'Sign In to Request Research Help',
+      message: 'Sign in or create an account to submit research assistance, biostatistics review, and dissertation guidance.',
+      actionText: 'Sign In to Request'
+    })) return;
+
     setErrorMessage(null);
     if (!resTitle.trim() || !resSupportDetails.trim()) {
       setErrorMessage('Please fill in your research proposed title and support requirements.');
@@ -115,8 +127,8 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
 
     setIsSubmitting(true);
     const res = await submitResearchRequest({
-      userName: resName || 'Researcher',
-      userEmail: resEmail || 'contact@studirad.org',
+      userName: resName || currentUser?.fullName || 'Researcher',
+      userEmail: resEmail || currentUser?.email || 'contact@studirad.org',
       researchTitle: resTitle.trim(),
       discipline: resDiscipline,
       assistanceType: resAssistanceType,
@@ -139,6 +151,12 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
 
   const handleServiceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requireAuth({
+      title: 'Sign In to Request Clinical Service',
+      message: 'Sign in or create an account to submit department audit, protocol review, and clinical requests.',
+      actionText: 'Sign In to Request'
+    })) return;
+
     setErrorMessage(null);
     if (!srvDescription.trim()) {
       setErrorMessage('Please describe the service required.');
@@ -147,8 +165,8 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
 
     setIsSubmitting(true);
     const res = await submitServiceRequest({
-      userName: srvName || 'Clinician',
-      userEmail: srvEmail || 'contact@studirad.org',
+      userName: srvName || currentUser?.fullName || 'Clinician',
+      userEmail: srvEmail || currentUser?.email || 'contact@studirad.org',
       serviceType: srvCategory,
       description: srvDescription.trim(),
       timeline: srvTimeline,
@@ -158,6 +176,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
     setIsSubmitting(false);
 
     if (res.success && res.referenceCode) {
+      setSuccessReference(res.referenceCode);
       setSuccessReference(res.referenceCode);
       setSrvDescription('');
       setSrvHospital('');
@@ -238,6 +257,11 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
         <button
           type="button"
           onClick={() => {
+            if (!requireAuth({
+              title: 'Sign In to View Requests',
+              message: 'Sign in to access your request dashboard and track your submitted tutoring, clinical, and research requests.',
+              actionText: 'Sign In to View Requests'
+            })) return;
             setActiveFormTab('my_requests');
             setSuccessReference(null);
             setErrorMessage(null);
@@ -636,150 +660,6 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
         </form>
       )}
 
-      {/* 3. CLINICAL SERVICES REQUEST FORM */}
-      {activeFormTab === 'service' && (
-        <form onSubmit={handleServiceSubmit} className="bg-[var(--bg-surface)] rounded-3xl p-6 sm:p-10 border border-[var(--border-subtle)] shadow-sm space-y-6">
-          <div className="border-b border-[var(--border-subtle)] pb-4">
-            <h2 className="heading-section text-[var(--text-primary)]">
-              Request Clinical Department Services
-            </h2>
-            <p className="body-standard text-[var(--text-secondary)] mt-1">
-              Engage senior clinical specialists for radiology audit review, Diagnostic Reference Level (DRL) compliance, scan protocol standardization, or CPD staff workshops.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {/* Name */}
-            <div className="flex flex-col gap-1.5">
-              <label className="label-ui text-[var(--text-primary)]">
-                Lead Contact Name <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={srvName}
-                onChange={(e) => setSrvName(e.target.value)}
-                placeholder="e.g. Folake Adeyemi, Senior Radiographer"
-                className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-              />
-            </div>
-
-            {/* Email */}
-            <div className="flex flex-col gap-1.5">
-              <label className="label-ui text-[var(--text-primary)]">
-                Institutional Email <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="email"
-                required
-                value={srvEmail}
-                onChange={(e) => setSrvEmail(e.target.value)}
-                placeholder="folake.adeyemi@luth.org.ng"
-                className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-              />
-            </div>
-
-            {/* Service Category */}
-            <div className="flex flex-col gap-1.5">
-              <label className="label-ui text-[var(--text-primary)]">
-                Service Category <span className="text-red-400">*</span>
-              </label>
-              <select
-                value={srvCategory}
-                onChange={(e) => setSrvCategory(e.target.value)}
-                className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-              >
-                <option value="Clinical Audit & DRL Dose Review">Clinical Audit & DRL Dose Review</option>
-                <option value="Departmental Protocol Optimization">Departmental Protocol Optimization</option>
-                <option value="Radiation Protection Adviser (RPA) Advisory">Radiation Protection Adviser (RPA) Advisory</option>
-                <option value="Staff CPD & Simulation Training Workshop">Staff CPD & Simulation Training Workshop</option>
-                <option value="Locum Staffing & Shift Cover Consulting">Locum Staffing & Shift Cover Consulting</option>
-              </select>
-            </div>
-
-            {/* Timeline */}
-            <div className="flex flex-col gap-1.5">
-              <label className="label-ui text-[var(--text-primary)]">
-                Target Timeline <span className="text-red-400">*</span>
-              </label>
-              <select
-                value={srvTimeline}
-                onChange={(e) => setSrvTimeline(e.target.value)}
-                className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-              >
-                <option value="Urgent (within 48 hours)">Urgent (within 48 hours)</option>
-                <option value="Standard (within 14 days)">Standard (within 14 days)</option>
-                <option value="Flexible (next 30-60 days)">Flexible (next 30-60 days)</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Department or Hospital */}
-          <div className="flex flex-col gap-1.5">
-            <label className="label-ui text-[var(--text-primary)]">
-              Hospital, Trust, or Imaging Clinic Name
-            </label>
-            <input
-              type="text"
-              value={srvHospital}
-              onChange={(e) => setSrvHospital(e.target.value)}
-              placeholder="e.g. National Hospital Abuja / Lagos University Teaching Hospital"
-              className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-            />
-          </div>
-
-          {/* Description */}
-          <div className="flex flex-col gap-1.5">
-            <label className="label-ui text-[var(--text-primary)]">
-              Detailed Scope of Service Required <span className="text-red-400">*</span>
-            </label>
-            <textarea
-              required
-              rows={4}
-              value={srvDescription}
-              onChange={(e) => setSrvDescription(e.target.value)}
-              placeholder="Describe the department requirements, imaging modality involved (e.g. Siemens Force CT, GE Signa MRI), staff headcount, and deliverables needed..."
-              className="w-full p-4 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-            />
-          </div>
-
-          {/* Notes */}
-          <div className="flex flex-col gap-1.5">
-            <label className="label-ui text-[var(--text-primary)]">
-              Additional Notes or Procurement Code (Optional)
-            </label>
-            <input
-              type="text"
-              value={srvNotes}
-              onChange={(e) => setSrvNotes(e.target.value)}
-              placeholder="e.g. NHS Purchase order code, remote delivery preferred"
-              className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-            />
-          </div>
-
-          {/* Submit Action */}
-          <div className="pt-6 pb-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-t border-[var(--border-subtle)]">
-            <span className="text-xs text-[var(--text-muted)] max-w-sm">
-              Our clinical governance team will contact your department.
-            </span>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full sm:w-auto min-h-[48px] px-8 py-3.5 rounded-xl bg-[#002147] dark:bg-[#1B447A] hover:bg-[#001733] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all disabled:opacity-60 cursor-pointer shrink-0"
-            >
-              {isSubmitting ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <Send className="w-4 h-4 text-[#FF7F32]" />
-                  <span>Submit Service Inquiry</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      )}
 
       {/* 4. MY SUBMITTED REQUESTS (Review & Tracking Dashboard) */}
       {activeFormTab === 'my_requests' && (

@@ -182,37 +182,68 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
           {/* ================= LEFT COLUMN (Profile Card, CPD, Interests, Locum, Settings) ================= */}
           <div className="lg:col-span-5 space-y-5">
             {/* 1. User Identity Card */}
-            <div className="w-full bg-white dark:bg-[#121824] rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#002147] to-[#0A3266] text-white flex items-center justify-center font-bold text-xl shadow-sm shrink-0 ring-4 ring-white dark:ring-[#1E293B]">
-                  {currentUser?.fullName
-                    ?.split(' ')
-                    .map((n) => n[0])
-                    .slice(0, 2)
-                    .join('') || 'SR'}
+            {!currentUser ? (
+              <div className="w-full bg-gradient-to-br from-[#002147] to-[#0A3266] text-white rounded-2xl p-5 border border-slate-700 shadow-md relative overflow-hidden space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center font-bold text-lg text-white">
+                    G
+                  </div>
+                  <div>
+                    <h2 className="text-base font-extrabold text-white">Guest Explorer Mode</h2>
+                    <p className="text-xs text-slate-300">Explore courses, masterclasses & clinical hub</p>
+                  </div>
                 </div>
-
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-extrabold text-slate-900 dark:text-white truncate">
-                    {currentUser?.fullName || 'Radiography Professional'}
-                  </h2>
-                  <p className="text-xs text-[#002147] dark:text-[#38BDF8] font-semibold mt-0.5 truncate">
-                    {currentUser?.role || 'Qualified Radiographer'}
-                  </p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                    {currentUser?.email || 'scholar@studirad.org'}
-                  </p>
+                <p className="text-xs text-slate-200 leading-relaxed">
+                  Sign in or create a free StudiRad account to enroll in live masterclasses, save courses, track certified CPD credits, and receive locum alerts.
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    onClick={() => setScreen('auth')}
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs shadow-sm transition-all text-center cursor-pointer"
+                  >
+                    Create Free Account
+                  </button>
+                  <button
+                    onClick={() => setScreen('auth')}
+                    className="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all text-center cursor-pointer"
+                  >
+                    Sign In
+                  </button>
                 </div>
               </div>
+            ) : (
+              <div className="w-full bg-white dark:bg-[#121824] rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#002147] to-[#0A3266] text-white flex items-center justify-center font-bold text-xl shadow-sm shrink-0 ring-4 ring-white dark:ring-[#1E293B]">
+                    {currentUser?.fullName
+                      ?.split(' ')
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join('') || 'SR'}
+                  </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                <span>Member since {userJoinedDate}</span>
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  Account Active
-                </span>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-base font-extrabold text-slate-900 dark:text-white truncate">
+                      {currentUser?.fullName || 'Radiography Professional'}
+                    </h2>
+                    <p className="text-xs text-[#002147] dark:text-[#38BDF8] font-semibold mt-0.5 truncate">
+                      {currentUser?.role || 'Qualified Radiographer'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      {currentUser?.email || 'scholar@studirad.org'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                  <span>Member since {userJoinedDate}</span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Account Active
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* 2. Verified CPD Credits Card */}
             <div className="w-full bg-white dark:bg-[#121824] rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
@@ -376,27 +407,39 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
 
               {/* Account Actions */}
               <div className="pt-1 space-y-1.5 border-t border-slate-100 dark:border-slate-800/80">
-                <button
-                  onClick={() => signOut()}
-                  className="w-full py-2.5 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-[#1E293B] text-slate-700 dark:text-slate-300 font-semibold text-xs flex items-center justify-between transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <LogOut className="w-4 h-4 text-slate-400" />
-                    <span>Sign Out</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                </button>
+                {currentUser ? (
+                  <>
+                    <button
+                      onClick={() => signOut()}
+                      className="w-full py-2.5 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-[#1E293B] text-slate-700 dark:text-slate-300 font-semibold text-xs flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <LogOut className="w-4 h-4 text-slate-400" />
+                        <span>Sign Out</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    </button>
 
-                <button
-                  onClick={() => setShowDeleteModal(true)}
-                  className="w-full py-2.5 px-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 font-semibold text-xs flex items-center justify-between transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <Trash2 className="w-4 h-4 text-red-400" />
-                    <span>Delete Account</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-red-400" />
-                </button>
+                    <button
+                      onClick={() => setShowDeleteModal(true)}
+                      className="w-full py-2.5 px-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 font-semibold text-xs flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                        <span>Delete Account</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-red-400" />
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setScreen('auth')}
+                    className="w-full py-2.5 px-3 rounded-xl bg-[#002147] hover:bg-[#001733] text-white font-bold text-xs flex items-center justify-between transition-colors cursor-pointer shadow-xs"
+                  >
+                    <span>Sign In or Register</span>
+                    <ChevronRight className="w-4 h-4 text-[#FF7F32]" />
+                  </button>
+                )}
               </div>
             </div>
           </div>

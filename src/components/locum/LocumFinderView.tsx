@@ -40,7 +40,7 @@ interface LocumFinderViewProps {
 }
 
 export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, requireAuth } = useAuth();
   const [activeTab, setActiveTab] = useState<'find' | 'status' | 'register'>('find');
 
   // Search State
@@ -284,6 +284,11 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
 
         <button
           onClick={() => {
+            if (!requireAuth({
+              title: 'Sign In for Locum Status',
+              message: 'Sign in to access your locum status dashboard, toggle shift availability, and receive facility contact requests.',
+              actionText: 'Sign In for Locum Status'
+            })) return;
             setActiveTab('status');
             setIsEditing(false);
           }}
@@ -299,6 +304,11 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
 
         <button
           onClick={() => {
+            if (!requireAuth({
+              title: 'Sign In to Register as Locum',
+              message: 'Sign in or create a verified account to register as an available locum radiographer and receive shift requests.',
+              actionText: 'Sign In to Register'
+            })) return;
             setActiveTab('register');
             setIsEditing(true);
           }}
@@ -495,25 +505,39 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
                   {/* Contact Facilities Action Row */}
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2.5">
                     {locum.phone ? (
-                      <a
-                        href={`tel:${locum.phone}`}
-                        className="py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                      <button
+                        onClick={() => {
+                          if (!requireAuth({
+                            title: 'Sign In to Call Locum',
+                            message: 'Sign in or create an account to view contact numbers and call locum radiographers directly.',
+                            actionText: 'Sign In to Call'
+                          })) return;
+                          window.location.href = `tel:${locum.phone}`;
+                        }}
+                        className="py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       >
                         <Phone className="w-3.5 h-3.5 text-emerald-600" />
                         <span>Call Radiographer</span>
-                      </a>
+                      </button>
                     ) : (
                       <div className="py-2.5 text-center text-xs text-slate-400">Call Unavailable</div>
                     )}
 
                     {locum.email ? (
-                      <a
-                        href={`mailto:${locum.email}`}
-                        className="py-2.5 rounded-xl bg-[#002147] hover:bg-[#001733] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                      <button
+                        onClick={() => {
+                          if (!requireAuth({
+                            title: 'Sign In to Email Locum',
+                            message: 'Sign in or create an account to send locum requests and job inquiries.',
+                            actionText: 'Sign In to Email'
+                          })) return;
+                          window.location.href = `mailto:${locum.email}`;
+                        }}
+                        className="py-2.5 rounded-xl bg-[#002147] hover:bg-[#001733] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
                       >
                         <Mail className="w-3.5 h-3.5 text-[#FF7F32]" />
                         <span>Send Email</span>
-                      </a>
+                      </button>
                     ) : (
                       <div className="py-2.5 text-center text-xs text-slate-400">Email Unavailable</div>
                     )}

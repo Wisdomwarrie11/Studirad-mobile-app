@@ -6,14 +6,22 @@ export const SplashScreen: React.FC = () => {
   const { setScreen, currentUser } = useAuth();
 
   useEffect(() => {
-    // If user is already logged in, navigate directly to app
-    if (currentUser) {
+    const hasOnboarded = (() => {
+      try {
+        return localStorage.getItem('studirad_onboarded') === 'true';
+      } catch {
+        return false;
+      }
+    })();
+
+    // If user is already logged in or has onboarded before, navigate directly to app
+    if (currentUser || hasOnboarded) {
       setScreen('app');
       return;
     }
 
     const timer = setTimeout(() => {
-      if (currentUser) {
+      if (currentUser || hasOnboarded) {
         setScreen('app');
       } else {
         setScreen('onboarding');
@@ -24,7 +32,15 @@ export const SplashScreen: React.FC = () => {
   }, [setScreen, currentUser]);
 
   const handleContinue = () => {
-    if (currentUser) {
+    const hasOnboarded = (() => {
+      try {
+        return localStorage.getItem('studirad_onboarded') === 'true';
+      } catch {
+        return false;
+      }
+    })();
+
+    if (currentUser || hasOnboarded) {
       setScreen('app');
     } else {
       setScreen('onboarding');

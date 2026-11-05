@@ -22,8 +22,11 @@ import {
   Play,
   Layers,
   HelpCircle,
-  Award
+  Award,
+  WifiOff,
+  Download
 } from 'lucide-react';
+import { OfflineStudyPackModal } from '../modals/OfflineStudyPackModal';
 import { getYouTubeThumbnail } from '../../utils/youtube';
 import classesImg from '../../assets/images/onboarding_classes_1792606674536.jpg';
 
@@ -77,7 +80,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
   onOpenPlayer,
   onSelectLiveClass,
 }) => {
-  const { currentUser, setScreen, learnInitialView } = useAuth();
+  const { currentUser, setScreen, learnInitialView, requireAuth } = useAuth();
 
   // Navigation mode: Classes, Study Materials, or Courses
   const [activeMainView, setActiveMainView] = useState<LearnMainView>(learnInitialView || 'classes');
@@ -101,6 +104,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
   const [materialTypeFilter, setMaterialTypeFilter] = useState<'all' | 'reading' | 'videos'>('all');
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
   const [selectedMaterialForReader, setSelectedMaterialForReader] = useState<StudyMaterial | null>(null);
+  const [showOfflinePackModal, setShowOfflinePackModal] = useState(false);
 
   // --- Courses State (Real-time Firestore) ---
   const [coursesList, setCoursesList] = useState<Course[]>([]);
@@ -133,18 +137,16 @@ export const LearnTab: React.FC<LearnTabProps> = ({
   const isUserAuthenticated = currentUser && !currentUser.isGuest;
 
   const handleClassClick = (cls: LiveClass) => {
-    if (!isUserAuthenticated) {
-      setAuthModalReason('class');
-      setShowAuthModal(true);
-      return;
-    }
+    // Users can explore class syllabus & details; registration is guarded inside modal
     onSelectLiveClass(cls);
   };
 
   const handleMaterialClick = (mat: StudyMaterial) => {
-    if (!isUserAuthenticated) {
-      setAuthModalReason('material');
-      setShowAuthModal(true);
+    if (!requireAuth({
+      title: 'Sign In to Access Study Materials',
+      message: 'Sign in or register for a free account to read clinical protocols, lecture slides, and stream educational video lectures.',
+      actionText: 'Study Materials',
+    })) {
       return;
     }
     setSelectedMaterialForReader(mat);
@@ -461,6 +463,36 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                 >
                   <Video className="w-3 h-3 text-red-500" />
                   <span>Videos</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Offline Radiography Study Pack Banner */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#002147] via-[#0A3266] to-[#002147] text-white border border-slate-700 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                  <WifiOff className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white">Offline Radiography Study Pack</h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      Service Worker Active
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300">
+                    Emergency chest rules, contrast algorithms, CRITOE chronology & board past questions cached for offline study.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                <button
+                  onClick={() => setShowOfflinePackModal(true)}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Open Offline Pack</span>
                 </button>
               </div>
             </div>
@@ -811,6 +843,12 @@ export const LearnTab: React.FC<LearnTabProps> = ({
           </div>
         </div>
       )}
+
+      {/* Offline Radiography Study Pack Modal */}
+      <OfflineStudyPackModal
+        isOpen={showOfflinePackModal}
+        onClose={() => setShowOfflinePackModal(false)}
+      />
     </div>
   );
 };

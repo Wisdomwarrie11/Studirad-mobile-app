@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StudyMaterial } from '../../types';
 import { getYouTubeEmbedUrl } from '../../utils/youtube';
+import { isResourceCached, cacheEducationalResource, uncacheEducationalResource } from '../../utils/offlineStorage';
+import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { 
   X, 
   Share2, 
@@ -17,7 +19,9 @@ import {
   Copy,
   Check,
   Eye,
-  RefreshCw
+  RefreshCw,
+  WifiOff,
+  Bookmark
 } from 'lucide-react';
 
 interface MaterialReaderModalProps {
@@ -47,10 +51,13 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
   onClose,
   material,
 }) => {
+  const isOnline = useOnlineStatus();
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [useDirectEmbed, setUseDirectEmbed] = useState(false);
+  const [isCached, setIsCached] = useState(false);
+  const [isCaching, setIsCaching] = useState(false);
 
   if (!isOpen || !material) return null;
 
@@ -73,6 +80,35 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
   // In-app embedded URLs
   const youtubeEmbed = isYouTube ? getYouTubeEmbedUrl(rawLink, false) : null;
   const googleDocsViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(rawLink)}&embedded=true`;
+
+  // Check if resource is cached in the service worker educational cache
+  useEffect(() => {
+    let isMounted = true;
+    if (rawLink) {
+      isResourceCached(rawLink).then((cached) => {
+        if (isMounted) setIsCached(cached);
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [rawLink]);
+
+  const handleToggleOfflineSave = async () => {
+    if (!rawLink || isCaching || isYouTube) return;
+    setIsCaching(true);
+    try {
+      if (isCached) {
+        await uncacheEducationalResource(rawLink);
+        setIsCached(false);
+      } else {
+        const ok = await cacheEducationalResource(rawLink);
+        if (ok) setIsCached(true);
+      }
+    } finally {
+      setIsCaching(false);
+    }
+  };
 
   const handleCopyLink = () => {
     if (rawLink) {
@@ -169,6 +205,28 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            {!isYouTube && rawLink && (
+              <button
+                onClick={handleToggleOfflineSave}
+                disabled={isCaching}
+                title={isCached ? 'Remove from Offline Cache' : 'Cache in Service Worker for Offline Study'}
+                className={`h-8 px-2.5 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                  isCached
+                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                    : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                }`}
+              >
+                {isCached ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                ) : (
+                  <Bookmark className="w-3.5 h-3.5 text-amber-500" />
+                )}
+                <span className="hidden sm:inline">
+                  {isCaching ? 'Caching...' : isCached ? 'Offline Ready' : 'Save Offline'}
+                </span>
+              </button>
+            )}
+
             {(isPDF || isOfficeDoc) && (
               <button
                 onClick={() => setUseDirectEmbed(!useDirectEmbed)}
@@ -209,6 +267,25 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
         {/* Scrollable Reader Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 no-scrollbar">
           
+          {/* Offline Mode Indicator Banner */}
+          {!isOnline && (
+            <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-semibold flex items-center justify-between gap-2 animate-fadeIn">
+              <div className="flex items-center gap-2">
+                <WifiOff className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>
+                  {isCached 
+                    ? 'Offline Study Active: Viewing document from Service Worker offline cache.' 
+                    : 'Offline Mode: Network unavailable. Reading from cached memory.'}
+                </span>
+              </div>
+              {isCached && (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold shrink-0">
+                  Cached in SW
+                </span>
+              )}
+            </div>
+          )}
+
           {/* ================= 1. IN-APP CONTENT VIEWER ================= */}
           {isYouTube ? (
             /* In-App YouTube Player */
@@ -352,15 +429,36 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
             )}
 
             {rawLink && !isYouTube && (
-              <button
-                type="button"
-                onClick={handleDownloadInApp}
-                disabled={isDownloading}
-                className="py-2.5 px-4 rounded-xl bg-[#002147] hover:bg-[#001733] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
-              >
-                <Download className={`w-3.5 h-3.5 ${isDownloading ? 'animate-bounce' : ''}`} />
-                <span>{isDownloading ? 'Downloading...' : 'Save File'}</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={handleToggleOfflineSave}
+                  disabled={isCaching}
+                  className={`py-2.5 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border ${
+                    isCached
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                      : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-100'
+                  }`}
+                  title={isCached ? 'Saved in Service Worker offline cache' : 'Save for offline access'}
+                >
+                  {isCached ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  ) : (
+                    <Bookmark className="w-3.5 h-3.5 text-amber-500" />
+                  )}
+                  <span>{isCaching ? 'Caching...' : isCached ? 'Saved Offline' : 'Save for Offline Study'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadInApp}
+                  disabled={isDownloading}
+                  className="py-2.5 px-4 rounded-xl bg-[#002147] hover:bg-[#001733] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+                >
+                  <Download className={`w-3.5 h-3.5 ${isDownloading ? 'animate-bounce' : ''}`} />
+                  <span>{isDownloading ? 'Downloading...' : 'Save File'}</span>
+                </button>
+              </>
             )}
           </div>
         </div>

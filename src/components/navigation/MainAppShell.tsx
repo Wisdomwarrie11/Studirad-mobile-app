@@ -22,9 +22,19 @@ import { QuizRunnerModal } from '../modals/QuizRunnerModal';
 import { OpportunityDetailsModal } from '../modals/OpportunityDetailsModal';
 import { TutorBookingModal } from '../modals/TutorBookingModal';
 import { ResearchRequestModal } from '../modals/ResearchRequestModal';
+import { AuthRequiredModal } from '../modals/AuthRequiredModal';
+import { OfflineIndicator } from '../common/OfflineIndicator';
+import { OfflineStudyPackModal } from '../modals/OfflineStudyPackModal';
 
 export const MainAppShell: React.FC = () => {
-  const { activeTab, setActiveTab, setScreen } = useAuth();
+  const { 
+    activeTab, 
+    setActiveTab, 
+    setScreen, 
+    authPrompt, 
+    closeAuthPrompt, 
+    requireAuth 
+  } = useAuth();
   const mainScrollRef = useRef<HTMLElement>(null);
 
   // Automatically reset scroll position to top whenever user switches tabs
@@ -49,9 +59,54 @@ export const MainAppShell: React.FC = () => {
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [selectedTutor, setSelectedTutor] = useState<Tutor | null>(null);
   const [selectedResearchService, setSelectedResearchService] = useState<ResearchService | null>(null);
+  const [isOfflineStudyPackOpen, setIsOfflineStudyPackOpen] = useState(false);
 
   // Active bookings state (pure real data)
   const [activeBookings, setActiveBookings] = useState<TutorBooking[]>([]);
+
+  const handleOpenPlayer = (course: Course) => {
+    if (!requireAuth({
+      title: 'Sign In to Stream Courses',
+      message: 'Create a free account or sign in to watch comprehensive video lecture modules, access study attachments, and track CPD credits.',
+      actionText: 'Watch Course',
+    })) {
+      return;
+    }
+    setPlayerCourse(course);
+  };
+
+  const handleStartQuiz = () => {
+    if (!requireAuth({
+      title: 'Sign In to Start Quiz',
+      message: 'Create an account or sign in to test your clinical knowledge and save board exam spotter scores.',
+      actionText: 'Diagnostic Spotter Quiz',
+    })) {
+      return;
+    }
+    setIsQuizActive(true);
+  };
+
+  const handleBookTutor = (tutor: Tutor) => {
+    if (!requireAuth({
+      title: 'Sign In to Book Mentorship',
+      message: 'Sign in or register to schedule live 1-on-1 tutorials with accredited clinical tutors.',
+      actionText: 'Book Mentorship',
+    })) {
+      return;
+    }
+    setSelectedTutor(tutor);
+  };
+
+  const handleRequestResearch = (srv: ResearchService) => {
+    if (!requireAuth({
+      title: 'Sign In to Request Services',
+      message: 'Create an account or sign in to submit research analysis, clinical audit, and dissertation support requests.',
+      actionText: 'Request Research',
+    })) {
+      return;
+    }
+    setSelectedResearchService(srv);
+  };
 
   const handleConfirmBooking = (details: {
     tutorName: string;
@@ -60,6 +115,13 @@ export const MainAppShell: React.FC = () => {
     date: string;
     timeSlot: string;
   }) => {
+    if (!requireAuth({
+      title: 'Sign In to Confirm Booking',
+      message: 'Sign in or register to complete your 1-on-1 booking and receive meeting calendar links.',
+      actionText: 'Confirm Session',
+    })) {
+      return;
+    }
     const newBooking: TutorBooking = {
       id: 'bk_' + Date.now(),
       tutorName: details.tutorName,
@@ -86,10 +148,10 @@ export const MainAppShell: React.FC = () => {
         {activeTab === 'home' && (
           <HomeTab
             onSelectCourse={(course) => setSelectedCourse(course)}
-            onOpenPlayer={(course) => setPlayerCourse(course)}
+            onOpenPlayer={handleOpenPlayer}
             onSelectLiveClass={(lc) => setSelectedLiveClass(lc)}
             onSelectOpportunity={(opp) => setSelectedOpportunity(opp)}
-            onStartQuiz={() => setIsQuizActive(true)}
+            onStartQuiz={handleStartQuiz}
             onOpenNotifications={() => setIsNotificationOpen(true)}
           />
         )}
@@ -97,16 +159,16 @@ export const MainAppShell: React.FC = () => {
         {activeTab === 'learn' && (
           <LearnTab
             onSelectCourse={(course) => setSelectedCourse(course)}
-            onOpenPlayer={(course) => setPlayerCourse(course)}
+            onOpenPlayer={handleOpenPlayer}
             onSelectLiveClass={(lc) => setSelectedLiveClass(lc)}
-            onStartQuiz={() => setIsQuizActive(true)}
+            onStartQuiz={handleStartQuiz}
           />
         )}
 
         {activeTab === 'search' && (
           <SearchTab
             onSelectCourse={(course) => setSelectedCourse(course)}
-            onOpenPlayer={(course) => setPlayerCourse(course)}
+            onOpenPlayer={handleOpenPlayer}
             onSelectLiveClass={(lc) => setSelectedLiveClass(lc)}
             onSelectOpportunity={(opp) => setSelectedOpportunity(opp)}
           />
@@ -116,8 +178,8 @@ export const MainAppShell: React.FC = () => {
 
         {activeTab === 'services' && (
           <ServicesTab
-            onBookTutor={(tutor) => setSelectedTutor(tutor)}
-            onRequestResearch={(srv) => setSelectedResearchService(srv)}
+            onBookTutor={handleBookTutor}
+            onRequestResearch={handleRequestResearch}
             activeBookings={activeBookings}
           />
         )}
@@ -131,7 +193,7 @@ export const MainAppShell: React.FC = () => {
         {activeTab === 'profile' && (
           <ProfileTab
             onEditTopics={() => setScreen('personalise')}
-            onOpenPlayer={(course) => setPlayerCourse(course)}
+            onOpenPlayer={handleOpenPlayer}
           />
         )}
       </main>
@@ -194,6 +256,26 @@ export const MainAppShell: React.FC = () => {
         service={selectedResearchService}
         onClose={() => setSelectedResearchService(null)}
         onSubmitRequest={(req) => console.log('Submitted research request', req)}
+      />
+
+      {/* Account Required Interceptor Modal */}
+      {authPrompt && (
+        <AuthRequiredModal
+          isOpen={authPrompt.isOpen}
+          onClose={closeAuthPrompt}
+          title={authPrompt.title}
+          message={authPrompt.message}
+          actionText={authPrompt.actionText}
+        />
+      )}
+
+      {/* Connectivity & Offline Educational Cache Indicator */}
+      <OfflineIndicator onOpenOfflinePack={() => setIsOfflineStudyPackOpen(true)} />
+
+      {/* Offline Radiography Study Pack Modal */}
+      <OfflineStudyPackModal
+        isOpen={isOfflineStudyPackOpen}
+        onClose={() => setIsOfflineStudyPackOpen(false)}
       />
     </div>
   );

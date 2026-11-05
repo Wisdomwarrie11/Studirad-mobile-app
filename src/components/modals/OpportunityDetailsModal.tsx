@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Opportunity } from '../../types';
+import { useAuth } from '../../context/AuthContext';
 import { 
   X, 
   Building2, 
@@ -19,6 +20,7 @@ export const OpportunityDetailsModal: React.FC<OpportunityDetailsModalProps> = (
   opportunity,
   onClose,
 }) => {
+  const { requireAuth } = useAuth();
   if (!opportunity) return null;
 
   const [isSaved, setIsSaved] = useState(false);
@@ -40,8 +42,17 @@ export const OpportunityDetailsModal: React.FC<OpportunityDetailsModalProps> = (
           </div>
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => setIsSaved(!isSaved)}
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+              onClick={() => {
+                if (!requireAuth({
+                  title: 'Sign In to Save Opportunity',
+                  message: 'Sign in or register to bookmark radiography vacancies and access them in your profile.',
+                  actionText: 'Save Opportunity',
+                })) {
+                  return;
+                }
+                setIsSaved(!isSaved);
+              }}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
                 isSaved ? 'text-[#FF7F32] bg-orange-50 dark:bg-orange-950/40' : 'text-slate-400 hover:text-slate-700 bg-slate-100 dark:bg-slate-800'
               }`}
             >
@@ -148,28 +159,30 @@ export const OpportunityDetailsModal: React.FC<OpportunityDetailsModalProps> = (
 
         {/* Footer CTA */}
         <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#121824] flex items-center gap-3">
-          {opportunity.link ? (
-            <a
-              href={opportunity.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base text-center bg-[#002147] hover:bg-[#001733] text-white shadow-md active:scale-98 transition-all"
-            >
-              Execute Application
-            </a>
-          ) : (
-            <button
-              onClick={() => setApplied(true)}
-              disabled={applied}
-              className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all shadow-md ${
-                applied
-                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 cursor-not-allowed'
-                  : 'bg-[#002147] hover:bg-[#001733] text-white active:scale-98'
-              }`}
-            >
-              {applied ? 'Application Recorded' : 'Apply via Portal'}
-            </button>
-          )}
+          <button
+            onClick={() => {
+              if (!requireAuth({
+                title: 'Sign In to Apply for Opportunity',
+                message: 'Create a free account or sign in to submit your credentials and clinical experience for this vacancy.',
+                actionText: 'Execute Application',
+              })) {
+                return;
+              }
+              if (opportunity.link) {
+                window.open(opportunity.link, '_blank');
+              } else {
+                setApplied(true);
+              }
+            }}
+            disabled={applied}
+            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all shadow-md cursor-pointer ${
+              applied
+                ? 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 cursor-not-allowed'
+                : 'bg-[#002147] hover:bg-[#001733] text-white active:scale-98'
+            }`}
+          >
+            {applied ? 'Application Recorded' : 'Execute Application'}
+          </button>
         </div>
       </div>
     </div>

@@ -94,28 +94,50 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             )}
           </button>
 
-          {/* 4. Profile Avatar Button */}
-          <button
-            onClick={onOpenProfile}
-            aria-label="Open user profile"
-            title="Profile & Settings"
-            className="flex items-center gap-1.5 p-0.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[40px] shrink-0"
-          >
-            <div className="w-9 h-9 rounded-full bg-[#002147] dark:bg-[#1B447A] text-white flex items-center justify-center font-bold text-sm ring-2 ring-slate-200 dark:ring-slate-700 shrink-0">
-              {currentUser?.avatarUrl ? (
-                <img
-                  src={currentUser.avatarUrl}
-                  alt={currentUser.fullName}
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                userInitial
-              )}
+          {/* 4. Profile / Sign In Action */}
+          {currentUser ? (
+            <button
+              onClick={onOpenProfile}
+              aria-label="Open user profile"
+              title="Profile & Settings"
+              className="flex items-center gap-1.5 p-0.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[40px] shrink-0"
+            >
+              <div className="w-9 h-9 rounded-full bg-[#002147] dark:bg-[#1B447A] text-white flex items-center justify-center font-bold text-sm ring-2 ring-slate-200 dark:ring-slate-700 shrink-0">
+                {currentUser?.avatarUrl ? (
+                  <img
+                    src={currentUser.avatarUrl}
+                    alt={currentUser.fullName}
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  userInitial
+                )}
+              </div>
+              <span className="hidden xl:inline text-sm font-bold text-slate-800 dark:text-white truncate max-w-[90px]">
+                {currentUser?.fullName?.split(' ')[0] || 'Profile'}
+              </span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={() => setScreen('auth')}
+                className="h-9 px-3 sm:px-3.5 rounded-xl bg-[#002147] hover:bg-[#001733] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1"
+                title="Sign In / Register"
+              >
+                <span>Sign In</span>
+              </button>
+              <button
+                onClick={onOpenProfile}
+                aria-label="Guest Menu"
+                title="Guest Settings"
+                className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-[#161F30] hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center transition-colors shrink-0"
+              >
+                <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[11px] font-bold text-slate-700 dark:text-slate-200">
+                  G
+                </div>
+              </button>
             </div>
-            <span className="hidden xl:inline text-sm font-bold text-slate-800 dark:text-white truncate max-w-[90px]">
-              {currentUser?.fullName?.split(' ')[0] || 'Profile'}
-            </span>
-          </button>
+          )}
 
           {/* 5. Admin Hub Shortcut (Visible to Admin or for Direct Navigation) */}
           {(currentUser?.isAdmin || currentUser?.email?.toLowerCase().includes('studirad') || currentUser?.email?.toLowerCase().includes('admin') || currentUser?.email?.toLowerCase() === 'wisdomwarrie11@gmail.com') && (

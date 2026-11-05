@@ -43,6 +43,14 @@ interface AuthContextType {
   signOut: () => void;
   resetToSplash: () => void;
   isFirebaseConnected: boolean;
+  authPrompt: {
+    isOpen: boolean;
+    title: string;
+    message: string;
+    actionText?: string;
+  } | null;
+  requireAuth: (options?: { title?: string; message?: string; actionText?: string; targetTab?: AuthMode }) => boolean;
+  closeAuthPrompt: () => void;
 }
 
 const STORAGE_KEY_USER = 'studirad_current_user';
@@ -79,10 +87,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(true);
   const [adminUser, setAdminUser] = useState<FirebaseUser | null>(adminAuth.currentUser);
   const [authInitialTab, setAuthInitialTab] = useState<AuthMode>('signIn');
+  const [authPrompt, setAuthPrompt] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    actionText?: string;
+  } | null>(null);
 
   const openAuthWithTab = (tab: AuthMode) => {
+    setAuthPrompt(null);
     setAuthInitialTab(tab);
     setScreen('auth');
+  };
+
+  const closeAuthPrompt = () => {
+    setAuthPrompt(null);
+  };
+
+  const requireAuth = (options?: {
+    title?: string;
+    message?: string;
+    actionText?: string;
+    targetTab?: AuthMode;
+  }): boolean => {
+    if (currentUser && !currentUser.isGuest) {
+      return true;
+    }
+    setAuthPrompt({
+      isOpen: true,
+      title: options?.title || 'Account Required',
+      message: options?.message || 'Please sign in or create a free StudiRad account to access this feature.',
+      actionText: options?.actionText,
+    });
+    if (options?.targetTab) {
+      setAuthInitialTab(options.targetTab);
+    }
+    return false;
   };
 
   const navigateToLearn = (view: 'classes' | 'materials' | 'courses') => {
@@ -214,11 +254,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Ensure first-time users or unauthenticated users always see onboarding before entering the app
+  // Only redirect to onboarding on first launch if the user has never onboarded
   useEffect(() => {
-    if (!currentUser && currentScreen === 'app') {
-      setCurrentScreenState('onboarding');
-    }
+    try {
+      const hasOnboarded = localStorage.getItem('studirad_onboarded');
+      if (!currentUser && !hasOnboarded && currentScreen === 'app') {
+        setCurrentScreenState('onboarding');
+      }
+    } catch {}
   }, [currentUser, currentScreen]);
 
   const markNotificationAsRead = (id: string) => {
@@ -584,7 +627,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await fbSignOut(adminAuth).catch(() => {});
     setCurrentUser(null);
     localStorage.removeItem(STORAGE_KEY_USER);
-    setScreen('onboarding');
+    // Return to exploration mode in the main app
+    setScreen('app');
   };
 
   const resetToSplash = async () => {
@@ -593,6 +637,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(null);
     localStorage.removeItem(STORAGE_KEY_USER);
     localStorage.removeItem(STORAGE_KEY_SCREEN);
+    localStorage.removeItem('studirad_onboarded');
     setNotifications(INITIAL_NOTIFICATIONS);
     setActiveTab('home');
     setScreen('splash');
@@ -630,6 +675,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signOut,
         resetToSplash,
         isFirebaseConnected,
+        authPrompt,
+        requireAuth,
+        closeAuthPrompt,
       }}
     >
       {children}
