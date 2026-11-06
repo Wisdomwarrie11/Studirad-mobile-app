@@ -68,9 +68,13 @@ export async function uploadFileToFirebaseStorage(
     const snapshot = await uploadBytes(storageRef, file);
     return await getDownloadURL(snapshot.ref);
   } catch (err) {
-    console.warn('Firebase Storage direct upload notice:', err);
-    // If storage rules restrict or offline, return safe object URL or fallback
-    return URL.createObjectURL(file);
+    console.warn('Firebase Storage upload notice, using persistent base64 data URL:', err);
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(URL.createObjectURL(file));
+      reader.readAsDataURL(file);
+    });
   }
 }
 

@@ -67,7 +67,8 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronRight,
-  Info
+  Info,
+  ImageIcon
 } from 'lucide-react';
 import classesImg from '../../assets/images/onboarding_classes_1792606674536.jpg';
 import radiographyImg from '../../assets/images/onboarding_radiography_1792606674447.jpg';
@@ -175,6 +176,7 @@ export const AdminDashboardScreen: React.FC = () => {
     isFree: boolean;
     videoUrl: string;
     overview: string;
+    image: string;
     modules: CourseModule[];
     materials: CourseMaterialLink[];
     links: CourseMaterialLink[];
@@ -192,11 +194,16 @@ export const AdminDashboardScreen: React.FC = () => {
     isFree: true,
     videoUrl: '',
     overview: '',
+    image: '',
     modules: [],
     materials: [],
     links: [],
     quiz: [],
   });
+
+  const [isUploadingCourseImg, setIsUploadingCourseImg] = useState(false);
+  const [isUploadingClassImg, setIsUploadingClassImg] = useState(false);
+  const [isUploadingMaterialFile, setIsUploadingMaterialFile] = useState(false);
 
   // Builder draft states
   const [newSectionTitle, setNewSectionTitle] = useState('');
@@ -250,6 +257,7 @@ export const AdminDashboardScreen: React.FC = () => {
     meetingLink: 'https://meet.studirad.org/room/masterclass',
     cpdCredits: '1.5 CPD Hours',
     description: '',
+    image: '',
   });
 
   // ----------------------------------------------------
@@ -342,7 +350,7 @@ export const AdminDashboardScreen: React.FC = () => {
       isFree: courseForm.isFree,
       videoUrl: courseForm.videoUrl.trim(),
       overview: courseForm.overview.trim() || 'Comprehensive clinical masterclass with high-yield case studies.',
-      image: courseForm.modality === 'ct' ? classesImg : courseForm.modality === 'ultrasound' ? careersImg : radiographyImg,
+      image: courseForm.image?.trim() || (courseForm.modality === 'ct' ? classesImg : courseForm.modality === 'ultrasound' ? careersImg : radiographyImg),
       modules: finalModules,
       materials: courseForm.materials || [],
       links: courseForm.links || [],
@@ -365,6 +373,9 @@ export const AdminDashboardScreen: React.FC = () => {
 
     const classId = classForm.id || `live_${Date.now()}`;
     const mappedCategory = classForm.modality === 'ct' ? 'CT' : classForm.modality === 'mri' ? 'MRI' : classForm.modality === 'ultrasound' ? 'Ultrasound' : 'X-ray';
+    const defaultClassImg = classForm.modality === 'ct' ? classesImg : classForm.modality === 'ultrasound' ? careersImg : radiographyImg;
+    const finalClassImage = classForm.image?.trim() || defaultClassImg;
+
     const newClass: Partial<LiveClass> = {
       id: classId,
       title: classForm.title.trim(),
@@ -384,8 +395,8 @@ export const AdminDashboardScreen: React.FC = () => {
       status: 'published',
       cohortStatus: 'upcoming',
       price: 'Free',
-      image: classForm.modality === 'ct' ? classesImg : classForm.modality === 'ultrasound' ? careersImg : radiographyImg,
-      thumbnail: classForm.modality === 'ct' ? classesImg : classForm.modality === 'ultrasound' ? careersImg : radiographyImg,
+      image: finalClassImage,
+      thumbnail: finalClassImage,
     };
 
     const res = await pushClassToFirestore(newClass);
@@ -780,6 +791,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     isFree: true,
                     videoUrl: '',
                     overview: '',
+                    image: '',
                     modules: [],
                     materials: [],
                     links: [],
@@ -827,6 +839,7 @@ export const AdminDashboardScreen: React.FC = () => {
                       meetingLink: 'https://meet.studirad.org/room/masterclass',
                       cpdCredits: '1.5 CPD Hours',
                       description: '',
+                      image: '',
                     });
                     setIsClassModalOpen(true);
                   }}
@@ -997,6 +1010,7 @@ export const AdminDashboardScreen: React.FC = () => {
                               isFree: !!c.isFree,
                               videoUrl: c.videoUrl || '',
                               overview: c.overview || '',
+                              image: c.image || '',
                               modules: c.modules || [],
                               materials: c.materials || [],
                               links: c.links || [],
@@ -1083,6 +1097,7 @@ export const AdminDashboardScreen: React.FC = () => {
                               meetingLink: cls.meetingLink || '',
                               cpdCredits: cls.cpdCredits || '1.0 CPD Hour',
                               description: cls.description || '',
+                              image: cls.image || '',
                             });
                             setIsClassModalOpen(true);
                           }}
@@ -1472,6 +1487,83 @@ export const AdminDashboardScreen: React.FC = () => {
                       className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
                     />
                   </div>
+
+                  {/* Course Cover Image (Custom Upload or Default) */}
+                  <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-white flex items-center gap-1.5">
+                        <ImageIcon className="w-4 h-4 text-[#FF7F32]" />
+                        <span>Course Cover Image (Custom or Default)</span>
+                      </label>
+                      {courseForm.image ? (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          Custom Image Applied
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                          Using Modality Default
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                      {/* Thumbnail Preview */}
+                      <div className="relative w-full sm:w-40 aspect-video rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shrink-0">
+                        <img
+                          src={courseForm.image || (courseForm.modality === 'ct' ? classesImg : courseForm.modality === 'ultrasound' ? careersImg : radiographyImg)}
+                          alt="Course cover preview"
+                          className="w-full h-full object-cover"
+                        />
+                        {courseForm.image && (
+                          <button
+                            type="button"
+                            onClick={() => setCourseForm({ ...courseForm, image: '' })}
+                            className="absolute top-1 right-1 p-1 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-xs cursor-pointer"
+                            title="Revert to default image"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Upload / Paste Options */}
+                      <div className="flex-1 w-full space-y-2">
+                        <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-slate-700 hover:border-[#FF7F32] bg-slate-950/60 hover:bg-slate-950 text-slate-300 text-xs font-semibold cursor-pointer transition-colors">
+                          {isUploadingCourseImg ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-[#FF7F32]" />
+                          ) : (
+                            <Upload className="w-4 h-4 text-[#FF7F32]" />
+                          )}
+                          <span>{isUploadingCourseImg ? 'Uploading image from device...' : 'Upload or drop image from local device'}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={isUploadingCourseImg}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              setIsUploadingCourseImg(true);
+                              try {
+                                const url = await uploadFileToFirebaseStorage(file, 'course_covers');
+                                setCourseForm((prev) => ({ ...prev, image: url }));
+                              } finally {
+                                setIsUploadingCourseImg(false);
+                              }
+                            }}
+                          />
+                        </label>
+
+                        <input
+                          type="text"
+                          value={courseForm.image}
+                          onChange={(e) => setCourseForm({ ...courseForm, image: e.target.value })}
+                          placeholder="Or paste image URL: https://..."
+                          className="w-full h-8 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -1726,15 +1818,144 @@ export const AdminDashboardScreen: React.FC = () => {
               {courseModalTab === 'materials' && (
                 <div className="space-y-4 animate-fadeIn">
                   {/* Add Study Material Form */}
-                  <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                  <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3.5">
                     <div>
                       <h4 className="font-bold text-white flex items-center gap-1.5">
                         <FileText className="w-4 h-4 text-blue-400" />
                         <span>Add Accompanying Study Material / Handout</span>
                       </h4>
                       <p className="text-[11px] text-slate-400">
-                        Upload or link PDF cheat sheets, clinical protocols, and guides
+                        Drag files from your local device, browse your computer, or paste a Google Drive / document link
                       </p>
+                    </div>
+
+                    {/* Drag-and-Drop / Local File Upload Zone */}
+                    <div
+                      tabIndex={0}
+                      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                      onDrop={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const files = Array.from(e.dataTransfer.files);
+                        if (!files || files.length === 0) return;
+                        setIsUploadingMaterialFile(true);
+                        try {
+                          for (const file of files) {
+                            const url = await uploadFileToFirebaseStorage(file, 'course_materials');
+                            const ext = file.name.split('.').pop()?.toLowerCase() || '';
+                            const detectedType: 'pdf' | 'doc' | 'video' | 'link' = 
+                              ext === 'pdf' ? 'pdf' :
+                              ['mp4', 'webm', 'mov'].includes(ext) ? 'video' :
+                              ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(ext) ? 'doc' : 'pdf';
+                            
+                            const cleanTitle = file.name.replace(/\.[^/.]+$/, '');
+                            const newMat: CourseMaterialLink = {
+                              id: `mat_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+                              title: cleanTitle,
+                              url,
+                              type: detectedType,
+                            };
+                            setCourseForm((prev) => ({
+                              ...prev,
+                              materials: [...prev.materials, newMat],
+                            }));
+                          }
+                        } finally {
+                          setIsUploadingMaterialFile(false);
+                        }
+                      }}
+                      onPaste={async (e) => {
+                        const items = Array.from(e.clipboardData?.items || []);
+                        const fileItems = items.filter((item) => item.kind === 'file');
+                        if (fileItems.length === 0) return;
+                        e.preventDefault();
+                        setIsUploadingMaterialFile(true);
+                        try {
+                          for (const item of fileItems) {
+                            const file = item.getAsFile();
+                            if (!file) continue;
+                            const url = await uploadFileToFirebaseStorage(file, 'course_materials');
+                            const ext = file.name.split('.').pop()?.toLowerCase() || '';
+                            const detectedType: 'pdf' | 'doc' | 'video' | 'link' = 
+                              ext === 'pdf' ? 'pdf' :
+                              ['mp4', 'webm', 'mov'].includes(ext) ? 'video' :
+                              ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(ext) ? 'doc' : 'pdf';
+                            
+                            const cleanTitle = file.name.replace(/\.[^/.]+$/, '') || 'Pasted Resource';
+                            const newMat: CourseMaterialLink = {
+                              id: `mat_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+                              title: cleanTitle,
+                              url,
+                              type: detectedType,
+                            };
+                            setCourseForm((prev) => ({
+                              ...prev,
+                              materials: [...prev.materials, newMat],
+                            }));
+                          }
+                        } finally {
+                          setIsUploadingMaterialFile(false);
+                        }
+                      }}
+                      className="p-4 rounded-2xl border-2 border-dashed border-slate-700 hover:border-[#FF7F32] focus:border-[#FF7F32] focus:outline-none bg-slate-950/60 hover:bg-slate-950 text-center space-y-1.5 transition-all cursor-pointer"
+                    >
+                      <label className="cursor-pointer block">
+                        <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center mx-auto mb-1">
+                          {isUploadingMaterialFile ? (
+                            <Loader2 className="w-5 h-5 animate-spin text-[#FF7F32]" />
+                          ) : (
+                            <Upload className="w-5 h-5 text-blue-400" />
+                          )}
+                        </div>
+                        <span className="text-xs font-bold text-white block">
+                          {isUploadingMaterialFile ? 'Uploading file from device...' : 'Drag & drop files from your computer, or click to browse'}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block">
+                          PDF guides, PPTX slides, Word documents, or video clips
+                        </span>
+                        <input
+                          type="file"
+                          multiple
+                          accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.mp4,.webm,.png,.jpg"
+                          disabled={isUploadingMaterialFile}
+                          className="hidden"
+                          onChange={async (e) => {
+                            const files = Array.from(e.target.files || []);
+                            if (files.length === 0) return;
+                            setIsUploadingMaterialFile(true);
+                            try {
+                              for (const file of files) {
+                                const url = await uploadFileToFirebaseStorage(file, 'course_materials');
+                                const ext = file.name.split('.').pop()?.toLowerCase() || '';
+                                const detectedType: 'pdf' | 'doc' | 'video' | 'link' = 
+                                  ext === 'pdf' ? 'pdf' :
+                                  ['mp4', 'webm', 'mov'].includes(ext) ? 'video' :
+                                  ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(ext) ? 'doc' : 'pdf';
+                                
+                                const cleanTitle = file.name.replace(/\.[^/.]+$/, '');
+                                const newMat: CourseMaterialLink = {
+                                  id: `mat_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+                                  title: cleanTitle,
+                                  url,
+                                  type: detectedType,
+                                };
+                                setCourseForm((prev) => ({
+                                  ...prev,
+                                  materials: [...prev.materials, newMat],
+                                }));
+                              }
+                            } finally {
+                              setIsUploadingMaterialFile(false);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400 font-semibold">
+                      <div className="flex-1 h-px bg-slate-800" />
+                      <span>OR ADD BY LINK / URL</span>
+                      <div className="flex-1 h-px bg-slate-800" />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -2226,6 +2447,76 @@ export const AdminDashboardScreen: React.FC = () => {
                   placeholder="Detailed breakdown of topics covered, interactive quiz format, etc."
                   className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
                 />
+              </div>
+
+              {/* Class Cover Image / Device Upload */}
+              <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-white flex items-center gap-1.5 text-xs">
+                    <ImageIcon className="w-3.5 h-3.5 text-[#FF7F32]" />
+                    <span>Class Cover Image</span>
+                  </label>
+                  <span className="text-[10px] text-slate-400">
+                    {classForm.image ? 'Custom image active' : 'Default modality image in use'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="relative w-24 h-16 rounded-xl overflow-hidden bg-slate-950 border border-slate-700 shrink-0">
+                    <img
+                      src={classForm.image?.trim() || (classForm.modality === 'ct' ? classesImg : classForm.modality === 'ultrasound' ? careersImg : radiographyImg)}
+                      alt="Class thumbnail preview"
+                      className="w-full h-full object-cover"
+                    />
+                    {isUploadingClassImg && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <Upload className="w-4 h-4 text-[#FF7F32] animate-bounce" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <label className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-[11px] flex items-center gap-1.5 cursor-pointer border border-slate-700 transition-colors">
+                        <Upload className="w-3.5 h-3.5 text-[#FF7F32]" />
+                        <span>{isUploadingClassImg ? 'Uploading...' : 'Choose from Device'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={isUploadingClassImg}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setIsUploadingClassImg(true);
+                            try {
+                              const url = await uploadFileToFirebaseStorage(file, 'class_covers');
+                              setClassForm((prev) => ({ ...prev, image: url }));
+                            } finally {
+                              setIsUploadingClassImg(false);
+                            }
+                          }}
+                        />
+                      </label>
+                      {classForm.image && (
+                        <button
+                          type="button"
+                          onClick={() => setClassForm((prev) => ({ ...prev, image: '' }))}
+                          className="text-[11px] text-slate-400 hover:text-red-400 underline cursor-pointer"
+                        >
+                          Reset to default
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      value={classForm.image}
+                      onChange={(e) => setClassForm({ ...classForm, image: e.target.value })}
+                      placeholder="Or paste image link: https://..."
+                      className="w-full h-8 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="pt-3 flex gap-2">

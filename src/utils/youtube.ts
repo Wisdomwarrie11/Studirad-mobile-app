@@ -85,22 +85,35 @@ export function getYouTubeThumbnail(url?: string | null): string | null {
 }
 
 /**
- * Extracts Google Drive file ID from any standard Google Drive URL:
+ * Extracts Google Drive / Google Docs file ID from any standard Google URL format:
+ * - https://docs.google.com/videos/d/FILE_ID/play?usp=sharing
  * - https://drive.google.com/file/d/FILE_ID/view?usp=sharing
  * - https://drive.google.com/file/d/FILE_ID/preview
+ * - https://docs.google.com/file/d/FILE_ID/...
  * - https://drive.google.com/open?id=FILE_ID
  */
 export function extractGoogleDriveId(url?: string | null): string | null {
   if (!url || typeof url !== 'string') return null;
   const trimmed = url.trim();
-  const fileMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (fileMatch && fileMatch[1]) {
-    return fileMatch[1];
+
+  // 1. Check for standard Google /d/FILE_ID format (covers drive, docs, videos, etc.)
+  const dMatch = trimmed.match(/\/d\/([a-zA-Z0-9_-]{15,})/);
+  if (dMatch && dMatch[1]) {
+    return dMatch[1];
   }
-  const idMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+
+  // 2. Specific subpaths: /file/d/, /videos/d/, /document/d/
+  const subpathMatch = trimmed.match(/\/(?:file|videos|document|presentation|spreadsheets)\/d\/([a-zA-Z0-9_-]+)/);
+  if (subpathMatch && subpathMatch[1]) {
+    return subpathMatch[1];
+  }
+
+  // 3. Query parameter: ?id=FILE_ID or &id=FILE_ID
+  const idMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]{15,})/);
   if (idMatch && idMatch[1]) {
     return idMatch[1];
   }
+
   return null;
 }
 
@@ -114,18 +127,27 @@ export function getGoogleDriveEmbedUrl(url?: string | null): string | null {
 }
 
 /**
- * Universal video embedder supporting both YouTube and Google Drive
+ * Universal video embedder supporting YouTube, Google Drive, and Google Docs videos
  */
 export function getVideoEmbedUrl(url?: string | null, autoplay = false): string | null {
   if (!url) return null;
-  if (url.includes('drive.google.com')) {
-    return getGoogleDriveEmbedUrl(url);
+  const trimmed = url.trim();
+
+  // If it's a Google Drive or Google Docs link
+  if (
+    trimmed.includes('drive.google.com') ||
+    trimmed.includes('docs.google.com') ||
+    Boolean(extractGoogleDriveId(trimmed))
+  ) {
+    const driveEmbed = getGoogleDriveEmbedUrl(trimmed);
+    if (driveEmbed) return driveEmbed;
   }
-  return getYouTubeEmbedUrl(url, autoplay);
+
+  return getYouTubeEmbedUrl(trimmed, autoplay);
 }
 
 /**
- * Checks if a URL is a playable video (YouTube or Google Drive)
+ * Checks if a URL is a playable video (YouTube or Google Drive / Google Docs)
  */
 export function isPlayableVideoUrl(url?: string | null): boolean {
   if (!url) return false;

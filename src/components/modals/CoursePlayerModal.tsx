@@ -39,6 +39,7 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
 }) => {
   const { currentUser } = useAuth();
   if (!course) return null;
+  if (!currentUser) return null;
 
   // Auto-record active course enrollment in Firestore for this learner
   useEffect(() => {
@@ -67,7 +68,6 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
   }, [course]);
 
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [videoMode, setVideoMode] = useState<'youtube' | 'dicom'>('youtube');
   const [activeTab, setActiveTab] = useState<PlayerTab>('curriculum');
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>(
     allLessons.filter((l) => l.completed).map((l) => l.id)
@@ -188,70 +188,34 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
 
         {/* Embedded Video Player Container (Strict 16:9 In-App Playback) */}
         <div className="relative w-full aspect-video bg-black flex flex-col justify-between shrink-0 overflow-hidden">
-          {videoMode === 'youtube' ? (
-            embedUrl ? (
-              <iframe
-                key={embedUrl}
-                className="w-full h-full border-0"
-                src={embedUrl}
-                title={currentLesson.title || course.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                referrerPolicy="strict-origin-when-cross-origin"
-              />
-            ) : (
-              /* Fallback when no valid YouTube URL is present */
-              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-950 text-white space-y-3">
-                <div className="w-14 h-14 rounded-2xl bg-[#002147] border border-[#FF7F32]/40 flex items-center justify-center text-[#FF7F32]">
-                  <Play className="w-7 h-7 ml-0.5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-white mb-1">
-                    {currentLesson.title}
-                  </h4>
-                  <p className="text-xs text-slate-400 max-w-sm">
-                    {activeVideoUrl 
-                      ? 'Could not parse video link. Please verify the YouTube or Google Drive link in the Admin Portal.'
-                      : 'No lecture video attached yet. You can embed a YouTube or Google Drive video link from the Admin Portal.'}
-                  </p>
-                </div>
-              </div>
-            )
+          {embedUrl ? (
+            <iframe
+              key={embedUrl}
+              className="w-full h-full border-0"
+              src={embedUrl}
+              title={currentLesson.title || course.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
+            />
           ) : (
-            /* Interactive DICOM Viewer simulation */
-            <div className="w-full h-full relative flex items-center justify-center p-4 bg-slate-950">
-              <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px] opacity-20" />
-              <div className="relative z-10 text-center space-y-2 max-w-xs">
-                <div className="w-16 h-16 rounded-full bg-[#002147] border-2 border-[#FF7F32] flex items-center justify-center mx-auto text-[#FF7F32]">
-                  <Layers className="w-8 h-8" />
-                </div>
-                <h4 className="text-sm font-bold text-white">{currentLesson.title}</h4>
-                <p className="text-xs text-slate-300">High-resolution DICOM windowing & multiplanar imaging</p>
+            /* Fallback when no valid Video URL is present */
+            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-950 text-white space-y-3">
+              <div className="w-14 h-14 rounded-2xl bg-[#002147] border border-[#FF7F32]/40 flex items-center justify-center text-[#FF7F32]">
+                <Play className="w-7 h-7 ml-0.5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white mb-1">
+                  {currentLesson.title}
+                </h4>
+                <p className="text-xs text-slate-400 max-w-sm">
+                  {activeVideoUrl 
+                    ? 'Could not parse video link. Please verify the YouTube or Google Drive link in the Admin Portal.'
+                    : 'No lecture video attached yet. You can embed a YouTube or Google Drive video link from the Admin Portal.'}
+                </p>
               </div>
             </div>
           )}
-
-          {/* Player Mode Switcher (Video vs DICOM) */}
-          <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-black/70 backdrop-blur-md p-1 rounded-xl border border-white/20">
-            <button
-              onClick={() => setVideoMode('youtube')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-                videoMode === 'youtube' ? 'bg-[#FF7F32] text-white shadow-xs' : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <Tv className="w-3.5 h-3.5" />
-              <span>Video</span>
-            </button>
-            <button
-              onClick={() => setVideoMode('dicom')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-                videoMode === 'dicom' ? 'bg-[#002147] text-white shadow-xs' : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>DICOM</span>
-            </button>
-          </div>
         </div>
 
         {/* Lesson Sub-Navigation & Tabs */}

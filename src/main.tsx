@@ -4,28 +4,44 @@ import './index.css';
 
 // Filter out third-party browser extension errors (e.g., MetaMask inpage scripts injected by Chrome extensions)
 if (typeof window !== 'undefined') {
-  window.addEventListener('error', (event) => {
-    if (
-      event.filename?.includes('chrome-extension://') ||
-      event.filename?.includes('moz-extension://') ||
-      event.message?.includes('MetaMask') ||
-      event.message?.includes('Failed to connect to MetaMask')
-    ) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-    }
-  });
+  const isExtensionNoise = (err: any) => {
+    if (!err) return false;
+    const msg = String(err.message || err.reason || err || '');
+    const file = String(err.filename || '');
+    const stack = String(err.stack || (err.error && err.error.stack) || '');
+    return (
+      msg.includes('MetaMask') ||
+      msg.includes('Failed to connect to MetaMask') ||
+      msg.includes('ethereum') ||
+      file.includes('chrome-extension://') ||
+      file.includes('moz-extension://') ||
+      stack.includes('chrome-extension://') ||
+      stack.includes('moz-extension://') ||
+      stack.includes('inpage.js')
+    );
+  };
 
-  window.addEventListener('unhandledrejection', (event) => {
-    const reasonStr = String(event.reason?.message || event.reason || '');
-    if (
-      reasonStr.includes('MetaMask') ||
-      reasonStr.includes('chrome-extension://') ||
-      reasonStr.includes('Failed to connect to MetaMask')
-    ) {
-      event.preventDefault();
-    }
-  });
+  window.addEventListener(
+    'error',
+    (event) => {
+      if (isExtensionNoise(event) || isExtensionNoise(event.error)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    },
+    true
+  );
+
+  window.addEventListener(
+    'unhandledrejection',
+    (event) => {
+      if (isExtensionNoise(event.reason)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    },
+    true
+  );
 }
 
 createRoot(document.getElementById('root')!).render(<App />);

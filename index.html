@@ -21,6 +21,42 @@
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <script>
       (function() {
+        function shouldSuppress(obj) {
+          if (!obj) return false;
+          var msg = String(obj.message || obj.reason || obj.description || obj || '');
+          var file = String(obj.filename || '');
+          var stack = String(obj.stack || (obj.error && obj.error.stack) || '');
+          return (
+            msg.indexOf('MetaMask') !== -1 ||
+            msg.indexOf('ethereum') !== -1 ||
+            msg.indexOf('nkbihfbeogaeaoehlefnkodbefgpgknn') !== -1 ||
+            file.indexOf('chrome-extension://') !== -1 ||
+            file.indexOf('moz-extension://') !== -1 ||
+            stack.indexOf('chrome-extension://') !== -1 ||
+            stack.indexOf('moz-extension://') !== -1 ||
+            stack.indexOf('inpage.js') !== -1
+          );
+        }
+
+        window.addEventListener('error', function(event) {
+          if (shouldSuppress(event) || shouldSuppress(event.error)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return true;
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(event) {
+          if (shouldSuppress(event.reason)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return true;
+          }
+        }, true);
+      })();
+    </script>
+    <script>
+      (function() {
         try {
           var saved = localStorage.getItem('studirad_theme_preference');
           var isDark = saved ? saved === 'dark' : false; // Default to light mode

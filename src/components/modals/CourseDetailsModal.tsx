@@ -25,7 +25,7 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
   onClose,
   onOpenPlayer,
 }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, requireAuth } = useAuth();
   if (!course) return null;
 
   return (
@@ -183,6 +183,13 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
 
           <button
             onClick={() => {
+              if (!requireAuth({
+                title: 'Sign In to Watch Course',
+                message: 'Create a free account or sign in to watch full curriculum video lectures and track accredited CPD credits.',
+                actionText: 'Watch Course',
+              })) {
+                return;
+              }
               if (currentUser?.id) {
                 enrollUserInCourse(currentUser.id, course).catch(() => {});
               }

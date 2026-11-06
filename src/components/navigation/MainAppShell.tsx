@@ -222,7 +222,7 @@ export const MainAppShell: React.FC = () => {
       <CourseDetailsModal
         course={selectedCourse}
         onClose={() => setSelectedCourse(null)}
-        onOpenPlayer={(c) => setPlayerCourse(c)}
+        onOpenPlayer={handleOpenPlayer}
       />
 
       <CoursePlayerModal
