@@ -1,15 +1,110 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
+import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
-app.use(express.json());
+// Enable large file uploads (50MB) for educational PDF textbooks, slides & high-res radiography scans
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Ensure public/uploads directory exists and is statically served
+const uploadsDir = path.resolve('public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
+
+// Configure Cloudinary if credentials are provided in environment
+if (process.env.CLOUDINARY_URL) {
+  cloudinary.config();
+} else if (process.env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+}
+
+// Dedicated Upload endpoint for Cloudinary & educational assets
+app.post('/api/upload', async (req, res) => {
+  try {
+    const { fileData, fileName, folder = 'studirad' } = req.body;
+    if (!fileData) {
+      return res.status(400).json({ error: 'fileData (base64 data URL) is required' });
+    }
+
+    const hasCloudinary = Boolean(
+      process.env.CLOUDINARY_URL || 
+      (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY)
+    );
+
+    // Try Cloudinary first if configured
+    if (hasCloudinary) {
+      try {
+        const cleanPublicId = fileName
+          ? `${Date.now()}_${fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_')}`
+          : undefined;
+
+        const uploadRes = await cloudinary.uploader.upload(fileData, {
+          folder,
+          resource_type: 'auto',
+          public_id: cleanPublicId,
+        });
+
+        return res.json({
+          url: uploadRes.secure_url,
+          publicId: uploadRes.public_id,
+          provider: 'cloudinary',
+        });
+      } catch (cloudErr) {
+        console.warn('Cloudinary upload warning, saving to local public server store:', cloudErr);
+      }
+    }
+
+    // Direct local public server storage: completely bypasses CORS, zero third-party preflight blocks
+    const matches = fileData.match(/^data:([A-Za-z-+/0-9]+);base64,(.+)$/);
+    let buffer: Buffer;
+    let ext = 'bin';
+
+    if (matches && matches.length === 3) {
+      const mime = matches[1];
+      buffer = Buffer.from(matches[2], 'base64');
+      if (fileName && fileName.includes('.')) {
+        ext = fileName.split('.').pop() || 'bin';
+      } else {
+        ext = mime.split('/')[1] || 'bin';
+      }
+    } else {
+      buffer = Buffer.from(fileData, 'base64');
+      if (fileName && fileName.includes('.')) {
+        ext = fileName.split('.').pop() || 'bin';
+      }
+    }
+
+    const cleanBaseName = fileName ? fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_') : 'file';
+    const uniqueFileName = `${Date.now()}_${cleanBaseName}.${ext}`;
+    const filePath = path.join(uploadsDir, uniqueFileName);
+    fs.writeFileSync(filePath, buffer);
+
+    const publicUrl = `/uploads/${uniqueFileName}`;
+    return res.json({
+      url: publicUrl,
+      provider: 'local_server',
+    });
+  } catch (err: any) {
+    console.error('Upload processing error:', err);
+    return res.status(500).json({ error: err?.message || 'Failed to process file upload' });
+  }
+});
 
 // API route for AI Tutor providing real radiography answers via Gemini
 app.post('/api/ai-tutor', async (req, res) => {

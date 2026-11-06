@@ -37,7 +37,7 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
   const handleRegister = () => {
     if (!requireAuth({
       title: 'Sign In to Register for Classes',
-      message: 'Sign in or create a free account to register for live cohorts, access class materials, and earn accredited CPD credits.',
+      message: 'Sign in or create a free account to register for live cohorts, participate in live Q&A, and access class materials.',
       actionText: 'Register for Live Class',
     })) {
       return;
@@ -135,7 +135,7 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
                 {liveClass.price || 'FREE'}
               </span>
               <span className="px-2.5 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
-                {liveClass.cpdCredits || '2.0 CPD Points'}
+                {liveClass.modality ? `${liveClass.modality.toUpperCase()} Session` : 'Live Masterclass'}
               </span>
               {liveClass.venue && (
                 <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">

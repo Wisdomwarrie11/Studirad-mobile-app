@@ -136,14 +136,14 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
               </div>
             </div>
 
-            {/* CPD Credits Metric */}
+            {/* Enrolled Courses Metric */}
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
               <span className="text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5">
                 <Award className="w-4 h-4 text-[#FF7F32]" />
-                <span>Verified CPD Credits</span>
+                <span>Enrolled Courses</span>
               </span>
               <span className="font-bold text-[#002147] dark:text-[#38BDF8] font-mono">
-                {(typeof currentUser?.cpdCredits === 'number' ? currentUser.cpdCredits : 0).toFixed(1)} hrs
+                {(currentUser?.courses?.length || currentUser?.enrolledCourseIds?.length || 0)} active
               </span>
             </div>
           </div>

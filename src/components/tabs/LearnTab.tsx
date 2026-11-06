@@ -24,7 +24,8 @@ import {
   HelpCircle,
   Award,
   WifiOff,
-  Download
+  Download,
+  Heart
 } from 'lucide-react';
 import { OfflineStudyPackModal } from '../modals/OfflineStudyPackModal';
 import { getYouTubeThumbnail } from '../../utils/youtube';
@@ -108,6 +109,28 @@ export const LearnTab: React.FC<LearnTabProps> = ({
 
   // --- Courses State (Real-time Firestore) ---
   const [coursesList, setCoursesList] = useState<Course[]>([]);
+  const [likedCourses, setLikedCourses] = useState<Record<string, boolean>>(() => {
+    try {
+      const keys = Object.keys(localStorage).filter(k => k.startsWith('studirad_liked_course_'));
+      const obj: Record<string, boolean> = {};
+      keys.forEach(k => {
+        const id = k.replace('studirad_liked_course_', '');
+        obj[id] = localStorage.getItem(k) === 'true';
+      });
+      return obj;
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleCourseLike = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = !likedCourses[id];
+    setLikedCourses(prev => ({ ...prev, [id]: next }));
+    try {
+      localStorage.setItem(`studirad_liked_course_${id}`, String(next));
+    } catch {}
+  };
 
   // Authentication guard modal
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -619,7 +642,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                       className="bg-white dark:bg-[#121824] rounded-3xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-[#002147] dark:hover:border-slate-600 transition-all cursor-pointer flex flex-col justify-between group"
                     >
                       <div className="space-y-3">
-                        {/* Course Image / Thumbnail with Video Badge */}
+                        {/* Course Image / Thumbnail with Video Badge & Like Button */}
                         <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-slate-900">
                           <img
                             src={(course.videoUrl ? getYouTubeThumbnail(course.videoUrl) : null) || course.image || classesImg}
@@ -630,6 +653,21 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                               (e.target as HTMLImageElement).src = classesImg;
                             }}
                           />
+
+                          {/* Floating Like Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => toggleCourseLike(course.id, e)}
+                            className={`absolute top-2.5 right-2.5 z-10 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all cursor-pointer ${
+                              likedCourses[course.id]
+                                ? 'bg-rose-500 text-white shadow-md'
+                                : 'bg-black/40 hover:bg-black/60 text-white'
+                            }`}
+                            title={likedCourses[course.id] ? 'Unlike Course' : 'Like Course'}
+                          >
+                            <Heart className={`w-4 h-4 ${likedCourses[course.id] ? 'fill-white text-white' : ''}`} />
+                          </button>
+
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-3">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-white/20 backdrop-blur-md text-white">
@@ -676,12 +714,10 @@ export const LearnTab: React.FC<LearnTabProps> = ({
 
                         {/* Badges for Curricular Features */}
                         <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[11px]">
-                          {course.cpdCredits ? (
-                            <span className="px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                              <Award className="w-3 h-3" />
-                              <span>{course.cpdCredits} CPD</span>
-                            </span>
-                          ) : null}
+                          <span className="px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                            <Award className="w-3 h-3" />
+                            <span>Certificate Included</span>
+                          </span>
 
                           {modulesCount > 0 && (
                             <span className="px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 font-semibold flex items-center gap-1">
@@ -789,7 +825,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {authModalReason === 'class'
-                  ? 'Sign in or create your free account to register for live cohorts and track CPD credits.'
+                  ? 'Sign in or create your free account to register for live cohort masterclasses.'
                   : 'Sign in or create your free account to access full study materials and video lectures.'}
               </p>
             </div>

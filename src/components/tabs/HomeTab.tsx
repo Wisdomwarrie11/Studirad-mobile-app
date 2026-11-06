@@ -565,7 +565,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                         </span>
                       </div>
                       <span className="text-xs text-slate-300 font-medium">
-                        {cls.cpdCredits}
+                        {cls.duration || '50 min'}
                       </span>
                     </div>
 

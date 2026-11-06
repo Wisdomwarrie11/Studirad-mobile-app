@@ -291,7 +291,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({
                         <span className="text-[10px] font-bold uppercase text-[#FF7F32]">
                           {c.modality?.toUpperCase() || c.category}
                         </span>
-                        <span className="text-[10px] text-slate-400">· {c.cpdCredits}</span>
+                        <span className="text-[10px] text-slate-400">· {c.duration || 'Self-Paced'}</span>
                       </div>
                       <h3 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-[#002147] dark:group-hover:text-[#38BDF8] transition-colors">
                         {c.title}

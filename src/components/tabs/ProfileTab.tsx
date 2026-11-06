@@ -172,7 +172,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
             Account & Profile
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Real-time verified CPD records, enrolled courses, and clinical affiliations
+            Enrolled courses, learning progress, and clinical affiliations
           </p>
         </header>
 
@@ -191,7 +191,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                 </div>
               </div>
               <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-                Sign in or create your free account to enroll in live masterclasses, save courses, track certified CPD hours, and request academic research assistance.
+                Sign in or create your free account to enroll in live masterclasses, save courses, track your learning progress, and request academic research assistance.
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
                 <button
@@ -230,8 +230,8 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                     <Award className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Certified CPD Tracking</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Record verified professional hours for annual radiography board licensing.</p>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Course Certificates</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Take quizzes, track real-time completion, and earn verified certificates.</p>
                   </div>
                 </div>
 
@@ -309,7 +309,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                 </div>
               </div>
 
-              {/* 2. Verified CPD Credits Card */}
+              {/* 2. Course Progress & Certificates Card */}
             <div className="w-full bg-white dark:bg-[#121824] rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -318,38 +318,24 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                   </div>
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      Verified CPD Credits
+                      Enrolled Courses & Progress
                     </h3>
                     <span className="text-lg font-extrabold text-slate-900 dark:text-white">
-                      {cpdHours.toFixed(1)} CPD Points
+                      {currentUser?.courses?.length || 0} Courses Enrolled
                     </span>
                   </div>
                 </div>
 
-                {cpdHours > 0 && (
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold">
-                    Verified
-                  </span>
-                )}
+                <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold">
+                  Active
+                </span>
               </div>
 
-              {cpdHours > 0 ? (
-                <div className="space-y-1.5">
-                  <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-[#002147] to-[#FF7F32] rounded-full transition-all duration-300"
-                      style={{ width: `${Math.min(100, (cpdHours / 30) * 100)}%` }}
-                    />
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Credits earned towards your statutory annual professional development record.
-                  </p>
-                </div>
-              ) : (
-                <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-                  No CPD credits earned yet. Complete accredited classes or courses in the Learn tab to earn verifiable credits.
+              <div className="space-y-1.5">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Track lesson completions, pass knowledge check quizzes, and earn verifiable course certificates.
                 </p>
-              )}
+              </div>
             </div>
 
             {/* 3. Learning Interests & Specialties */}

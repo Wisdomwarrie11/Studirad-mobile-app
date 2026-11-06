@@ -29,7 +29,7 @@ import {
   deleteMaterialFromFirestore,
   pushOfficialClassesToFirestore
 } from '../../services/firebaseDataService';
-import { uploadFileToFirebaseStorage } from '../../firebase';
+import { uploadFileToCloudinary } from '../../services/cloudinaryService';
 import { Wordmark } from '../brand/Wordmark';
 import { 
   BookOpen, 
@@ -500,7 +500,7 @@ export const AdminDashboardScreen: React.FC = () => {
 
         if (materialForm.submissionType === 'file' && materialForm.selectedFile) {
           // Upload directly to Firebase Storage
-          resourceUrl = await uploadFileToFirebaseStorage(materialForm.selectedFile, 'materials');
+          resourceUrl = await uploadFileToCloudinary(materialForm.selectedFile, 'materials');
         }
 
         if (!resourceUrl) {
@@ -1440,12 +1440,12 @@ export const AdminDashboardScreen: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-300 mb-1">CPD Credits</label>
+                      <label className="block font-semibold text-slate-300 mb-1">Certificate / Tag</label>
                       <input
                         type="text"
                         value={courseForm.cpdCredits}
                         onChange={(e) => setCourseForm({ ...courseForm, cpdCredits: e.target.value })}
-                        placeholder="e.g. 3.0 CPD Points"
+                        placeholder="e.g. Verified Certificate"
                         className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
                       />
                     </div>
@@ -1545,7 +1545,7 @@ export const AdminDashboardScreen: React.FC = () => {
                               if (!file) return;
                               setIsUploadingCourseImg(true);
                               try {
-                                const url = await uploadFileToFirebaseStorage(file, 'course_covers');
+                                const url = await uploadFileToCloudinary(file, 'course_covers');
                                 setCourseForm((prev) => ({ ...prev, image: url }));
                               } finally {
                                 setIsUploadingCourseImg(false);
@@ -1841,7 +1841,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         setIsUploadingMaterialFile(true);
                         try {
                           for (const file of files) {
-                            const url = await uploadFileToFirebaseStorage(file, 'course_materials');
+                            const url = await uploadFileToCloudinary(file, 'course_materials');
                             const ext = file.name.split('.').pop()?.toLowerCase() || '';
                             const detectedType: 'pdf' | 'doc' | 'video' | 'link' = 
                               ext === 'pdf' ? 'pdf' :
@@ -1874,7 +1874,7 @@ export const AdminDashboardScreen: React.FC = () => {
                           for (const item of fileItems) {
                             const file = item.getAsFile();
                             if (!file) continue;
-                            const url = await uploadFileToFirebaseStorage(file, 'course_materials');
+                            const url = await uploadFileToCloudinary(file, 'course_materials');
                             const ext = file.name.split('.').pop()?.toLowerCase() || '';
                             const detectedType: 'pdf' | 'doc' | 'video' | 'link' = 
                               ext === 'pdf' ? 'pdf' :
@@ -1925,7 +1925,7 @@ export const AdminDashboardScreen: React.FC = () => {
                             setIsUploadingMaterialFile(true);
                             try {
                               for (const file of files) {
-                                const url = await uploadFileToFirebaseStorage(file, 'course_materials');
+                                const url = await uploadFileToCloudinary(file, 'course_materials');
                                 const ext = file.name.split('.').pop()?.toLowerCase() || '';
                                 const detectedType: 'pdf' | 'doc' | 'video' | 'link' = 
                                   ext === 'pdf' ? 'pdf' :
@@ -2415,12 +2415,12 @@ export const AdminDashboardScreen: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">CPD Credits</label>
+                  <label className="block font-semibold text-slate-300 mb-1">Certificate / Tag</label>
                   <input
                     type="text"
                     value={classForm.cpdCredits}
                     onChange={(e) => setClassForm({ ...classForm, cpdCredits: e.target.value })}
-                    placeholder="1.5 CPD Hours"
+                    placeholder="Attendance Certificate"
                     className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
                   />
                 </div>
@@ -2490,7 +2490,7 @@ export const AdminDashboardScreen: React.FC = () => {
                             if (!file) return;
                             setIsUploadingClassImg(true);
                             try {
-                              const url = await uploadFileToFirebaseStorage(file, 'class_covers');
+                              const url = await uploadFileToCloudinary(file, 'class_covers');
                               setClassForm((prev) => ({ ...prev, image: url }));
                             } finally {
                               setIsUploadingClassImg(false);

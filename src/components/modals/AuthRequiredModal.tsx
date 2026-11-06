@@ -103,7 +103,7 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>Register for live expert cohorts & earn verified CPD credits</span>
+                <span>Register for live expert cohorts & earn course certificates</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />

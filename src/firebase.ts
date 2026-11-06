@@ -53,30 +53,19 @@ const existingAppletApp = getApps().find((a) => a.name === 'appletApp');
 export const appletApp: FirebaseApp = existingAppletApp || initializeApp(appletConfig, 'appletApp');
 export const appletDb: Firestore = getFirestore(appletApp, appletConfig.firestoreDatabaseId);
 
+import { uploadFileToCloudinary } from './services/cloudinaryService';
+
 /**
- * Upload a file directly to Firebase Storage (studirad-platform-new)
- * and return the persistent download URL for Firestore storage.
+ * Upload a file directly to Cloudinary storage
+ * and return the persistent public URL for Firestore records.
  */
 export async function uploadFileToFirebaseStorage(
   file: File,
   folder: string = 'materials'
 ): Promise<string> {
-  try {
-    const fileExt = file.name.split('.').pop() || 'dat';
-    const cleanName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-    const storageRef = ref(storage, `${folder}/${cleanName}`);
-    const snapshot = await uploadBytes(storageRef, file);
-    return await getDownloadURL(snapshot.ref);
-  } catch (err) {
-    console.warn('Firebase Storage upload notice, using persistent base64 data URL:', err);
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => resolve(URL.createObjectURL(file));
-      reader.readAsDataURL(file);
-    });
-  }
+  return await uploadFileToCloudinary(file, folder);
 }
+
 
 // Connection test
 async function testConnection() {

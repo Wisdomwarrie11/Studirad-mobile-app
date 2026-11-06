@@ -67,7 +67,7 @@ export const MainAppShell: React.FC = () => {
   const handleOpenPlayer = (course: Course) => {
     if (!requireAuth({
       title: 'Sign In to Stream Courses',
-      message: 'Create a free account or sign in to watch comprehensive video lecture modules, access study attachments, and track CPD credits.',
+      message: 'Create a free account or sign in to watch comprehensive video lecture modules, access study attachments, and track course progress.',
       actionText: 'Watch Course',
     })) {
       return;

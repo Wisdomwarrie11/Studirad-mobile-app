@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Course } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { enrollUserInCourse } from '../../services/firebaseDataService';
@@ -11,7 +11,8 @@ import {
   CheckCircle2, 
   Play, 
   BookOpen, 
-  Tv
+  Tv,
+  Heart
 } from 'lucide-react';
 
 interface CourseDetailsModalProps {
@@ -26,7 +27,24 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
   onOpenPlayer,
 }) => {
   const { currentUser, requireAuth } = useAuth();
+  const [liked, setLiked] = useState(false);
+
+  useEffect(() => {
+    if (course?.id) {
+      const saved = localStorage.getItem(`studirad_liked_course_${course.id}`);
+      setLiked(saved === 'true');
+    }
+  }, [course?.id]);
+
   if (!course) return null;
+
+  const toggleLike = () => {
+    const next = !liked;
+    setLiked(next);
+    if (course?.id) {
+      localStorage.setItem(`studirad_liked_course_${course.id}`, String(next));
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity animate-fadeIn text-slate-900 dark:text-slate-100 select-none">
@@ -44,12 +62,26 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
               Recorded Video Course
             </span>
           </div>
-          <button
-            onClick={onClose}
-            className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleLike}
+              className={`p-2 rounded-full border transition-all cursor-pointer ${
+                liked
+                  ? 'border-rose-500/30 bg-rose-50 dark:bg-rose-950/40 text-rose-500'
+                  : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-slate-400 hover:text-slate-700 dark:hover:text-white'
+              }`}
+              title={liked ? 'Unlike Course' : 'Like Course'}
+            >
+              <Heart className={`w-4 h-4 ${liked ? 'fill-rose-500 text-rose-500' : ''}`} />
+            </button>
+            <button
+              onClick={onClose}
+              className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Content */}
@@ -70,8 +102,8 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
                 <span className="px-2.5 py-0.5 rounded-lg bg-[#FF7F32] text-white text-xs font-bold">
                   {course.isFree ? 'Free Access' : course.price}
                 </span>
-                <span className="px-2.5 py-0.5 rounded-lg bg-black/60 text-white text-xs font-semibold">
-                  {course.cpdCredits}
+                <span className="px-2.5 py-0.5 rounded-lg bg-black/60 text-white text-xs font-semibold uppercase">
+                  {course.modality || 'Clinical'}
                 </span>
               </div>
               <h2 className="text-lg sm:text-xl font-bold text-white leading-tight">
@@ -109,17 +141,17 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
             <div className="p-3 rounded-2xl bg-white dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 shadow-xs">
               <Clock className="w-4 h-4 text-slate-400 mx-auto mb-1" />
               <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs sm:text-sm">{course.duration}</span>
-              <span className="text-xs text-slate-400">Paced</span>
+              <span className="text-xs text-slate-400">Self-Paced</span>
             </div>
             <div className="p-3 rounded-2xl bg-white dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 shadow-xs">
               <BookOpen className="w-4 h-4 text-slate-400 mx-auto mb-1" />
               <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs sm:text-sm">{course.modules.length} Modules</span>
-              <span className="text-xs text-slate-400">Recorded</span>
+              <span className="text-xs text-slate-400">Lessons & Quiz</span>
             </div>
             <div className="p-3 rounded-2xl bg-white dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 shadow-xs">
               <Award className="w-4 h-4 text-[#FF7F32] mx-auto mb-1" />
-              <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs sm:text-sm">{course.cpdCredits}</span>
-              <span className="text-xs text-slate-400">Accredited</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs sm:text-sm">Certificate</span>
+              <span className="text-xs text-slate-400">Included</span>
             </div>
           </div>
 
@@ -185,7 +217,7 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
             onClick={() => {
               if (!requireAuth({
                 title: 'Sign In to Watch Course',
-                message: 'Create a free account or sign in to watch full curriculum video lectures and track accredited CPD credits.',
+                message: 'Create a free account or sign in to watch full curriculum video lectures, take quizzes, and earn course certificates.',
                 actionText: 'Watch Course',
               })) {
                 return;

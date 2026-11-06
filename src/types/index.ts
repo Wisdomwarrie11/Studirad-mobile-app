@@ -36,6 +36,7 @@ export interface UserProfile {
   createdAt: string;
   cpdCredits?: number;
   enrolledCourseIds?: string[];
+  courses?: EnrolledCourseRecord[];
   savedOpportunityIds?: (number | string)[];
   quizScores?: { quizTitle: string; score: number; total: number; date: string }[];
   bookings?: TutorBooking[];
@@ -147,6 +148,7 @@ export interface Course {
   links?: CourseMaterialLink[];
   quiz?: CourseQuizQuestion[];
   progressPercent?: number;
+  likes?: number;
   modality?: ClinicalModality;
   createdAt?: string | number;
   updatedAt?: string | number;
