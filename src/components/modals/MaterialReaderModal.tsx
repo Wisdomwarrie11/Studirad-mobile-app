@@ -176,15 +176,13 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-xs transition-opacity animate-fadeIn text-slate-900 dark:text-slate-100 select-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xs transition-opacity animate-fadeIn text-slate-900 dark:text-slate-100 select-none">
       <div className="absolute inset-0" onClick={onClose}></div>
 
       <div 
-        className={`relative w-full ${
-          isFullscreen 
-            ? 'max-w-6xl h-[96vh]' 
-            : 'max-w-3xl max-h-[92vh]'
-        } bg-white dark:bg-[#121824] rounded-t-3xl sm:rounded-3xl flex flex-col shadow-2xl z-10 overflow-hidden text-left animate-slideUp border border-slate-200 dark:border-slate-800 transition-all duration-300`}
+        className={`relative w-full h-full sm:h-[96vh] ${
+          isFullscreen ? 'sm:max-w-7xl' : 'sm:max-w-5xl md:max-w-6xl'
+        } bg-white dark:bg-[#121824] rounded-none sm:rounded-3xl flex flex-col shadow-2xl z-10 overflow-hidden text-left animate-slideUp border-0 sm:border border-slate-200 dark:border-slate-800 transition-all duration-300`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}

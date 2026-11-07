@@ -20,6 +20,7 @@ export type ProfessionalRole =
   | 'Imaging Technologist' 
   | 'Clinical Educator' 
   | 'Radiology Resident'
+  | 'Clinical Instructor / Tutor'
   | 'Guest Explorer'
   | 'Administrator';
 
@@ -31,6 +32,12 @@ export interface UserProfile {
   selectedTopics: string[];
   isGuest: boolean;
   isAdmin?: boolean;
+  isInstructor?: boolean;
+  instructorStatus?: 'none' | 'pending' | 'approved';
+  instructorBio?: string;
+  instructorAcademicBackground?: string;
+  instructorExpertise?: string[];
+  instructorExperience?: string;
   institution?: string;
   avatarUrl?: string;
   createdAt: string;
@@ -40,6 +47,71 @@ export interface UserProfile {
   savedOpportunityIds?: (number | string)[];
   quizScores?: { quizTitle: string; score: number; total: number; date: string }[];
   bookings?: TutorBooking[];
+}
+
+export interface TutorApplication {
+  id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  bio: string;
+  academicBackground: string;
+  areaOfExpertise: string[];
+  experienceYears: string;
+  summary: string;
+  phone?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  appliedAt: string | number;
+  reviewedAt?: string | number;
+  reviewedBy?: string;
+  feedbackNotes?: string;
+}
+
+export interface TutorAvailability {
+  enabled: boolean;
+  days: string[];
+  timeSlots: string[];
+  minDurationMinutes: number; // 30
+  maxDurationMinutes: number; // 60
+  ratePer30Min: number; // base charge for 30 minutes
+  currency: string;
+  instructorBioSnippet?: string;
+}
+
+export interface TutorialRequest {
+  id: string;
+  courseId: string;
+  courseTitle: string;
+  instructorId?: string;
+  instructorName: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  selectedDay: string;
+  selectedTimeSlot: string;
+  durationMinutes: number; // 30, 45, 60
+  calculatedRate: number; // ratePer30Min * (durationMinutes / 30)
+  currency: string;
+  specificFocusTopic: string;
+  status: 'pending' | 'confirmed' | 'completed' | 'declined';
+  createdAt: string | number;
+  adminFeedback?: string;
+  meetingLink?: string;
+}
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'tutor_application' | 'course_submission' | 'tutorial_request' | 'class' | 'job' | 'system' | 'quiz' | 'booking';
+  targetRole?: 'admin' | 'instructor' | 'user';
+  targetUserId?: string;
+  relatedId?: string;
+  read: boolean;
+  createdAt?: string | number;
+  timestamp?: string;
+  linkTab?: string;
+  actionTarget?: { tab: NavTab; itemId?: string };
 }
 
 export interface EnrolledCourseRecord {
@@ -74,16 +146,6 @@ export interface OnboardingSlide {
   description: string;
   image: string;
   badge: string;
-}
-
-export interface AppNotification {
-  id: string;
-  title: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-  type: 'class' | 'job' | 'system' | 'quiz' | 'booking';
-  actionTarget?: { tab: NavTab; itemId?: string };
 }
 
 export interface CourseMaterialLink {
@@ -150,6 +212,11 @@ export interface Course {
   progressPercent?: number;
   likes?: number;
   modality?: ClinicalModality;
+  status?: 'published' | 'pending_approval' | 'draft';
+  tutorAvailability?: TutorAvailability;
+  creatorId?: string;
+  creatorRole?: 'admin' | 'instructor';
+  creatorName?: string;
   createdAt?: string | number;
   updatedAt?: string | number;
 }

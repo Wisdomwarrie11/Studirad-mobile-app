@@ -15,6 +15,8 @@ import {
   Heart
 } from 'lucide-react';
 
+import { PrivateTutorialBookingModal } from './PrivateTutorialBookingModal';
+
 interface CourseDetailsModalProps {
   course: Course | null;
   onClose: () => void;
@@ -28,6 +30,7 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
 }) => {
   const { currentUser, requireAuth } = useAuth();
   const [liked, setLiked] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
 
   useEffect(() => {
     if (course?.id) {
@@ -176,6 +179,55 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
             </ul>
           </div>
 
+          {/* Available to Tutor Rundown */}
+          {course.tutorAvailability?.enabled && (
+            <div className="p-4 rounded-2xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/60 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <h4 className="text-xs sm:text-sm font-bold text-[#002147] dark:text-[#FF7F32]">
+                    Available to Tutor
+                  </h4>
+                </div>
+                <span className="text-xs font-extrabold text-[#002147] dark:text-white px-2.5 py-1 rounded-lg bg-white dark:bg-[#121824] border border-orange-200 dark:border-orange-800/60 shadow-2xs">
+                  {course.tutorAvailability.currency || '£'}{course.tutorAvailability.ratePer30Min} / 30 min
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                {course.instructor} is available for bespoke 1-on-1 private tutorials to guide you through this course, review case studies, and clarify radiologic concepts.
+              </p>
+
+              <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 dark:text-slate-400">
+                <div className="p-2 rounded-xl bg-white/80 dark:bg-[#121824]/80 border border-orange-100 dark:border-orange-900/40">
+                  <span className="font-bold text-slate-700 dark:text-slate-300 block mb-0.5">Available Days:</span>
+                  <span className="truncate block">{course.tutorAvailability.days?.join(', ') || 'Flexible'}</span>
+                </div>
+                <div className="p-2 rounded-xl bg-white/80 dark:bg-[#121824]/80 border border-orange-100 dark:border-orange-900/40">
+                  <span className="font-bold text-slate-700 dark:text-slate-300 block mb-0.5">Duration:</span>
+                  <span>30 min – 1 hr</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!requireAuth({
+                    title: 'Sign In to Request Tutorial',
+                    message: 'Please sign in or create an account to book a private 1-on-1 session with this course instructor.',
+                    actionText: 'Book Tutorial'
+                  })) {
+                    return;
+                  }
+                  setShowBookingModal(true);
+                }}
+                className="w-full py-2.5 px-3 rounded-xl bg-[#002147] hover:bg-[#001733] dark:bg-[#FF7F32] dark:hover:bg-[#ff8f4a] text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+              >
+                <span>Request Private Tutorial</span>
+              </button>
+            </div>
+          )}
+
           {/* Curriculum Preview */}
           <div className="space-y-2">
             <h4 className="text-sm font-bold text-slate-900 dark:text-white">Recorded Modules Breakdown</h4>
@@ -235,6 +287,13 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Private Tutorial Booking Modal */}
+      <PrivateTutorialBookingModal
+        course={course}
+        isOpen={showBookingModal}
+        onClose={() => setShowBookingModal(false)}
+      />
     </div>
   );
 };

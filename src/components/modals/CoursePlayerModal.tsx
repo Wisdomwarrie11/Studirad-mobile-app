@@ -283,10 +283,10 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xs transition-opacity text-slate-900 dark:text-slate-100 select-none">
       <div 
-        className={`relative w-full h-full bg-white dark:bg-[#121824] flex flex-col shadow-2xl overflow-hidden text-left border border-slate-200 dark:border-slate-800 transition-all ${
+        className={`relative w-full h-full bg-white dark:bg-[#121824] flex flex-col shadow-2xl overflow-hidden text-left border-0 sm:border border-slate-200 dark:border-slate-800 transition-all ${
           isVideoExpanded 
             ? 'max-w-none max-h-none rounded-none' 
-            : 'max-w-2xl max-h-[94vh] rounded-t-3xl sm:rounded-3xl animate-scaleIn'
+            : 'sm:max-w-4xl md:max-w-5xl sm:h-[96vh] rounded-none sm:rounded-3xl animate-scaleIn'
         }`}
         onClick={(e) => e.stopPropagation()}
       >

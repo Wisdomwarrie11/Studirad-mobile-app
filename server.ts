@@ -22,14 +22,18 @@ if (!fs.existsSync(uploadsDir)) {
 }
 app.use('/uploads', express.static(uploadsDir));
 
-// Configure Cloudinary if credentials are provided in environment
+// Configure Cloudinary with environment variables or user provided settings
+const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'du87lncx2';
+const API_KEY = process.env.CLOUDINARY_API_KEY || '752912421192271';
+const API_SECRET = process.env.CLOUDINARY_API_SECRET || 'hYQULIZP5XJNiCsjAIGVuN32eA8';
+
 if (process.env.CLOUDINARY_URL) {
   cloudinary.config();
-} else if (process.env.CLOUDINARY_CLOUD_NAME) {
+} else if (CLOUD_NAME && API_KEY) {
   cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
+    cloud_name: CLOUD_NAME,
+    api_key: API_KEY,
+    api_secret: API_SECRET,
     secure: true,
   });
 }
@@ -44,7 +48,7 @@ app.post('/api/upload', async (req, res) => {
 
     const hasCloudinary = Boolean(
       process.env.CLOUDINARY_URL || 
-      (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY)
+      (CLOUD_NAME && API_KEY)
     );
 
     // Try Cloudinary first if configured

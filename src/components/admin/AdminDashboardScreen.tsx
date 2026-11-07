@@ -10,7 +10,9 @@ import {
   CourseMaterialLink,
   CourseQuizQuestion,
   CourseModule,
-  Lesson 
+  Lesson,
+  TutorApplication,
+  TutorialRequest 
 } from '../../types';
 import { getYouTubeEmbedUrl, extractYouTubeId, getYouTubeThumbnail, getVideoEmbedUrl, isPlayableVideoUrl } from '../../utils/youtube';
 import { 
@@ -27,7 +29,14 @@ import {
   pushMaterialToFirestore,
   pushVideoToFirestore,
   deleteMaterialFromFirestore,
-  pushOfficialClassesToFirestore
+  pushOfficialClassesToFirestore,
+  subscribeAdminNotifications,
+  markNotificationAsRead,
+  subscribeTutorApplications,
+  reviewTutorApplication,
+  subscribeTutorialRequests,
+  updateTutorialRequestStatus,
+  approveCourseByAdmin
 } from '../../services/firebaseDataService';
 import { uploadFileToCloudinary } from '../../services/cloudinaryService';
 import { Wordmark } from '../brand/Wordmark';
@@ -68,13 +77,16 @@ import {
   ChevronUp,
   ChevronRight,
   Info,
-  ImageIcon
+  ImageIcon,
+  Bell,
+  GraduationCap,
+  UserCheck
 } from 'lucide-react';
 import classesImg from '../../assets/images/onboarding_classes_1792606674536.jpg';
 import radiographyImg from '../../assets/images/onboarding_radiography_1792606674447.jpg';
 import careersImg from '../../assets/images/onboarding_careers_1792606674049.jpg';
 
-type AdminTab = 'courses' | 'classes' | 'opportunities' | 'materials';
+type AdminTab = 'courses' | 'classes' | 'opportunities' | 'materials' | 'tutors' | 'tutorials';
 
 const COURSE_CATEGORIES = [
   'Anatomy',
@@ -114,8 +126,18 @@ export const AdminDashboardScreen: React.FC = () => {
   const [classes, setClasses] = useState<LiveClass[]>([]);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [materials, setMaterials] = useState<ClinicalResource[]>([]);
+  const [tutorApplications, setTutorApplications] = useState<TutorApplication[]>([]);
+  const [tutorialRequests, setTutorialRequests] = useState<TutorialRequest[]>([]);
+  const [adminNotifications, setAdminNotifications] = useState<any[]>([]);
+  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
 
-  // Subscriptions to live projects (studirad-platform-new and studirad-admin-portal)
+  // Meeting Link & Feedback Modals state
+  const [selectedTutorialForMeeting, setSelectedTutorialForMeeting] = useState<TutorialRequest | null>(null);
+  const [meetingLinkInput, setMeetingLinkInput] = useState('https://meet.studirad.org/room/tutorial-');
+  const [selectedAppForFeedback, setSelectedAppForFeedback] = useState<TutorApplication | null>(null);
+  const [tutorFeedbackNotes, setTutorFeedbackNotes] = useState('');
+
+  // Subscriptions to live projects
   useEffect(() => {
     setIsSyncing(true);
     const unsubCourses = subscribeCourses((list) => {
@@ -131,12 +153,24 @@ export const AdminDashboardScreen: React.FC = () => {
     const unsubMats = subscribeMaterials((list) => {
       setMaterials(list);
     });
+    const unsubApps = subscribeTutorApplications((list) => {
+      setTutorApplications(list);
+    });
+    const unsubRequests = subscribeTutorialRequests((list) => {
+      setTutorialRequests(list);
+    });
+    const unsubNotifs = subscribeAdminNotifications((list) => {
+      setAdminNotifications(list);
+    });
 
     return () => {
       unsubCourses();
       unsubClasses();
       unsubOpps();
       unsubMats();
+      unsubApps();
+      unsubRequests();
+      unsubNotifs();
     };
   }, []);
 
@@ -160,7 +194,7 @@ export const AdminDashboardScreen: React.FC = () => {
   // ----------------------------------------------------
   // Form states: Course (Comprehensive Builder)
   // ----------------------------------------------------
-  type CourseModalTab = 'basics' | 'curriculum' | 'materials' | 'quiz';
+  type CourseModalTab = 'basics' | 'curriculum' | 'materials' | 'quiz' | 'availability';
   const [courseModalTab, setCourseModalTab] = useState<CourseModalTab>('basics');
 
   const [courseForm, setCourseForm] = useState<{
@@ -181,6 +215,12 @@ export const AdminDashboardScreen: React.FC = () => {
     materials: CourseMaterialLink[];
     links: CourseMaterialLink[];
     quiz: CourseQuizQuestion[];
+    availableToTutor: boolean;
+    tutoringDays: string[];
+    tutoringTimeSlots: string[];
+    ratePer30Min: number;
+    currency: string;
+    status: 'published' | 'pending_approval' | 'draft';
   }>({
     id: '',
     title: '',
@@ -189,7 +229,7 @@ export const AdminDashboardScreen: React.FC = () => {
     institution: 'StudiRad Clinical Academy',
     modality: 'xray' as ClinicalModality,
     duration: '3 Weeks · 2 hrs/week',
-    cpdCredits: '2.0 CPD Points',
+    cpdCredits: 'Course Certificate Included',
     price: 'Free with Membership',
     isFree: true,
     videoUrl: '',
@@ -199,6 +239,12 @@ export const AdminDashboardScreen: React.FC = () => {
     materials: [],
     links: [],
     quiz: [],
+    availableToTutor: true,
+    tutoringDays: ['Monday', 'Wednesday', 'Friday'],
+    tutoringTimeSlots: ['10:00 - 12:00 BST', '14:00 - 16:00 BST', '18:00 - 20:00 BST'],
+    ratePer30Min: 25,
+    currency: '£',
+    status: 'published',
   });
 
   const [isUploadingCourseImg, setIsUploadingCourseImg] = useState(false);
@@ -355,6 +401,16 @@ export const AdminDashboardScreen: React.FC = () => {
       materials: courseForm.materials || [],
       links: courseForm.links || [],
       quiz: courseForm.quiz || [],
+      tutorAvailability: {
+        enabled: courseForm.availableToTutor,
+        days: courseForm.tutoringDays,
+        timeSlots: courseForm.tutoringTimeSlots,
+        minDurationMinutes: 30,
+        maxDurationMinutes: 60,
+        ratePer30Min: courseForm.ratePer30Min,
+        currency: courseForm.currency,
+      },
+      status: courseForm.status || 'published',
     };
 
     const res = await pushCourseToFirestore(newCourse);
@@ -618,6 +674,82 @@ export const AdminDashboardScreen: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Notification Bell */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowNotificationsDropdown((prev) => !prev)}
+              className="relative p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors cursor-pointer flex items-center justify-center"
+              title="Admin Notifications"
+            >
+              <Bell className="w-4 h-4 text-[#FF7F32]" />
+              {adminNotifications.filter((n) => !n.read).length > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white font-bold text-[10px] flex items-center justify-center animate-pulse">
+                  {adminNotifications.filter((n) => !n.read).length}
+                </span>
+              )}
+            </button>
+
+            {/* Notifications Dropdown */}
+            {showNotificationsDropdown && (
+              <div 
+                className="absolute right-0 mt-2 w-80 sm:w-96 bg-[#161F30] rounded-2xl shadow-2xl border border-slate-700 p-3 z-50 text-left space-y-2 animate-scaleIn max-h-[80vh] flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800 px-1">
+                  <div className="flex items-center gap-1.5">
+                    <Bell className="w-3.5 h-3.5 text-[#FF7F32]" />
+                    <span className="font-bold text-xs text-white">Admin Notifications</span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-slate-400">
+                    {adminNotifications.filter((n) => !n.read).length} unread
+                  </span>
+                </div>
+
+                <div className="overflow-y-auto space-y-2 flex-1 max-h-72 no-scrollbar">
+                  {adminNotifications.length === 0 ? (
+                    <p className="text-xs text-slate-500 text-center py-6">
+                      No notifications yet
+                    </p>
+                  ) : (
+                    adminNotifications.map((n) => (
+                      <div
+                        key={n.id}
+                        onClick={async () => {
+                          await markNotificationAsRead(n.id);
+                          setShowNotificationsDropdown(false);
+                          if (n.linkTab && ['courses', 'classes', 'opportunities', 'materials', 'tutors', 'tutorials'].includes(n.linkTab)) {
+                            setActiveTab(n.linkTab as AdminTab);
+                          }
+                        }}
+                        className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                          n.read
+                            ? 'bg-slate-900/60 border-slate-800 text-slate-400'
+                            : 'bg-slate-800/90 border-[#FF7F32]/40 text-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between font-bold text-[11px] mb-0.5">
+                          <span className={n.read ? 'text-slate-300' : 'text-[#FF7F32]'}>
+                            {n.title}
+                          </span>
+                          {!n.read && (
+                            <span className="w-2 h-2 rounded-full bg-[#FF7F32] shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-[11px] leading-relaxed text-slate-300 line-clamp-2">
+                          {n.message}
+                        </p>
+                        <span className="text-[9px] text-slate-500 block mt-1">
+                          {n.createdAt ? new Date(n.createdAt).toLocaleString() : 'Recently'}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Switch to learner view */}
           <button
             onClick={() => setScreen('app')}
@@ -658,69 +790,122 @@ export const AdminDashboardScreen: React.FC = () => {
       {/* Main Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Metric Cards Banner */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div 
             onClick={() => setActiveTab('courses')}
-            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               activeTab === 'courses' 
                 ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10' 
                 : 'bg-[#121824] border-slate-800 hover:border-slate-700'
             }`}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-slate-400">Courses & Masterclasses</span>
-              <BookOpen className="w-4 h-4 text-[#FF7F32]" />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-semibold text-slate-400">Courses</span>
+              <BookOpen className="w-3.5 h-3.5 text-[#FF7F32]" />
             </div>
-            <div className="text-2xl font-bold font-mono text-white">{courses.length}</div>
-            <span className="text-[10px] text-slate-400 mt-1 block">Live in Learn & Home</span>
+            <div className="text-xl font-bold font-mono text-white flex items-center justify-between">
+              <span>{courses.length}</span>
+              {courses.filter((c) => c.status === 'pending_approval').length > 0 && (
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  {courses.filter((c) => c.status === 'pending_approval').length} pending
+                </span>
+              )}
+            </div>
+            <span className="text-[9px] text-slate-400 mt-1 block truncate">Learn Library</span>
           </div>
 
           <div 
             onClick={() => setActiveTab('classes')}
-            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               activeTab === 'classes' 
                 ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10' 
                 : 'bg-[#121824] border-slate-800 hover:border-slate-700'
             }`}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-slate-400">Live Cohort Classes</span>
-              <Video className="w-4 h-4 text-emerald-400" />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-semibold text-slate-400">Live Classes</span>
+              <Video className="w-3.5 h-3.5 text-emerald-400" />
             </div>
-            <div className="text-2xl font-bold font-mono text-white">{classes.length}</div>
-            <span className="text-[10px] text-slate-400 mt-1 block">Scheduled on calendar</span>
+            <div className="text-xl font-bold font-mono text-white">{classes.length}</div>
+            <span className="text-[9px] text-slate-400 mt-1 block truncate">Masterclasses</span>
           </div>
 
           <div 
             onClick={() => setActiveTab('opportunities')}
-            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               activeTab === 'opportunities' 
                 ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10' 
                 : 'bg-[#121824] border-slate-800 hover:border-slate-700'
             }`}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-slate-400">Opportunities (Jobs & Locums)</span>
-              <Briefcase className="w-4 h-4 text-blue-400" />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-semibold text-slate-400">Opportunities</span>
+              <Briefcase className="w-3.5 h-3.5 text-blue-400" />
             </div>
-            <div className="text-2xl font-bold font-mono text-white">{opportunities.length}</div>
-            <span className="text-[10px] text-slate-400 mt-1 block">Synced with admin-portal</span>
+            <div className="text-xl font-bold font-mono text-white">{opportunities.length}</div>
+            <span className="text-[9px] text-slate-400 mt-1 block truncate">Jobs & Locums</span>
           </div>
 
           <div 
             onClick={() => setActiveTab('materials')}
-            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               activeTab === 'materials' 
                 ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10' 
                 : 'bg-[#121824] border-slate-800 hover:border-slate-700'
             }`}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-slate-400">Clinical Materials & Videos</span>
-              <FileText className="w-4 h-4 text-amber-400" />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-semibold text-slate-400">Materials</span>
+              <FileText className="w-3.5 h-3.5 text-amber-400" />
             </div>
-            <div className="text-2xl font-bold font-mono text-white">{materials.length}</div>
-            <span className="text-[10px] text-slate-400 mt-1 block">Protocols, PDFs & Videos</span>
+            <div className="text-xl font-bold font-mono text-white">{materials.length}</div>
+            <span className="text-[9px] text-slate-400 mt-1 block truncate">Protocols & PDFs</span>
+          </div>
+
+          <div 
+            onClick={() => setActiveTab('tutors')}
+            className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
+              activeTab === 'tutors' 
+                ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10' 
+                : 'bg-[#121824] border-slate-800 hover:border-slate-700'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-semibold text-slate-400">Tutors</span>
+              <GraduationCap className="w-3.5 h-3.5 text-purple-400" />
+            </div>
+            <div className="text-xl font-bold font-mono text-white flex items-center justify-between">
+              <span>{tutorApplications.length}</span>
+              {tutorApplications.filter((a) => a.status === 'pending').length > 0 && (
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  {tutorApplications.filter((a) => a.status === 'pending').length} new
+                </span>
+              )}
+            </div>
+            <span className="text-[9px] text-slate-400 mt-1 block truncate">Faculty Register</span>
+          </div>
+
+          <div 
+            onClick={() => setActiveTab('tutorials')}
+            className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
+              activeTab === 'tutorials' 
+                ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10' 
+                : 'bg-[#121824] border-slate-800 hover:border-slate-700'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-semibold text-slate-400">Tutorials</span>
+              <UserCheck className="w-3.5 h-3.5 text-rose-400" />
+            </div>
+            <div className="text-xl font-bold font-mono text-white flex items-center justify-between">
+              <span>{tutorialRequests.length}</span>
+              {tutorialRequests.filter((r) => r.status === 'pending').length > 0 && (
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                  {tutorialRequests.filter((r) => r.status === 'pending').length} req
+                </span>
+              )}
+            </div>
+            <span className="text-[9px] text-slate-400 mt-1 block truncate">1-on-1 Requests</span>
           </div>
         </div>
 
@@ -730,11 +915,14 @@ export const AdminDashboardScreen: React.FC = () => {
           <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#121824] border border-slate-800 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab('courses')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'courses' ? 'bg-[#FF7F32] text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Courses
+              <span>Courses</span>
+              {courses.filter((c) => c.status === 'pending_approval').length > 0 && (
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+              )}
             </button>
             <button
               onClick={() => setActiveTab('classes')}
@@ -759,6 +947,32 @@ export const AdminDashboardScreen: React.FC = () => {
               }`}
             >
               Materials & Videos
+            </button>
+            <button
+              onClick={() => setActiveTab('tutors')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'tutors' ? 'bg-[#FF7F32] text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>Tutors Register</span>
+              {tutorApplications.filter((a) => a.status === 'pending').length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-purple-500 text-white text-[9px] font-bold">
+                  {tutorApplications.filter((a) => a.status === 'pending').length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('tutorials')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'tutorials' ? 'bg-[#FF7F32] text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>Tutorial Inquiries</span>
+              {tutorialRequests.filter((r) => r.status === 'pending').length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-bold">
+                  {tutorialRequests.filter((r) => r.status === 'pending').length}
+                </span>
+              )}
             </button>
           </div>
 
@@ -796,6 +1010,12 @@ export const AdminDashboardScreen: React.FC = () => {
                     materials: [],
                     links: [],
                     quiz: [],
+                    availableToTutor: true,
+                    tutoringDays: ['Monday', 'Wednesday', 'Friday'],
+                    tutoringTimeSlots: ['10:00 - 12:00 BST', '14:00 - 16:00 BST', '18:00 - 20:00 BST'],
+                    ratePer30Min: 25,
+                    currency: '£',
+                    status: 'published',
                   });
                   setCourseModalTab('basics');
                   setIsCourseModalOpen(true);
@@ -936,6 +1156,11 @@ export const AdminDashboardScreen: React.FC = () => {
                             <span className="px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-xs text-blue-400 text-[10px] font-bold uppercase tracking-wider">
                               {c.modality || 'General'}
                             </span>
+                            {c.status === 'pending_approval' && (
+                              <span className="px-2 py-0.5 rounded-md bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider animate-pulse">
+                                Pending Approval
+                              </span>
+                            )}
                           </div>
                           {c.videoUrl && (
                             <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-red-600/90 text-white text-[10px] font-bold flex items-center gap-1 shadow-sm">
@@ -976,6 +1201,13 @@ export const AdminDashboardScreen: React.FC = () => {
                           <span>{c.modules?.length || 1} {c.modules?.length === 1 ? 'Section' : 'Sections'}</span>
                         </span>
 
+                        {c.tutorAvailability?.enabled && (
+                          <span className="px-2 py-0.5 rounded bg-orange-500/15 text-[#FF7F32] border border-orange-500/30 text-[10px] font-semibold flex items-center gap-1">
+                            <UserCheck className="w-3 h-3" />
+                            <span>Tutor: {c.tutorAvailability.currency || '£'}{c.tutorAvailability.ratePer30Min}/30m</span>
+                          </span>
+                        )}
+
                         {(c.materials?.length || 0) + (c.links?.length || 0) > 0 && (
                           <span className="px-2 py-0.5 rounded bg-blue-950/50 text-blue-300 border border-blue-900/40 text-[10px] font-semibold flex items-center gap-1">
                             <FileText className="w-3 h-3" />
@@ -993,8 +1225,24 @@ export const AdminDashboardScreen: React.FC = () => {
                     </div>
 
                     <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                      <span>{c.cpdCredits}</span>
+                      <span className="text-[11px] font-medium text-slate-400">{c.duration || 'Flexible'}</span>
                       <div className="flex items-center gap-1.5">
+                        {c.status === 'pending_approval' && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const res = await approveCourseByAdmin(c.id, c.creatorId, c.title);
+                              if (res.success) {
+                                triggerSuccess(`Course "${c.title}" approved and published to all learners!`);
+                              }
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 shadow-sm transition-all cursor-pointer"
+                            title="Approve and make course live to students"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Approve</span>
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             setCourseForm({
@@ -1005,7 +1253,7 @@ export const AdminDashboardScreen: React.FC = () => {
                               institution: c.institution || '',
                               modality: c.modality || 'xray',
                               duration: c.duration || '',
-                              cpdCredits: c.cpdCredits || '',
+                              cpdCredits: c.cpdCredits || 'Course Certificate Included',
                               price: c.price || 'Free with Membership',
                               isFree: !!c.isFree,
                               videoUrl: c.videoUrl || '',
@@ -1015,18 +1263,24 @@ export const AdminDashboardScreen: React.FC = () => {
                               materials: c.materials || [],
                               links: c.links || [],
                               quiz: c.quiz || [],
+                              availableToTutor: c.tutorAvailability?.enabled ?? true,
+                              tutoringDays: c.tutorAvailability?.days || ['Monday', 'Wednesday', 'Friday'],
+                              tutoringTimeSlots: c.tutorAvailability?.timeSlots || ['10:00 - 12:00 BST', '14:00 - 16:00 BST', '18:00 - 20:00 BST'],
+                              ratePer30Min: c.tutorAvailability?.ratePer30Min || 25,
+                              currency: c.tutorAvailability?.currency || '£',
+                              status: c.status || 'published',
                             });
                             setCourseModalTab('basics');
                             setIsCourseModalOpen(true);
                           }}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
                           title="Manage & Edit Course, Modules, Materials & Quiz"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setItemToDelete({ type: 'courses', id: c.id, title: c.title })}
-                          className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-300 transition-colors"
+                          className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-300 transition-colors cursor-pointer"
                           title="Delete course"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1291,6 +1545,365 @@ export const AdminDashboardScreen: React.FC = () => {
             )}
           </div>
         )}
+
+        {/* ---------------------------------------------------- */}
+        {/* TAB 5: TUTORS & INSTRUCTORS REGISTER */}
+        {/* ---------------------------------------------------- */}
+        {activeTab === 'tutors' && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-base font-extrabold text-white">
+                  Tutor & Clinical Instructor Register
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Review applicant qualifications, verify clinical experience, and approve instructor privileges.
+                </p>
+              </div>
+              <span className="text-xs text-slate-400 font-semibold">
+                {tutorApplications.length} total applications ({tutorApplications.filter(a => a.status === 'pending').length} pending)
+              </span>
+            </div>
+
+            {tutorApplications.length === 0 ? (
+              <div className="p-12 text-center bg-[#121824] rounded-2xl border border-slate-800 text-slate-400 text-xs space-y-2">
+                <GraduationCap className="w-10 h-10 text-slate-600 mx-auto" />
+                <p className="font-semibold text-slate-300">No tutor applications submitted yet</p>
+                <p className="text-[11px] text-slate-500">
+                  When radiographers apply via the "Be a Tutor / Instructor" CTA on the user side, their submissions will be listed here for verification.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {tutorApplications
+                  .filter((app) => 
+                    !searchQuery.trim() || 
+                    app.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    app.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    app.academicBackground?.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map((app) => (
+                    <div
+                      key={app.id}
+                      className="p-5 rounded-2xl bg-[#121824] border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-all space-y-4 text-left"
+                    >
+                      <div className="space-y-3">
+                        {/* Header: Name, Status, Date */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#002147] to-[#0A3266] text-white flex items-center justify-center font-bold text-sm shrink-0">
+                              {app.fullName?.split(' ').map(n => n[0]).slice(0, 2).join('') || 'TR'}
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-extrabold text-white">
+                                {app.fullName}
+                              </h4>
+                              <p className="text-[11px] text-slate-400">
+                                {app.email} {app.phone ? `· ${app.phone}` : ''}
+                              </p>
+                            </div>
+                          </div>
+
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+                            app.status === 'approved'
+                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                              : app.status === 'rejected'
+                              ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                              : 'bg-amber-500/15 text-amber-300 border border-amber-500/30 animate-pulse'
+                          }`}>
+                            {app.status === 'approved' ? 'Approved Instructor' : app.status === 'rejected' ? 'Declined' : 'Pending Review'}
+                          </span>
+                        </div>
+
+                        {/* Qualifications & Experience */}
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80">
+                            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-0.5">
+                              Qualifications
+                            </span>
+                            <span className="font-semibold text-slate-200 line-clamp-2">
+                              {app.academicBackground}
+                            </span>
+                          </div>
+
+                          <div className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80">
+                            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-0.5">
+                              Experience
+                            </span>
+                            <span className="font-semibold text-slate-200">
+                              {app.experienceYears || '3+ years'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Modality Expertise Chips */}
+                        {app.areaOfExpertise && app.areaOfExpertise.length > 0 && (
+                          <div className="space-y-1">
+                            <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                              Clinical Expertise
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {app.areaOfExpertise.map((mod) => (
+                                <span
+                                  key={mod}
+                                  className="px-2 py-0.5 rounded-md bg-purple-950/40 text-purple-300 border border-purple-800/30 text-[10px] font-medium"
+                                >
+                                  {mod}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Bio & Summary */}
+                        <div className="space-y-1 text-xs">
+                          <p className="text-slate-300 leading-relaxed bg-slate-900/30 p-2.5 rounded-xl border border-slate-800/60 line-clamp-3">
+                            <strong className="text-slate-400 font-semibold block text-[10px] uppercase mb-0.5">Bio:</strong>
+                            {app.bio}
+                          </p>
+                          {app.summary && (
+                            <p className="text-slate-400 text-[11px] leading-relaxed italic px-1 pt-1">
+                              "{app.summary}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Footer Actions */}
+                      <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                        <span className="text-[10px] text-slate-500">
+                          Applied: {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : 'Recently'}
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                          {app.status === 'pending' ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedAppForFeedback(app);
+                                  setTutorFeedbackNotes('');
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer"
+                              >
+                                Decline...
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const res = await reviewTutorApplication(
+                                    app.id,
+                                    app.userId,
+                                    'approved',
+                                    'Approved by StudiRad Admin Team. Welcome to the teaching faculty!'
+                                  );
+                                  if (res.success) {
+                                    triggerSuccess(`Tutor application for ${app.fullName} approved! Role updated to Clinical Instructor.`);
+                                  }
+                                }}
+                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Approve as Instructor</span>
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-[11px] font-semibold text-slate-400">
+                              Status: {app.status}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ---------------------------------------------------- */}
+        {/* TAB 6: PRIVATE TUTORIAL INQUIRIES */}
+        {/* ---------------------------------------------------- */}
+        {activeTab === 'tutorials' && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-base font-extrabold text-white">
+                  Private 1-on-1 Tutorial Inquiries
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Student booking inquiries for course private tutorials. Confirm schedules and assign video meeting room links.
+                </p>
+              </div>
+              <span className="text-xs text-slate-400 font-semibold">
+                {tutorialRequests.length} total bookings ({tutorialRequests.filter(r => r.status === 'pending').length} pending)
+              </span>
+            </div>
+
+            {tutorialRequests.length === 0 ? (
+              <div className="p-12 text-center bg-[#121824] rounded-2xl border border-slate-800 text-slate-400 text-xs space-y-2">
+                <UserCheck className="w-10 h-10 text-slate-600 mx-auto" />
+                <p className="font-semibold text-slate-300">No private tutorial requests received yet</p>
+                <p className="text-[11px] text-slate-500">
+                  When students click "Request Private Tutorial" on a course, their inquiry and preferred time slot will appear here.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {tutorialRequests
+                  .filter((req) =>
+                    !searchQuery.trim() ||
+                    req.studentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    req.studentEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    req.courseTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    req.instructorName?.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map((req) => (
+                    <div
+                      key={req.id}
+                      className="p-5 rounded-2xl bg-[#121824] border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-all space-y-4 text-left"
+                    >
+                      <div className="space-y-3">
+                        {/* Student Info & Status */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                              Learner Inquiry
+                            </span>
+                            <h4 className="text-sm font-extrabold text-white">
+                              {req.studentName}
+                            </h4>
+                            <p className="text-[11px] text-slate-400">
+                              {req.studentEmail}
+                            </p>
+                          </div>
+
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+                            req.status === 'confirmed'
+                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                              : req.status === 'declined'
+                              ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                              : 'bg-amber-500/15 text-amber-300 border border-amber-500/30 animate-pulse'
+                          }`}>
+                            {req.status}
+                          </span>
+                        </div>
+
+                        {/* Course & Instructor Info */}
+                        <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1">
+                          <div className="flex items-center justify-between text-xs font-bold text-white">
+                            <span className="truncate pr-2">{req.courseTitle}</span>
+                            <span className="text-[#FF7F32] font-mono shrink-0">
+                              {req.currency}{req.calculatedRate}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400">
+                            Instructor: <span className="text-slate-300 font-medium">{req.instructorName}</span>
+                          </p>
+                        </div>
+
+                        {/* Requested Day, Slot & Duration */}
+                        <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                          <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
+                            <span className="text-[10px] text-slate-500 block">Requested Day</span>
+                            <span className="font-bold text-slate-200 text-[11px]">{req.selectedDay}</span>
+                          </div>
+                          <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
+                            <span className="text-[10px] text-slate-500 block">Time Slot</span>
+                            <span className="font-bold text-slate-200 text-[11px]">{req.selectedTimeSlot}</span>
+                          </div>
+                          <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
+                            <span className="text-[10px] text-slate-500 block">Duration</span>
+                            <span className="font-bold text-[#FF7F32] text-[11px]">{req.durationMinutes} min</span>
+                          </div>
+                        </div>
+
+                        {/* Student Specific Focus */}
+                        {req.specificFocusTopic && (
+                          <div className="p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/60 text-xs text-slate-300 space-y-0.5">
+                            <strong className="text-[10px] text-slate-500 font-bold uppercase block">
+                              Focus Area / Questions:
+                            </strong>
+                            <p className="leading-relaxed line-clamp-3">
+                              {req.specificFocusTopic}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Confirmed Meeting Link */}
+                        {req.meetingLink && (
+                          <div className="p-2.5 rounded-xl bg-blue-950/40 border border-blue-800/40 text-xs text-blue-300 flex items-center justify-between">
+                            <span className="truncate pr-2 font-mono text-[11px]">{req.meetingLink}</span>
+                            <a
+                              href={req.meetingLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-white hover:underline shrink-0 text-[11px] font-bold"
+                            >
+                              Open Room
+                            </a>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer Actions */}
+                      <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                        <span className="text-[10px] text-slate-500">
+                          Logged: {req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'Recently'}
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                          {req.status === 'pending' ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  await updateTutorialRequestStatus(
+                                    req.id,
+                                    'declined',
+                                    'Slot unavailable, please pick another window',
+                                    undefined,
+                                    req.studentId,
+                                    req.courseTitle
+                                  );
+                                  triggerSuccess('Tutorial request marked as declined.');
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer"
+                              >
+                                Decline
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedTutorialForMeeting(req);
+                                  setMeetingLinkInput(`https://meet.studirad.org/room/tutorial-${req.id.slice(-6)}`);
+                                }}
+                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Confirm Session</span>
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedTutorialForMeeting(req);
+                                setMeetingLinkInput(req.meetingLink || `https://meet.studirad.org/room/tutorial-${req.id.slice(-6)}`);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                            >
+                              Update Link
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* ---------------------------------------------------- */}
@@ -1375,6 +1988,19 @@ export const AdminDashboardScreen: React.FC = () => {
               >
                 <HelpCircle className="w-3.5 h-3.5" />
                 <span>4. Course Quiz ({courseForm.quiz.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCourseModalTab('availability')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                  courseModalTab === 'availability'
+                    ? 'bg-[#FF7F32] text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white bg-slate-900/60'
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>5. Private Tutoring {courseForm.availableToTutor ? '(Enabled)' : '(Disabled)'}</span>
               </button>
             </div>
 
@@ -2269,6 +2895,158 @@ export const AdminDashboardScreen: React.FC = () => {
                 </div>
               )}
 
+              {/* SUB-TAB 5: PRIVATE TUTORING AVAILABILITY (User Requirement 2) */}
+              {courseModalTab === 'availability' && (
+                <div className="space-y-4 animate-fadeIn">
+                  <div className="p-4 rounded-2xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-white text-xs sm:text-sm flex items-center gap-2">
+                        <UserCheck className="w-4 h-4 text-[#FF7F32]" />
+                        <span>Available to Tutor (Private 1-on-1 Sessions)</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Enable to display "Available to Tutor" on the course rundown and let students request 1-on-1 private tutorials.
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={courseForm.availableToTutor}
+                        onChange={(e) => setCourseForm({ ...courseForm, availableToTutor: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FF7F32]"></div>
+                    </label>
+                  </div>
+
+                  {courseForm.availableToTutor && (
+                    <div className="space-y-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+                      {/* Days of Week */}
+                      <div className="space-y-2">
+                        <label className="block text-[11px] font-semibold text-slate-300">
+                          Available Days of the Week
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
+                            const isChecked = courseForm.tutoringDays.includes(day);
+                            return (
+                              <button
+                                type="button"
+                                key={day}
+                                onClick={() => {
+                                  const nextDays = isChecked
+                                    ? courseForm.tutoringDays.filter((d) => d !== day)
+                                    : [...courseForm.tutoringDays, day];
+                                  setCourseForm({ ...courseForm, tutoringDays: nextDays });
+                                }}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                                  isChecked
+                                    ? 'bg-[#FF7F32] text-white border-[#FF7F32]'
+                                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                {day}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Time of Day Windows */}
+                      <div className="space-y-2">
+                        <label className="block text-[11px] font-semibold text-slate-300">
+                          Available Time of Day Windows
+                        </label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {courseForm.tutoringTimeSlots.map((slot) => (
+                            <span
+                              key={slot}
+                              className="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-200 flex items-center gap-1.5"
+                            >
+                              <span>{slot}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCourseForm({
+                                    ...courseForm,
+                                    tutoringTimeSlots: courseForm.tutoringTimeSlots.filter((s) => s !== slot),
+                                  });
+                                }}
+                                className="text-slate-400 hover:text-red-400 cursor-pointer"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="e.g. 18:00 - 20:00 BST (Press Enter to Add)"
+                            className="flex-1 h-9 px-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const val = (e.target as HTMLInputElement).value.trim();
+                                if (val && !courseForm.tutoringTimeSlots.includes(val)) {
+                                  setCourseForm({
+                                    ...courseForm,
+                                    tutoringTimeSlots: [...courseForm.tutoringTimeSlots, val],
+                                  });
+                                  (e.target as HTMLInputElement).value = '';
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Duration & Charge Rate */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div className="space-y-1">
+                          <label className="block text-[11px] font-semibold text-slate-300">
+                            Session Duration Limit
+                          </label>
+                          <div className="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 font-mono">
+                            Min 30 min — Max 1 hr (Supported: 30m, 45m, 60m)
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-[11px] font-semibold text-slate-300">
+                            Charge per 30 Minutes
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={courseForm.currency}
+                              onChange={(e) => setCourseForm({ ...courseForm, currency: e.target.value })}
+                              className="w-16 h-9 px-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-bold"
+                            >
+                              <option value="£">£</option>
+                              <option value="$">$</option>
+                              <option value="₦">₦</option>
+                              <option value="€">€</option>
+                            </select>
+                            <input
+                              type="number"
+                              min="5"
+                              step="1"
+                              value={courseForm.ratePer30Min}
+                              onChange={(e) => setCourseForm({ ...courseForm, ratePer30Min: Number(e.target.value) })}
+                              className="flex-1 h-9 px-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-bold"
+                            />
+                          </div>
+                          <p className="text-[10px] text-slate-500">
+                            Tuition increases dynamically with duration (e.g. 1hr = {courseForm.currency}{courseForm.ratePer30Min * 2}).
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
             </form>
 
             {/* Bottom Docked Action Bar */}
@@ -2282,13 +3060,14 @@ export const AdminDashboardScreen: React.FC = () => {
               </button>
 
               <div className="flex items-center gap-2.5">
-                {courseModalTab !== 'quiz' && (
+                {courseModalTab !== 'availability' && (
                   <button
                     type="button"
                     onClick={() => {
                       if (courseModalTab === 'basics') setCourseModalTab('curriculum');
                       else if (courseModalTab === 'curriculum') setCourseModalTab('materials');
                       else if (courseModalTab === 'materials') setCourseModalTab('quiz');
+                      else if (courseModalTab === 'quiz') setCourseModalTab('availability');
                     }}
                     className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
@@ -2943,6 +3722,149 @@ export const AdminDashboardScreen: React.FC = () => {
                 className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ---------------------------------------------------- */}
+      {/* MEETING LINK DIALOG FOR TUTORIAL CONFIRMATION */}
+      {/* ---------------------------------------------------- */}
+      {selectedTutorialForMeeting && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs">
+          <div className="bg-[#121824] border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 text-left shadow-2xl animate-scaleIn">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <UserCheck className="w-4 h-4 text-[#FF7F32]" />
+                <h4 className="text-sm font-bold text-white">
+                  Confirm Tutorial Session
+                </h4>
+              </div>
+              <button
+                onClick={() => setSelectedTutorialForMeeting(null)}
+                className="text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-300 space-y-1.5 p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+              <p>
+                Student: <strong className="text-white">{selectedTutorialForMeeting.studentName}</strong> ({selectedTutorialForMeeting.studentEmail})
+              </p>
+              <p>
+                Course: <strong className="text-white">{selectedTutorialForMeeting.courseTitle}</strong>
+              </p>
+              <p>
+                Schedule: <strong className="text-[#FF7F32]">{selectedTutorialForMeeting.selectedDay} · {selectedTutorialForMeeting.selectedTimeSlot}</strong> ({selectedTutorialForMeeting.durationMinutes} min)
+              </p>
+              <p>
+                Fee: <strong>{selectedTutorialForMeeting.currency}{selectedTutorialForMeeting.calculatedRate}</strong>
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300 block">
+                Video Meeting Room Link (Google Meet / Zoom / StudiRad Room)
+              </label>
+              <input
+                type="url"
+                value={meetingLinkInput}
+                onChange={(e) => setMeetingLinkInput(e.target.value)}
+                placeholder="https://meet.studirad.org/room/..."
+                className="w-full h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedTutorialForMeeting(null)}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const res = await updateTutorialRequestStatus(
+                    selectedTutorialForMeeting.id,
+                    'confirmed',
+                    'Session schedule confirmed. Room link attached.',
+                    meetingLinkInput.trim(),
+                    selectedTutorialForMeeting.studentId,
+                    selectedTutorialForMeeting.courseTitle
+                  );
+                  if (res.success) {
+                    triggerSuccess(`Tutorial session confirmed for ${selectedTutorialForMeeting.studentName}! Notification sent to student.`);
+                    setSelectedTutorialForMeeting(null);
+                  }
+                }}
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Confirm & Send Alert</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* TUTOR APPLICATION FEEDBACK / DECLINE MODAL */}
+      {/* ---------------------------------------------------- */}
+      {selectedAppForFeedback && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs">
+          <div className="bg-[#121824] border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 text-left shadow-2xl animate-scaleIn">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <h4 className="text-sm font-bold text-white">
+                Decline Tutor Application
+              </h4>
+              <button
+                onClick={() => setSelectedAppForFeedback(null)}
+                className="text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-300">
+              Provide guidance notes for <strong>{selectedAppForFeedback.fullName}</strong>. They will receive this feedback in their email and account within 24–72 hours.
+            </p>
+
+            <textarea
+              rows={3}
+              value={tutorFeedbackNotes}
+              onChange={(e) => setTutorFeedbackNotes(e.target.value)}
+              placeholder="e.g. Please gain additional postgraduate clinical teaching experience before reapplying..."
+              className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs resize-none focus:outline-none focus:ring-1 focus:ring-red-500"
+            />
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedAppForFeedback(null)}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const res = await reviewTutorApplication(
+                    selectedAppForFeedback.id,
+                    selectedAppForFeedback.userId,
+                    'rejected',
+                    tutorFeedbackNotes.trim()
+                  );
+                  if (res.success) {
+                    triggerSuccess(`Application for ${selectedAppForFeedback.fullName} declined with feedback.`);
+                    setSelectedAppForFeedback(null);
+                  }
+                }}
+                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-xs cursor-pointer"
+              >
+                Confirm Decline
               </button>
             </div>
           </div>

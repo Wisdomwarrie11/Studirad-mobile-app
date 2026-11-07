@@ -9,7 +9,20 @@ import {
   limit
 } from 'firebase/firestore';
 import { db, adminDb, appletDb, handleFirestoreError, OperationType } from '../firebase';
-import { Opportunity, LiveClass, Webinar, Course, ClinicalResource, ClinicalModality, StudyMaterial, EnrolledCourseRecord } from '../types';
+import { 
+  Opportunity, 
+  LiveClass, 
+  Webinar, 
+  Course, 
+  ClinicalResource, 
+  ClinicalModality, 
+  StudyMaterial, 
+  EnrolledCourseRecord,
+  TutorApplication,
+  TutorialRequest,
+  TutorAvailability,
+  AppNotification
+} from '../types';
 import { MOCK_OPPORTUNITIES, MOCK_LIVE_CLASSES, MOCK_WEBINARS, MOCK_COURSES, MOCK_RESOURCES } from '../data/mockData';
 import { getYouTubeThumbnail } from '../utils/youtube';
 
@@ -749,6 +762,11 @@ export function subscribeCourses(
       quiz: Array.isArray(data.quiz) ? data.quiz : [],
       progressPercent: typeof data.progressPercent === 'number' ? data.progressPercent : 0,
       modality: data.modality || mapCourseToModality(data.course || data.category),
+      status: data.status || 'published',
+      tutorAvailability: data.tutorAvailability || undefined,
+      creatorId: data.creatorId || undefined,
+      creatorRole: data.creatorRole || undefined,
+      creatorName: data.creatorName || undefined,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     };
@@ -1415,5 +1433,331 @@ export function subscribeAdminNotifications(
       onUpdate(list);
     },
     (err) => console.warn('Admin notifications subscription notice:', err)
+  );
+}
+
+/**
+ * Mark notification as read
+ */
+export async function markNotificationAsRead(notifId: string): Promise<void> {
+  try {
+    await setDoc(doc(db, 'admin_notifications', notifId), { read: true }, { merge: true });
+  } catch (e) {
+    console.warn('Error marking notification as read:', e);
+  }
+}
+
+/**
+ * Submit Tutor / Instructor Application
+ */
+export async function submitTutorApplication(
+  applicationData: Omit<TutorApplication, 'id' | 'status' | 'appliedAt'>
+): Promise<{ success: boolean; id: string; error?: string }> {
+  const appId = `tutor_app_${Date.now()}`;
+  try {
+    const payload: TutorApplication = {
+      ...applicationData,
+      id: appId,
+      status: 'pending',
+      appliedAt: new Date().toISOString(),
+    };
+
+    // Save to tutor_applications
+    await setDoc(doc(db, 'tutor_applications', appId), payload, { merge: true });
+    if (appletDb) {
+      await setDoc(doc(appletDb, 'tutor_applications', appId), payload, { merge: true }).catch(() => {});
+    }
+
+    // Also update user's profile with instructorStatus = 'pending'
+    if (applicationData.userId) {
+      const userRef = doc(db, 'users', applicationData.userId);
+      await setDoc(userRef, {
+        instructorStatus: 'pending',
+        instructorBio: applicationData.bio,
+        instructorAcademicBackground: applicationData.academicBackground,
+        instructorExpertise: applicationData.areaOfExpertise,
+        instructorExperience: applicationData.experienceYears,
+      }, { merge: true }).catch(() => {});
+    }
+
+    // Create Admin notification for the new application
+    const notifId = `notif_${Date.now()}`;
+    const notifPayload = {
+      id: notifId,
+      title: `New Tutor Application: ${applicationData.fullName}`,
+      message: `${applicationData.fullName} applied to be an Instructor (${applicationData.experienceYears} experience).`,
+      type: 'tutor_application',
+      targetRole: 'admin',
+      relatedId: appId,
+      read: false,
+      createdAt: new Date().toISOString(),
+      linkTab: 'tutors',
+    };
+    await setDoc(doc(db, 'admin_notifications', notifId), notifPayload, { merge: true }).catch(() => {});
+
+    return { success: true, id: appId };
+  } catch (error: any) {
+    console.error('Error submitting tutor application:', error);
+    return { success: false, id: appId, error: error?.message || 'Failed to submit application' };
+  }
+}
+
+/**
+ * Real-time listener for Tutor Applications (Admin Register)
+ */
+export function subscribeTutorApplications(
+  onUpdate: (apps: TutorApplication[]) => void
+): () => void {
+  const collRef = collection(db, 'tutor_applications');
+  return onSnapshot(
+    collRef,
+    (snapshot) => {
+      const list: TutorApplication[] = [];
+      snapshot.forEach((d) => list.push({ id: d.id, ...d.data() } as TutorApplication));
+      list.sort((a, b) => new Date(b.appliedAt || 0).getTime() - new Date(a.appliedAt || 0).getTime());
+      onUpdate(list);
+    },
+    (err) => console.warn('Tutor applications subscription notice:', err)
+  );
+}
+
+/**
+ * Admin: Review and Approve/Decline Tutor Application
+ */
+export async function reviewTutorApplication(
+  applicationId: string,
+  userId: string,
+  status: 'approved' | 'rejected',
+  feedbackNotes?: string,
+  reviewedBy?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const updatePayload = {
+      status,
+      feedbackNotes: feedbackNotes || '',
+      reviewedAt: new Date().toISOString(),
+      reviewedBy: reviewedBy || 'StudiRad Admin Team',
+    };
+
+    await setDoc(doc(db, 'tutor_applications', applicationId), updatePayload, { merge: true });
+    if (appletDb) {
+      await setDoc(doc(appletDb, 'tutor_applications', applicationId), updatePayload, { merge: true }).catch(() => {});
+    }
+
+    // If approved, update user's role and instructor status
+    if (userId) {
+      await setDoc(doc(db, 'users', userId), {
+        role: status === 'approved' ? 'Clinical Instructor / Tutor' : 'Qualified Radiographer',
+        isInstructor: status === 'approved',
+        instructorStatus: status,
+      }, { merge: true });
+    }
+
+    // Notify user
+    const notifId = `notif_user_${Date.now()}`;
+    const userNotif = {
+      id: notifId,
+      title: status === 'approved' ? 'Tutor Application Approved! 🎉' : 'Update on Tutor Application',
+      message: status === 'approved' 
+        ? 'Congratulations! You are now an approved StudiRad Instructor. You can now build courses and offer private 1-on-1 tutorials.' 
+        : `Thank you for applying. Feedback from team: ${feedbackNotes || 'Please contact support for guidance.'}`,
+      type: 'tutor_application',
+      targetRole: 'user',
+      targetUserId: userId,
+      relatedId: applicationId,
+      read: false,
+      createdAt: new Date().toISOString(),
+    };
+    await setDoc(doc(db, 'notifications', notifId), userNotif, { merge: true }).catch(() => {});
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error reviewing tutor application:', err);
+    return { success: false, error: err?.message || 'Failed to review application' };
+  }
+}
+
+/**
+ * Submit Private Tutorial Booking Request
+ */
+export async function submitTutorialRequest(
+  requestData: Omit<TutorialRequest, 'id' | 'status' | 'createdAt'>
+): Promise<{ success: boolean; id: string; error?: string }> {
+  const reqId = `tut_req_${Date.now()}`;
+  try {
+    const payload: TutorialRequest = {
+      ...requestData,
+      id: reqId,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+
+    await setDoc(doc(db, 'tutorial_requests', reqId), payload, { merge: true });
+    if (appletDb) {
+      await setDoc(doc(appletDb, 'tutorial_requests', reqId), payload, { merge: true }).catch(() => {});
+    }
+
+    // Notify Admin
+    const adminNotifId = `notif_admin_${Date.now()}`;
+    const adminNotif = {
+      id: adminNotifId,
+      title: `Private Tutorial Request: ${requestData.courseTitle}`,
+      message: `${requestData.studentName} requested ${requestData.durationMinutes}min session with ${requestData.instructorName} on ${requestData.selectedDay} (${requestData.selectedTimeSlot}). Rate: ${requestData.currency} ${requestData.calculatedRate}.`,
+      type: 'tutorial_request',
+      targetRole: 'admin',
+      relatedId: reqId,
+      read: false,
+      createdAt: new Date().toISOString(),
+      linkTab: 'tutorials',
+    };
+    await setDoc(doc(db, 'admin_notifications', adminNotifId), adminNotif, { merge: true }).catch(() => {});
+
+    // Notify Instructor if instructorId is set
+    if (requestData.instructorId) {
+      const instNotifId = `notif_inst_${Date.now()}`;
+      const instNotif = {
+        id: instNotifId,
+        title: `New Tutorial Request: ${requestData.courseTitle}`,
+        message: `${requestData.studentName} requested a private session on ${requestData.selectedDay} (${requestData.selectedTimeSlot}). Rate: ${requestData.currency} ${requestData.calculatedRate}.`,
+        type: 'tutorial_request',
+        targetRole: 'instructor',
+        targetUserId: requestData.instructorId,
+        relatedId: reqId,
+        read: false,
+        createdAt: new Date().toISOString(),
+      };
+      await setDoc(doc(db, 'notifications', instNotifId), instNotif, { merge: true }).catch(() => {});
+    }
+
+    return { success: true, id: reqId };
+  } catch (error: any) {
+    console.error('Error submitting tutorial request:', error);
+    return { success: false, id: reqId, error: error?.message || 'Failed to submit request' };
+  }
+}
+
+/**
+ * Real-time listener for Tutorial Requests
+ */
+export function subscribeTutorialRequests(
+  onUpdate: (requests: TutorialRequest[]) => void
+): () => void {
+  const collRef = collection(db, 'tutorial_requests');
+  return onSnapshot(
+    collRef,
+    (snapshot) => {
+      const list: TutorialRequest[] = [];
+      snapshot.forEach((d) => list.push({ id: d.id, ...d.data() } as TutorialRequest));
+      list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      onUpdate(list);
+    },
+    (err) => console.warn('Tutorial requests subscription notice:', err)
+  );
+}
+
+/**
+ * Update Tutorial Request Status (Admin / Instructor confirms with meeting link or feedback)
+ */
+export async function updateTutorialRequestStatus(
+  requestId: string,
+  status: 'confirmed' | 'declined' | 'completed',
+  adminFeedback?: string,
+  meetingLink?: string,
+  studentId?: string,
+  courseTitle?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const updatePayload: Partial<TutorialRequest> = {
+      status,
+      adminFeedback: adminFeedback || '',
+      meetingLink: meetingLink || '',
+    };
+    await setDoc(doc(db, 'tutorial_requests', requestId), updatePayload, { merge: true });
+
+    // Notify Student
+    if (studentId) {
+      const notifId = `notif_user_${Date.now()}`;
+      const userNotif = {
+        id: notifId,
+        title: status === 'confirmed' ? `Tutorial Session Confirmed! 📅` : `Tutorial Request Update`,
+        message: status === 'confirmed'
+          ? `Your private session for "${courseTitle || 'Course'}" has been confirmed! Meeting Room: ${meetingLink || 'Check dashboard for details.'}`
+          : `Update on your tutorial request for "${courseTitle || 'Course'}": ${adminFeedback || status}`,
+        type: 'tutorial_request',
+        targetRole: 'user',
+        targetUserId: studentId,
+        relatedId: requestId,
+        read: false,
+        createdAt: new Date().toISOString(),
+      };
+      await setDoc(doc(db, 'notifications', notifId), userNotif, { merge: true }).catch(() => {});
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error updating tutorial request:', err);
+    return { success: false, error: err?.message || 'Failed to update request' };
+  }
+}
+
+/**
+ * Admin: Approve and Publish Course (Tutors create courses with status 'pending_approval')
+ */
+export async function approveCourseByAdmin(
+  courseId: string,
+  creatorId?: string,
+  courseTitle?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await setDoc(doc(db, 'courses', courseId), {
+      status: 'published',
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+
+    if (creatorId) {
+      const notifId = `notif_creator_${Date.now()}`;
+      const notif = {
+        id: notifId,
+        title: 'Course Published! 🚀',
+        message: `Your course "${courseTitle || 'New Course'}" has been approved by admin and is now live to all learners!`,
+        type: 'course_submission',
+        targetRole: 'instructor',
+        targetUserId: creatorId,
+        relatedId: courseId,
+        read: false,
+        createdAt: new Date().toISOString(),
+      };
+      await setDoc(doc(db, 'notifications', notifId), notif, { merge: true }).catch(() => {});
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error approving course:', err);
+    return { success: false, error: err?.message || 'Failed to approve course' };
+  }
+}
+
+/**
+ * Real-time listener for user/instructor notifications
+ */
+export function subscribeUserNotifications(
+  userId: string,
+  onUpdate: (notifications: any[]) => void
+): () => void {
+  const collRef = collection(db, 'notifications');
+  return onSnapshot(
+    collRef,
+    (snapshot) => {
+      const list: any[] = [];
+      snapshot.forEach((d) => {
+        const data = d.data();
+        if (data.targetUserId === userId || (!data.targetUserId && data.targetRole === 'user')) {
+          list.push({ id: d.id, ...data });
+        }
+      });
+      list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      onUpdate(list);
+    },
+    (err) => console.warn('User notifications subscription notice:', err)
   );
 }

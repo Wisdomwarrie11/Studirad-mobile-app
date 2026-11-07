@@ -34,6 +34,8 @@ import {
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ProfileSkeleton } from '../common/Skeletons';
 import { PlayStoreModal } from '../modals/PlayStoreModal';
+import { TutorApplicationModal } from '../modals/TutorApplicationModal';
+import { InstructorStudioModal } from '../modals/InstructorStudioModal';
 
 interface ProfileTabProps {
   onEditTopics: () => void;
@@ -55,6 +57,8 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [savedOppIds, setSavedOppIds] = useState<(string | number)[]>([]);
   const [showPlayStoreModal, setShowPlayStoreModal] = useState(false);
+  const [showTutorAppModal, setShowTutorAppModal] = useState(false);
+  const [showInstructorStudioModal, setShowInstructorStudioModal] = useState(false);
 
   // Smooth perceived performance transition
   useEffect(() => {
@@ -308,6 +312,84 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                   </span>
                 </div>
               </div>
+
+              {/* 1b. Tutor / Instructor Card (Distinct profile and CTA) */}
+              {currentUser?.isInstructor || currentUser?.role === 'Clinical Instructor / Tutor' ? (
+                <div className="w-full bg-gradient-to-br from-[#002147] via-[#0A3266] to-[#002147] text-white rounded-2xl p-5 border border-slate-700 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-xl bg-orange-500/20 text-[#FF7F32] flex items-center justify-center shrink-0">
+                        <GraduationCap className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF7F32]">
+                          Teaching Faculty
+                        </span>
+                        <h3 className="text-sm font-extrabold text-white">
+                          Instructor Studio
+                        </h3>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
+                      Approved Tutor
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-200 leading-relaxed">
+                    Build accredited courses, configure your private tutoring rates, and manage 1-on-1 student tutorial bookings.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowInstructorStudioModal(true)}
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <span>Open Instructor Studio</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : currentUser?.instructorStatus === 'pending' ? (
+                <div className="w-full bg-amber-50 dark:bg-amber-950/30 rounded-2xl p-5 border border-amber-200 dark:border-amber-800/60 space-y-2.5 text-left">
+                  <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
+                    <Clock className="w-4 h-4 text-[#FF7F32]" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider">
+                      Instructor Application Under Review
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                    Your tutor application is currently being evaluated by our clinical verification team. Please check your email inbox within <strong>24–72 hours</strong> for feedback.
+                  </p>
+                </div>
+              ) : (
+                <div className="w-full bg-gradient-to-br from-[#002147] to-[#0A3266] text-white rounded-2xl p-5 border border-slate-700 shadow-xs space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-orange-500/20 text-[#FF7F32] flex items-center justify-center shrink-0">
+                      <GraduationCap className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF7F32]">
+                        Clinical Faculty
+                      </span>
+                      <h3 className="text-sm font-extrabold text-white">
+                        Be a Tutor / Instructor
+                      </h3>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-200 leading-relaxed">
+                    Join our teaching faculty to upload specialized courses, guide radiography students, and offer 1-on-1 private tutorials.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowTutorAppModal(true)}
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <span>Be a Tutor / Instructor</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
 
               {/* 2. Course Progress & Certificates Card */}
             <div className="w-full bg-white dark:bg-[#121824] rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
@@ -625,7 +707,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                           {rec.title}
                         </span>
                         <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
-                          {rec.cpdCredits || '1.0 CPD Point'}
+                          Verified Masterclass
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
@@ -775,6 +857,18 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
       <PlayStoreModal
         isOpen={showPlayStoreModal}
         onClose={() => setShowPlayStoreModal(false)}
+      />
+
+      {/* Tutor Application Modal */}
+      <TutorApplicationModal
+        isOpen={showTutorAppModal}
+        onClose={() => setShowTutorAppModal(false)}
+      />
+
+      {/* Instructor Studio Modal */}
+      <InstructorStudioModal
+        isOpen={showInstructorStudioModal}
+        onClose={() => setShowInstructorStudioModal(false)}
       />
     </div>
   );
