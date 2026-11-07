@@ -22,8 +22,11 @@ import {
   Bookmark,
   HelpCircle,
   FileCheck2,
-  FileText
+  FileText,
+  Clock
 } from 'lucide-react';
+import { TutorApplicationModal } from '../modals/TutorApplicationModal';
+import { InstructorStudioModal } from '../modals/InstructorStudioModal';
 
 interface ProfileDrawerProps {
   isOpen: boolean;
@@ -44,6 +47,8 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(true);
   const [offlineSync, setOfflineSync] = useState(true);
+  const [showTutorAppModal, setShowTutorAppModal] = useState(false);
+  const [showInstructorStudioModal, setShowInstructorStudioModal] = useState(false);
   const [activeModalInfo, setActiveModalInfo] = useState<{
     title: string;
     content: string;
@@ -147,6 +152,99 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
               </span>
             </div>
           </div>
+
+          {/* Be a Tutor / Instructor CTA Card */}
+          {currentUser?.isInstructor || currentUser?.role === 'Clinical Instructor / Tutor' ? (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#002147] via-[#0A3266] to-[#002147] text-white border border-slate-700 shadow-sm space-y-2.5 text-left">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-orange-500/20 text-[#FF7F32] flex items-center justify-center shrink-0">
+                    <GraduationCap className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF7F32] block">
+                      Teaching Faculty
+                    </span>
+                    <h4 className="text-xs font-bold text-white">
+                      Instructor Studio
+                    </h4>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
+                  Approved
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-200 leading-snug">
+                Manage your video courses and 1-on-1 private tutorial student bookings.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowInstructorStudioModal(true)}
+                className="w-full py-2 px-3 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+              >
+                <span>Open Instructor Studio</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : currentUser?.instructorStatus === 'pending' ? (
+            <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-left space-y-1.5">
+              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
+                <Clock className="w-4 h-4 text-[#FF7F32]" />
+                <h4 className="text-xs font-bold">
+                  Tutor Application Under Review
+                </h4>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug">
+                Please check your email inbox within <strong>24–72 hours</strong> for verification feedback.
+              </p>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#002147] via-[#0A3266] to-[#002147] text-white border border-slate-700 shadow-sm space-y-2.5 text-left">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-orange-500/20 text-[#FF7F32] flex items-center justify-center shrink-0">
+                    <GraduationCap className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF7F32] block">
+                      Teaching Faculty
+                    </span>
+                    <h4 className="text-xs font-bold text-white">
+                      Be a Tutor / Instructor
+                    </h4>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-orange-500/20 text-[#FF7F32] text-[10px] font-bold border border-orange-500/30">
+                  Join
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-200 leading-snug">
+                Upload specialized courses and offer 1-on-1 private tutorials to radiography scholars.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowTutorAppModal(true)}
+                className="w-full py-2 px-3 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+              >
+                <GraduationCap className="w-3.5 h-3.5" />
+                <span>Be a Tutor / Instructor</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {/* Quick link to Full Profile Page */}
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              setActiveTab('profile');
+            }}
+            className="w-full py-2.5 px-3 rounded-xl bg-white dark:bg-[#121824] hover:bg-slate-50 dark:hover:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-[#002147] dark:text-[#38BDF8] font-bold text-xs flex items-center justify-between transition-colors shadow-2xs cursor-pointer"
+          >
+            <span>View Full Profile & Enrolled Courses</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
 
           {/* Section 1: Learning, Courses & Quizzes */}
           <div className="space-y-1.5">
@@ -605,7 +703,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
             </p>
 
             <ul className="text-[11px] text-slate-600 space-y-1 mb-4 bg-red-50/50 p-3 rounded-xl border border-red-100">
-              <li className="text-red-700">• All logged CPD points & verified certificates</li>
+              <li className="text-red-700">• All verified course certificates and learning records</li>
               <li className="text-red-700">• Course progress and clinical quiz submissions</li>
               <li className="text-red-700">• Bookmarked hospital locum vacancies</li>
               <li className="text-red-700">• Scheduled 1-on-1 tutor bookings</li>
@@ -635,6 +733,18 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
           </div>
         </div>
       )}
+
+      {/* Tutor Application Modal */}
+      <TutorApplicationModal
+        isOpen={showTutorAppModal}
+        onClose={() => setShowTutorAppModal(false)}
+      />
+
+      {/* Instructor Studio Modal */}
+      <InstructorStudioModal
+        isOpen={showInstructorStudioModal}
+        onClose={() => setShowInstructorStudioModal(false)}
+      />
     </div>
   );
 };

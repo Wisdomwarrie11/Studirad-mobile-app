@@ -213,6 +213,42 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
               </div>
             </div>
 
+            {/* 1b. Be a Tutor / Instructor CTA for Guests */}
+            <div className="w-full bg-gradient-to-br from-[#002147] via-[#0A3266] to-[#002147] text-white rounded-3xl p-6 sm:p-7 border border-slate-700 shadow-sm space-y-3.5 text-left">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-orange-500/20 text-[#FF7F32] flex items-center justify-center shrink-0">
+                    <GraduationCap className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#FF7F32]">
+                      Teaching Faculty
+                    </span>
+                    <h3 className="text-base sm:text-lg font-extrabold text-white">
+                      Be a Tutor / Instructor
+                    </h3>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-orange-500/20 text-[#FF7F32] text-[10px] font-bold border border-orange-500/30">
+                  Join Faculty
+                </span>
+              </div>
+
+              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                Are you a qualified radiographer, sonographer, or clinical specialist? Join our teaching faculty to upload specialized courses, mentor radiography scholars, and offer 1-on-1 private tutorials.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setShowTutorAppModal(true)}
+                className="w-full py-3 px-4 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <GraduationCap className="w-4 h-4" />
+                <span>Be a Tutor / Instructor</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
             {/* 2. Member Features Preview */}
             <div className="w-full bg-white dark:bg-[#121824] rounded-3xl p-6 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -275,8 +311,84 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
             </div>
           </div>
         ) : (
-          /* Responsive Full-Width Layout: 2 Columns on Tablet / Laptop, 1 Column on Mobile */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          /* Responsive Full-Width Layout: Hero Banner + 2 Columns on Tablet / Laptop, 1 Column on Mobile */
+          <div className="space-y-6">
+            {/* Top Prominent Faculty & Tutor Hero Banner */}
+            {currentUser?.isInstructor || currentUser?.role === 'Clinical Instructor / Tutor' ? (
+              <div className="w-full bg-gradient-to-r from-[#002147] via-[#0A3266] to-[#002147] text-white rounded-2xl p-4 sm:p-5 border border-slate-700 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-xl bg-orange-500/20 text-[#FF7F32] flex items-center justify-center shrink-0">
+                    <GraduationCap className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm sm:text-base font-extrabold text-white">
+                        Instructor Studio Active
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
+                        Approved Tutor
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-200 mt-0.5">
+                      Upload and manage your clinical courses and private 1-on-1 tutorial bookings.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowInstructorStudioModal(true)}
+                  className="py-2.5 px-5 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
+                >
+                  <GraduationCap className="w-4 h-4" />
+                  <span>Open Instructor Studio</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            ) : currentUser?.instructorStatus === 'pending' ? (
+              <div className="w-full bg-amber-50 dark:bg-amber-950/30 rounded-2xl p-4 sm:p-5 border border-amber-200 dark:border-amber-800/60 flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <Clock className="w-5 h-5 text-[#FF7F32]" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200">
+                    Tutor / Instructor Application Under Review
+                  </h3>
+                  <p className="text-xs text-amber-800/90 dark:text-amber-300/90 mt-0.5">
+                    Your application has been received. Please check your email inbox within <strong>24–72 hours</strong> for feedback from our clinical faculty team.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full bg-gradient-to-r from-[#002147] via-[#0A3266] to-[#002147] text-white rounded-2xl p-4 sm:p-5 border border-slate-700 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-xl bg-orange-500/20 text-[#FF7F32] flex items-center justify-center shrink-0">
+                    <GraduationCap className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF7F32]">
+                      Clinical Faculty & Mentorship
+                    </span>
+                    <h3 className="text-sm sm:text-base font-extrabold text-white">
+                      Be a Tutor / Instructor
+                    </h3>
+                    <p className="text-xs text-slate-200 mt-0.5">
+                      Join our teaching faculty to upload accredited courses, mentor radiography scholars, and offer 1-on-1 private tutorials.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowTutorAppModal(true)}
+                  className="py-2.5 px-5 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
+                >
+                  <GraduationCap className="w-4 h-4" />
+                  <span>Be a Tutor / Instructor</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             {/* ================= LEFT COLUMN (Profile Card, CPD, Interests, Locum, Settings) ================= */}
             <div className="lg:col-span-5 space-y-5">
@@ -812,6 +924,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
             </div>
           </div>
         </div>
+      </div>
       )}
       </div>
 
@@ -828,7 +941,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                 Delete Account?
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                This will permanently delete your user profile, saved CPD records, and class registrations.
+                This will permanently delete your user profile, course progress, and verified certificates.
               </p>
             </div>
 
