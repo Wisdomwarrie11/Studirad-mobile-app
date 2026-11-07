@@ -30,11 +30,17 @@
             msg.indexOf('MetaMask') !== -1 ||
             msg.indexOf('ethereum') !== -1 ||
             msg.indexOf('nkbihfbeogaeaoehlefnkodbefgpgknn') !== -1 ||
+            msg.indexOf('WebSocket') !== -1 ||
+            msg.indexOf('websocket') !== -1 ||
+            msg.indexOf('closed without opened') !== -1 ||
+            msg.indexOf('failed to connect to websocket') !== -1 ||
             file.indexOf('chrome-extension://') !== -1 ||
             file.indexOf('moz-extension://') !== -1 ||
+            file.indexOf('@vite/client') !== -1 ||
             stack.indexOf('chrome-extension://') !== -1 ||
             stack.indexOf('moz-extension://') !== -1 ||
-            stack.indexOf('inpage.js') !== -1
+            stack.indexOf('inpage.js') !== -1 ||
+            stack.indexOf('@vite/client') !== -1
           );
         }
 
