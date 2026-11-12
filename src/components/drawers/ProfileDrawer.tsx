@@ -233,18 +233,6 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
             </div>
           )}
 
-          {/* Quick link to Full Profile Page */}
-          <button
-            type="button"
-            onClick={() => {
-              onClose();
-              setActiveTab('profile');
-            }}
-            className="w-full py-2.5 px-3 rounded-xl bg-white dark:bg-[#121824] hover:bg-slate-50 dark:hover:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-[#002147] dark:text-[#38BDF8] font-bold text-xs flex items-center justify-between transition-colors shadow-2xs cursor-pointer"
-          >
-            <span>View Full Profile & Enrolled Courses</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
 
           {/* Section 1: Learning, Courses & Quizzes */}
           <div className="space-y-1.5">

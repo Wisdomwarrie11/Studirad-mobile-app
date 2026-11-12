@@ -211,7 +211,18 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
     return Math.round((completedLessonIds.length / allLessons.length) * 100);
   }, [completedLessonIds, allLessons]);
 
+  const [isCourseFinished, setIsCourseFinished] = useState(false);
+
   // Handlers
+  const handleFinishCourse = () => {
+    if (!isCurrentCompleted) {
+      setQuizNotice('Please complete the quiz to finish this course.');
+      setActiveTab('quiz');
+      return;
+    }
+    setIsCourseFinished(true);
+  };
+
   const handleNextLesson = () => {
     if (!isCurrentCompleted) {
       setQuizNotice('Please complete the lesson quiz to mark this video done and advance.');
@@ -221,6 +232,8 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
     if (currentLessonIndex < allLessons.length - 1) {
       setCurrentLessonIndex((prev) => prev + 1);
       setActiveTab('curriculum');
+    } else {
+      handleFinishCourse();
     }
   };
 
@@ -626,14 +639,23 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                         <span className="text-xs font-bold">Quiz passed! Lesson marked as completed.</span>
                       </div>
-                      {hasNextLesson && (
+                      {hasNextLesson ? (
                         <button
                           type="button"
                           onClick={handleNextLesson}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer shrink-0"
                         >
                           <span>Next Lesson</span>
                           <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleFinishCourse}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer shrink-0"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Complete Course</span>
                         </button>
                       )}
                     </div>
@@ -855,22 +877,61 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
               <button
                 type="button"
                 onClick={handleNextLesson}
-                disabled={currentLessonIndex === allLessons.length - 1}
                 className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  !isCurrentCompleted && hasNextLesson
+                  !isCurrentCompleted
                     ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                    : 'bg-[#002147] dark:bg-[#1B447A] text-white hover:opacity-95'
-                } disabled:opacity-40`}
+                    : hasNextLesson
+                    ? 'bg-[#002147] dark:bg-[#1B447A] text-white hover:opacity-95'
+                    : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs'
+                }`}
               >
-                <span>Next Lesson</span>
+                <span>{hasNextLesson ? 'Next Lesson' : 'Complete Course'}</span>
                 {!isCurrentCompleted && hasNextLesson ? (
                   <Lock className="w-3.5 h-3.5 text-amber-400" />
-                ) : (
+                ) : hasNextLesson ? (
                   <ChevronRight className="w-4 h-4" />
+                ) : (
+                  <Check className="w-4 h-4" />
                 )}
               </button>
             </div>
           </>
+        )}
+
+        {/* Course Completed Celebration Overlay */}
+        {isCourseFinished && (
+          <div className="absolute inset-0 z-40 bg-[#002147]/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white space-y-4 animate-scaleIn">
+            <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400">
+              <CheckCircle2 className="w-10 h-10" />
+            </div>
+            <div className="space-y-1 max-w-sm">
+              <span className="text-xs font-bold text-[#FF7F32] uppercase tracking-wider">
+                {course.modality || 'Course'} Finished
+              </span>
+              <h3 className="text-xl font-bold text-white">
+                Course Successfully Completed!
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                You have completed all {allLessons.length} lessons and quizzes for "{course.title}". Your progress is recorded in your profile.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsCourseFinished(false)}
+                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer"
+              >
+                Review Lessons
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+              >
+                Finish & Exit
+              </button>
+            </div>
+          </div>
         )}
       </div>
 

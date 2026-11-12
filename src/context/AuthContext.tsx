@@ -8,10 +8,10 @@ import {
   signOut as fbSignOut,
   User as FirebaseUser 
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, adminAuth, googleProvider, db, handleFirestoreError, OperationType } from '../firebase';
 import { UserProfile, AppScreen, ProfessionalRole, NavTab, AppNotification, AuthMode } from '../types';
-import { seedFirestoreIfEmpty } from '../services/firebaseDataService';
+import { seedFirestoreIfEmpty, subscribeUserNotifications } from '../services/firebaseDataService';
 
 interface AuthContextType {
   currentUser: UserProfile | null;
@@ -264,14 +264,77 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {}
   }, [currentUser, currentScreen]);
 
+  // Real-time synchronization with Firestore user notifications & role status
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    // 1. Listen for user notifications in real-time
+    const unsubNotifs = subscribeUserNotifications(currentUser.id, (realNotifs) => {
+      if (Array.isArray(realNotifs)) {
+        const mapped: AppNotification[] = realNotifs.map((n) => ({
+          id: n.id,
+          title: n.title || 'Notification',
+          message: n.message || '',
+          timestamp: n.createdAt
+            ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : 'Just now',
+          type: n.type || 'system',
+          read: Boolean(n.read),
+        }));
+        setNotifications(mapped);
+      }
+    });
+
+    // 2. Listen for role changes / tutor approvals on user profile in Firestore
+    const userDocRef = doc(db, 'users', currentUser.id);
+    const unsubUser = onSnapshot(
+      userDocRef,
+      (snap) => {
+        if (snap.exists()) {
+          const uData = snap.data();
+          setCurrentUser((prev) => {
+            if (!prev) return prev;
+            if (
+              prev.role !== uData.role ||
+              prev.isInstructor !== uData.isInstructor ||
+              prev.instructorStatus !== uData.instructorStatus
+            ) {
+              const updated = {
+                ...prev,
+                role: uData.role || prev.role,
+                isInstructor: Boolean(uData.isInstructor),
+                instructorStatus: uData.instructorStatus || prev.instructorStatus,
+              };
+              try {
+                localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(updated));
+              } catch {}
+              return updated;
+            }
+            return prev;
+          });
+        }
+      },
+      () => {}
+    );
+
+    return () => {
+      unsubNotifs?.();
+      unsubUser?.();
+    };
+  }, [currentUser?.id]);
+
   const markNotificationAsRead = (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    setDoc(doc(db, 'notifications', id), { read: true }, { merge: true }).catch(() => {});
   };
 
   const markAllNotificationsAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    notifications.forEach((n) => {
+      setDoc(doc(db, 'notifications', n.id), { read: true }, { merge: true }).catch(() => {});
+    });
   };
 
   const clearNotifications = () => {

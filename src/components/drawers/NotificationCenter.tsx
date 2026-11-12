@@ -10,7 +10,9 @@ import {
   ShieldCheck, 
   Bell,
   Clock,
-  Calendar
+  Calendar,
+  GraduationCap,
+  Sparkles
 } from 'lucide-react';
 import { AppNotification, NavTab } from '../../types';
 
@@ -42,8 +44,13 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     return n.type === activeFilter;
   });
 
-  const getTypeIcon = (type: AppNotification['type']) => {
+  const getTypeIcon = (type: any) => {
     switch (type) {
+      case 'tutor_application':
+        return <GraduationCap className="w-4 h-4 text-[#FF7F32]" />;
+      case 'course_approval':
+      case 'course':
+        return <Sparkles className="w-4 h-4 text-emerald-500" />;
       case 'class':
         return <Video className="w-4 h-4 text-blue-600" />;
       case 'job':
@@ -51,6 +58,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
       case 'quiz':
         return <HelpCircle className="w-4 h-4 text-purple-600" />;
       case 'booking':
+      case 'tutorial_request':
         return <Calendar className="w-4 h-4 text-emerald-600" />;
       case 'system':
       default:

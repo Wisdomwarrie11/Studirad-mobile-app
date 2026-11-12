@@ -2,6 +2,7 @@ import {
   collection, 
   onSnapshot, 
   doc, 
+  getDoc,
   setDoc, 
   deleteDoc,
   getDocs, 
@@ -1301,12 +1302,26 @@ export function subscribeUserRequests(
   userEmailOrId: string,
   onUpdate: (requests: any[]) => void
 ): () => void {
-  const collRef = collection(db, 'requests');
-  
-  const unsubscribe = onSnapshot(
-    collRef,
+  const reqCollRef = collection(db, 'requests');
+  const tutCollRef = collection(db, 'tutorial_requests');
+
+  let currentReqs: any[] = [];
+  let currentTutorials: any[] = [];
+
+  const emitCombined = () => {
+    const combined = [...currentReqs, ...currentTutorials];
+    combined.sort(
+      (a, b) =>
+        new Date(b.submittedAt || b.createdAt || 0).getTime() -
+        new Date(a.submittedAt || a.createdAt || 0).getTime()
+    );
+    onUpdate(combined);
+  };
+
+  const unsubReqs = onSnapshot(
+    reqCollRef,
     (snapshot) => {
-      const all: any[] = [];
+      const list: any[] = [];
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
         if (
@@ -1314,27 +1329,61 @@ export function subscribeUserRequests(
           data.userId === userEmailOrId ||
           data.userEmail?.toLowerCase() === userEmailOrId.toLowerCase()
         ) {
-          all.push({
+          list.push({
             id: docSnap.id,
             ...data,
           });
         }
       });
-      all.sort((a, b) => new Date(b.submittedAt || b.createdAt || 0).getTime() - new Date(a.submittedAt || a.createdAt || 0).getTime());
-      onUpdate(all);
+      currentReqs = list;
+      emitCombined();
     },
     (err) => {
       console.warn('Requests subscription notice:', err);
-      try {
-        const saved = JSON.parse(localStorage.getItem('studirad_user_requests') || '[]');
-        onUpdate(saved);
-      } catch {
-        onUpdate([]);
-      }
     }
   );
 
-  return unsubscribe;
+  const unsubTutorials = onSnapshot(
+    tutCollRef,
+    (snapshot) => {
+      const list: any[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (
+          !userEmailOrId ||
+          data.studentId === userEmailOrId ||
+          data.studentEmail?.toLowerCase() === userEmailOrId.toLowerCase() ||
+          data.userId === userEmailOrId
+        ) {
+          list.push({
+            id: docSnap.id,
+            referenceCode: data.referenceCode || `SR-TUT-${docSnap.id.slice(-5)}`,
+            category: 'private_class',
+            userId: data.studentId || data.userId,
+            userEmail: data.studentEmail || data.userEmail,
+            userName: data.studentName || data.userName,
+            status: data.status === 'confirmed' ? 'Scheduled' : data.status === 'completed' ? 'Completed' : 'Under Review',
+            statusNotes: data.adminFeedback || (data.status === 'confirmed' ? `Confirmed with ${data.instructorName}. Room: ${data.meetingLink || 'Ready'}` : 'Under clinical coordinator review.'),
+            submittedAt: data.createdAt || new Date().toISOString(),
+            subjectTopic: `${data.courseTitle || 'Private Tutorial'} (${data.durationMinutes || 30} mins)`,
+            learningObjectives: `Scheduled session with ${data.instructorName} on ${data.selectedDay} at ${data.selectedTimeSlot}. Rate: ${data.currency} ${data.calculatedRate}.`,
+            preferredTimes: `${data.selectedDay} - ${data.selectedTimeSlot}`,
+            ...data,
+          });
+        }
+      });
+      currentTutorials = list;
+      emitCombined();
+    },
+    (err) => {
+      console.warn('Tutorial requests subscription notice:', err);
+    }
+  );
+
+  return () => {
+    unsubReqs();
+    unsubTutorials();
+  };
 }
 
 /**
@@ -1769,3 +1818,100 @@ export function subscribeUserNotifications(
     (err) => console.warn('User notifications subscription notice:', err)
   );
 }
+
+export interface UserGameProgress {
+  currentLevel: 'easy' | 'medium' | 'difficult';
+  levelIndices: {
+    easy: number;
+    medium: number;
+    difficult: number;
+  };
+  solvedQuestionIds: string[];
+  totalScore: number;
+  streak: number;
+  bestStreak: number;
+  marblesCount: number;
+  lastPlayedAt: string;
+}
+
+const DEFAULT_GAME_PROGRESS: UserGameProgress = {
+  currentLevel: 'easy',
+  levelIndices: {
+    easy: 0,
+    medium: 0,
+    difficult: 0,
+  },
+  solvedQuestionIds: [],
+  totalScore: 0,
+  streak: 0,
+  bestStreak: 0,
+  marblesCount: 0,
+  lastPlayedAt: new Date().toISOString(),
+};
+
+/**
+ * Save user radiographic trivia & marble game progress
+ */
+export async function saveUserGameProgress(
+  userId: string,
+  progress: UserGameProgress
+): Promise<void> {
+  if (!userId) return;
+  const storageKey = `studirad_game_progress_${userId}`;
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(progress));
+  } catch {}
+
+  try {
+    const docRef = doc(db, 'users', userId, 'game_progress', 'state');
+    await setDoc(docRef, progress, { merge: true });
+  } catch (e) {
+    // Non-blocking fallback to local storage
+  }
+}
+
+/**
+ * Load user radiographic trivia & marble game progress (resumes where they stopped)
+ */
+export async function loadUserGameProgress(
+  userId: string
+): Promise<UserGameProgress> {
+  const storageKey = `studirad_game_progress_${userId || 'guest'}`;
+  let localProgress: UserGameProgress | null = null;
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      localProgress = JSON.parse(saved);
+    }
+  } catch {}
+
+  if (!userId || userId === 'guest') {
+    return localProgress || DEFAULT_GAME_PROGRESS;
+  }
+
+  try {
+    const docRef = doc(db, 'users', userId, 'game_progress', 'state');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data() as UserGameProgress;
+      // Merge with highest score
+      const merged: UserGameProgress = {
+        ...DEFAULT_GAME_PROGRESS,
+        ...localProgress,
+        ...data,
+        levelIndices: {
+          ...DEFAULT_GAME_PROGRESS.levelIndices,
+          ...(localProgress?.levelIndices || {}),
+          ...(data.levelIndices || {}),
+        },
+      };
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(merged));
+      } catch {}
+      return merged;
+    }
+  } catch {}
+
+  return localProgress || DEFAULT_GAME_PROGRESS;
+}
+

@@ -163,7 +163,6 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
         >
           <GraduationCap className="w-4 h-4 text-[#FF7F32]" />
           <span>Private Classes</span>
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-500">Soon</span>
         </button>
 
         <button
@@ -274,15 +273,6 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
           </div>
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a
-              href="https://wa.me/2349029729621?text=Hello%20StudiRad%2C%20I%20am%20interested%20in%20upcoming%20Private%20Classes"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm inline-flex items-center justify-center gap-2 transition-all shadow-md"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span>Inquire via WhatsApp (+2349029729621)</span>
-            </a>
             <button
               type="button"
               onClick={() => setActiveFormTab('research')}

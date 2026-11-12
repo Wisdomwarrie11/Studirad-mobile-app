@@ -364,8 +364,14 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                   return (
                     <div
                       key={cls.id}
-                      onClick={() => handleClassClick(cls)}
-                      className="w-[calc(50%-6px)] min-w-[145px] max-w-[185px] sm:w-[210px] shrink-0 bg-white dark:bg-[#121824] rounded-2xl p-2.5 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between overflow-hidden cursor-pointer hover:border-[#002147] dark:hover:border-slate-600 transition-all group"
+                      onClick={() => {
+                        if (!isCompleted) handleClassClick(cls);
+                      }}
+                      className={`w-[calc(50%-6px)] min-w-[145px] max-w-[185px] sm:w-[210px] shrink-0 bg-white dark:bg-[#121824] rounded-2xl p-2.5 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between overflow-hidden transition-all ${
+                        isCompleted
+                          ? 'opacity-85 cursor-default'
+                          : 'cursor-pointer hover:border-[#002147] dark:hover:border-slate-600 group'
+                      }`}
                     >
                       <div>
                         {/* Card Image */}
@@ -374,7 +380,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                             src={cls.image || cls.thumbnail || classesImg}
                             alt={cls.title}
                             referrerPolicy="no-referrer"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className={`w-full h-full object-cover transition-transform duration-300 ${!isCompleted ? 'group-hover:scale-105' : ''}`}
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = classesImg;
                             }}
@@ -391,7 +397,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                           <div className="absolute bottom-2 left-2">
                             <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
                               isCompleted
-                                ? 'bg-slate-800 text-slate-200'
+                                ? 'bg-slate-800 text-slate-300'
                                 : 'bg-blue-600 text-white shadow-xs'
                             }`}>
                               {isCompleted ? 'Completed' : 'Coming Soon'}
@@ -400,7 +406,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                         </div>
 
                         {/* Title */}
-                        <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white line-clamp-2 mt-2 leading-snug group-hover:text-[#002147] dark:group-hover:text-[#38BDF8] transition-colors">
+                        <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white line-clamp-2 mt-2 leading-snug">
                           {cls.title}
                         </h3>
 
@@ -411,22 +417,15 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                         </div>
                       </div>
 
-                      {/* Register Link / Action (Inactive for Upcoming Classes) */}
+                      {/* Register Link / Status Badge */}
                       <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                         <span className="text-[11px] font-bold text-[#002147] dark:text-[#38BDF8]">
                           {cls.price || 'Free Cohort'}
                         </span>
 
-                        {isCompleted ? (
-                          <span className="text-[11px] font-bold text-[#FF7F32] group-hover:underline flex items-center gap-0.5">
-                            <span>View</span>
-                            <ChevronRight className="w-3 h-3" />
-                          </span>
-                        ) : (
-                          <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md cursor-not-allowed">
-                            Coming Soon
-                          </span>
-                        )}
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                          {isCompleted ? 'Completed' : 'Coming Soon'}
+                        </span>
                       </div>
                     </div>
                   );

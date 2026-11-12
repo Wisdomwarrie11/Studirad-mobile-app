@@ -67,14 +67,7 @@ const RequestContext = createContext<RequestContextType | undefined>(undefined);
 
 export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser } = useAuth();
-  const [requests, setRequests] = useState<UserRequest[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_REQUESTS);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [requests, setRequests] = useState<UserRequest[]>([]);
 
   // Real-time synchronization with Firestore requests collection
   useEffect(() => {

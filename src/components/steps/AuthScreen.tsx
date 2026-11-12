@@ -27,6 +27,8 @@ interface AuthScreenProps {
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
   const { 
+    currentUser,
+    setScreen,
     signIn, 
     signUp, 
     adminSignIn, 
@@ -144,6 +146,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
         
         {/* Top Header */}
         <header className="w-full pb-3 flex flex-col items-center border-b border-[var(--border-subtle)] shrink-0 relative">
+          {currentUser && (
+            <button
+              type="button"
+              onClick={() => setScreen('app')}
+              className="absolute left-0 top-1 text-xs font-semibold text-[var(--text-secondary)] hover:text-[#FF7F32] flex items-center gap-1 cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Back</span>
+            </button>
+          )}
           <div className="absolute right-0 top-0">
             <ThemeToggle />
           </div>
@@ -574,6 +586,31 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                   </>
                 )}
               </button>
+
+              {/* Back to Main Login navigation */}
+              <div className="pt-2 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('signIn');
+                    setErrorMessage(null);
+                  }}
+                  className="flex items-center gap-1.5 text-xs font-bold text-[#FF7F32] hover:underline cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Back to Main Login</span>
+                </button>
+
+                {currentUser && (
+                  <button
+                    type="button"
+                    onClick={() => setScreen('app')}
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors cursor-pointer"
+                  >
+                    Return to App
+                  </button>
+                )}
+              </div>
             </form>
           )}
 
