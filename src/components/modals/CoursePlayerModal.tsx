@@ -10,7 +10,6 @@ import {
   ChevronRight, 
   CheckCircle2, 
   BookOpen, 
-  Award, 
   FileText, 
   Link as LinkIcon, 
   HelpCircle, 
@@ -21,7 +20,6 @@ import {
   Maximize2,
   Minimize2,
   Lock,
-  Sparkles,
   RotateCcw
 } from 'lucide-react';
 
@@ -342,23 +340,12 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
           </div>
         </div>
 
-        {/* Real-time Course Completion Loader Header */}
-        <div className="bg-slate-100 dark:bg-[#161F30] px-4 sm:px-5 py-2 border-b border-slate-200 dark:border-slate-800 shrink-0">
-          <div className="flex items-center justify-between text-[11px] font-semibold mb-1">
-            <span className="text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-              <span>Real-Time Course Completion</span>
-              <span className="text-[10px] text-slate-400 font-normal">
-                ({completedLessonIds.length} of {allLessons.length} lessons done)
-              </span>
-            </span>
-            <span className="text-[#FF7F32] font-bold text-xs">{progressPercent}%</span>
-          </div>
-          <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-[#002147] via-[#2563EB] to-[#FF7F32] rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
+        {/* Sleek Course Progress Line */}
+        <div className="w-full h-1 bg-slate-200 dark:bg-slate-800 shrink-0">
+          <div
+            className="h-full bg-[#FF7F32] transition-all duration-300"
+            style={{ width: `${progressPercent}%` }}
+          />
         </div>
 
         {/* Video Player Container */}
@@ -392,20 +379,16 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
             </div>
           ) : (
             /* Fallback when no valid Video URL is present */
-            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-950 text-white space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-[#002147] border border-[#FF7F32]/40 flex items-center justify-center text-[#FF7F32]">
-                <Play className="w-7 h-7 ml-0.5" />
+            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-950 text-white space-y-2">
+              <div className="w-12 h-12 rounded-xl bg-[#002147] border border-[#FF7F32]/40 flex items-center justify-center text-[#FF7F32]">
+                <Play className="w-6 h-6 ml-0.5" />
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-white mb-1">
-                  {currentLesson.title}
-                </h4>
-                <p className="text-xs text-slate-400 max-w-sm">
-                  {activeVideoUrl 
-                    ? 'Could not parse video link. Please verify the YouTube or Google Drive link in the Admin Portal.'
-                    : 'No lecture video attached yet. You can embed a YouTube or Google Drive video link from the Admin Portal.'}
-                </p>
-              </div>
+              <h4 className="text-sm font-bold text-white">
+                {currentLesson.title}
+              </h4>
+              <p className="text-xs text-slate-400">
+                Video currently unavailable.
+              </p>
             </div>
           )}
 
@@ -434,30 +417,18 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
         {/* If video is not expanded, render tabs, quiz action, curriculum & footer */}
         {!isVideoExpanded && (
           <>
-            {/* Take Quiz Callout Banner directly under Video */}
-            <div className="px-4 sm:px-5 py-2.5 bg-slate-50 dark:bg-[#161F30] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
+            {/* Action Bar */}
+            <div className="px-4 sm:px-5 py-2 bg-slate-50 dark:bg-[#161F30] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-2 min-w-0">
-                {isCurrentCompleted ? (
-                  <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center shrink-0">
-                    <Check className="w-3.5 h-3.5" />
-                  </span>
-                ) : (
-                  <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0 animate-pulse">
-                    <HelpCircle className="w-3.5 h-3.5" />
+                <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                  {currentLesson.title}
+                </span>
+                {isCurrentCompleted && (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold shrink-0 flex items-center gap-1">
+                    <Check className="w-3 h-3" />
+                    <span>Done</span>
                   </span>
                 )}
-                <div className="min-w-0">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">
-                    {isCurrentCompleted 
-                      ? '✓ Lesson Completed & Quiz Passed' 
-                      : 'Take Quiz to Complete Lesson & Unlock Next'}
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
-                    {isCurrentCompleted 
-                      ? 'You have successfully verified understanding for this topic.' 
-                      : 'Answer the clinical check questions to record lesson progress.'}
-                  </span>
-                </div>
               </div>
 
               <div className="flex items-center gap-1.5 shrink-0">
@@ -470,12 +441,9 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                       ? 'border-rose-500/30 bg-rose-50 dark:bg-rose-950/40 text-rose-500'
                       : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#121824] text-slate-500 hover:text-slate-800 dark:hover:text-white'
                   }`}
-                  title={isLessonLiked ? 'Liked' : 'Like this video'}
+                  title={isLessonLiked ? 'Liked' : 'Like'}
                 >
                   <Heart className={`w-3.5 h-3.5 ${isLessonLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
-                  <span className="hidden sm:inline text-[11px] font-semibold">
-                    {isLessonLiked ? 'Liked' : 'Like'}
-                  </span>
                 </button>
 
                 {/* Take Quiz Button */}
@@ -484,14 +452,14 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                   onClick={() => setActiveTab('quiz')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
                     activeTab === 'quiz'
-                      ? 'bg-[#FF7F32] text-white shadow-[#FF7F32]/20'
+                      ? 'bg-[#FF7F32] text-white shadow-xs'
                       : isCurrentCompleted
-                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                       : 'bg-[#FF7F32] hover:bg-[#e86f26] text-white'
                   }`}
                 >
                   <HelpCircle className="w-3.5 h-3.5" />
-                  <span>{isCurrentCompleted ? 'Review Quiz' : 'Take Quiz'}</span>
+                  <span>{isCurrentCompleted ? 'Quiz' : 'Take Quiz'}</span>
                 </button>
               </div>
             </div>
@@ -508,7 +476,7 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                   }`}
                 >
                   <BookOpen className="w-3.5 h-3.5 text-[#FF7F32]" />
-                  <span>Curriculum ({allLessons.length})</span>
+                  <span>Curriculum</span>
                 </button>
 
                 <button
@@ -520,7 +488,7 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                   }`}
                 >
                   <HelpCircle className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Take Quiz ({courseQuizQuestions.length})</span>
+                  <span>Quiz</span>
                 </button>
 
                 <button
@@ -532,7 +500,7 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                   }`}
                 >
                   <FileText className="w-3.5 h-3.5 text-blue-500" />
-                  <span>Materials & Links ({accompanyingMaterials.length + accompanyingLinks.length})</span>
+                  <span>Materials</span>
                 </button>
 
                 <button
@@ -567,102 +535,73 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
               
               {/* TAB 1: CURRICULUM */}
               {activeTab === 'curriculum' && (
-                <div className="space-y-4">
-                  <div>
-                    <span className="text-[11px] font-bold text-[#FF7F32] uppercase tracking-wider block mb-0.5">
-                      Currently Viewing: Lesson {currentLessonIndex + 1} of {allLessons.length} · {currentLesson.duration}
-                    </span>
-                    <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-snug">
-                      {currentLesson.title}
-                    </h3>
-                  </div>
-
-                  {currentLesson.summary && (
-                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                      <span className="font-bold text-slate-900 dark:text-white block mb-1">Clinical Lesson Focus:</span>
-                      <p>{currentLesson.summary}</p>
-                    </div>
-                  )}
-
-                  {/* Modules Structure */}
-                  <div className="space-y-3">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      Course Modules & Lessons
-                    </h4>
-
-                    {course.modules && course.modules.length > 0 ? (
-                      course.modules.map((module, mIdx) => (
-                        <div
-                          key={module.id || mIdx}
-                          className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-[#121824]"
-                        >
-                          <div className="p-3 bg-slate-100/70 dark:bg-[#161F30] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <div className="space-y-3">
+                  {course.modules && course.modules.length > 0 ? (
+                    course.modules.map((module, mIdx) => (
+                      <div
+                        key={module.id || mIdx}
+                        className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-[#121824]"
+                      >
+                        {course.modules && course.modules.length > 1 && (
+                          <div className="px-3.5 py-2 bg-slate-100/70 dark:bg-[#161F30] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-900 dark:text-white">
                               {module.title}
                             </span>
-                            <span className="text-[11px] text-slate-500">
-                              {module.lessons?.length || 0} lessons
-                            </span>
                           </div>
+                        )}
 
-                          <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {module.lessons?.map((lesson) => {
-                              const flatIdx = allLessons.findIndex((l) => l.id === lesson.id);
-                              const isActive = flatIdx === currentLessonIndex;
-                              const isDone = completedLessonIds.includes(lesson.id);
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {module.lessons?.map((lesson) => {
+                            const flatIdx = allLessons.findIndex((l) => l.id === lesson.id);
+                            const isActive = flatIdx === currentLessonIndex;
+                            const isDone = completedLessonIds.includes(lesson.id);
 
-                              return (
-                                <button
-                                  key={lesson.id}
-                                  onClick={() => {
-                                    if (flatIdx !== -1) setCurrentLessonIndex(flatIdx);
-                                  }}
-                                  className={`w-full p-3 flex items-center justify-between text-left transition-colors cursor-pointer ${
+                            return (
+                              <button
+                                key={lesson.id}
+                                onClick={() => {
+                                  if (flatIdx !== -1) setCurrentLessonIndex(flatIdx);
+                                }}
+                                className={`w-full p-3 flex items-center justify-between text-left transition-colors cursor-pointer ${
+                                  isActive
+                                    ? 'bg-blue-50/70 dark:bg-[#1B2942] text-[#002147] dark:text-[#38BDF8]'
+                                    : 'hover:bg-slate-50 dark:hover:bg-[#161F30] text-slate-700 dark:text-slate-300'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
                                     isActive
-                                      ? 'bg-blue-50/70 dark:bg-[#1B2942] text-[#002147] dark:text-[#38BDF8]'
-                                      : 'hover:bg-slate-50 dark:hover:bg-[#161F30] text-slate-700 dark:text-slate-300'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
-                                      isActive
-                                        ? 'bg-[#FF7F32] text-white'
-                                        : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
-                                    }`}>
-                                      <Play className="w-3 h-3 fill-current ml-0.5" />
-                                    </div>
-                                    <div className="truncate">
-                                      <span className="text-xs font-semibold block truncate">
-                                        {lesson.title}
-                                      </span>
-                                      <span className="text-[10px] text-slate-400">
-                                        {lesson.duration}
-                                      </span>
-                                    </div>
+                                      ? 'bg-[#FF7F32] text-white'
+                                      : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                                  }`}>
+                                    <Play className="w-3 h-3 fill-current ml-0.5" />
                                   </div>
+                                  <div className="truncate">
+                                    <span className="text-xs font-semibold block truncate">
+                                      {lesson.title}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400">
+                                      {lesson.duration}
+                                    </span>
+                                  </div>
+                                </div>
 
-                                  {isDone ? (
-                                    <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
-                                      <Check className="w-3.5 h-3.5" />
-                                      <span>Done</span>
-                                    </span>
-                                  ) : (
-                                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full shrink-0">
-                                      Quiz Pending
-                                    </span>
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
+                                {isDone && (
+                                  <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                                    <Check className="w-3.5 h-3.5" />
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
                         </div>
-                      ))
-                    ) : (
-                      <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 text-xs text-slate-500">
-                        {allLessons[0]?.title} ({allLessons[0]?.duration})
                       </div>
-                    )}
-                  </div>
+                    ))
+                  ) : (
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 text-xs text-slate-500">
+                      {allLessons[0]?.title} ({allLessons[0]?.duration})
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -670,60 +609,44 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
               {activeTab === 'quiz' && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF7F32] block">
-                        Lesson {currentLessonIndex + 1} Quiz
-                      </span>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                        {currentLesson.title}
-                      </h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        Answer the questions below to verify clinical mastery and mark this lesson as completed.
-                      </p>
-                    </div>
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                      Quiz · {currentLesson.title}
+                    </h4>
 
                     {submittedQuiz && (
-                      <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 text-xs font-bold shrink-0">
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 text-xs font-bold shrink-0">
                         Score: {calculateScore()} / {courseQuizQuestions.length}
                       </span>
                     )}
                   </div>
 
                   {submittedQuiz && (
-                    <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 space-y-2">
+                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-emerald-500" />
-                        <h5 className="font-bold text-xs sm:text-sm">
-                          Quiz Completed! Lesson marked as completed 🎉
-                        </h5>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span className="text-xs font-bold">Quiz passed! Lesson marked as completed.</span>
                       </div>
-                      <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                        Your real-time course progress has updated. You are now unlocked to advance to the next lesson!
-                      </p>
                       {hasNextLesson && (
-                        <div className="pt-1">
-                          <button
-                            type="button"
-                            onClick={handleNextLesson}
-                            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
-                          >
-                            <span>Proceed to Next Lesson</span>
-                            <ChevronRight className="w-4 h-4" />
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={handleNextLesson}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>Next Lesson</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
                       )}
                     </div>
                   )}
 
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {courseQuizQuestions.map((q, qIdx) => {
-                      const isAnswered = selectedAnswers[qIdx] !== undefined;
                       const isCorrect = submittedQuiz && selectedAnswers[qIdx] === q.correctAnswerIndex;
 
                       return (
                         <div
                           key={q.id || qIdx}
-                          className={`p-4 rounded-2xl border transition-all ${
+                          className={`p-3.5 rounded-2xl border transition-all ${
                             submittedQuiz
                               ? isCorrect
                                 ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800'
@@ -731,16 +654,16 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                               : 'bg-white dark:bg-[#161F30] border-slate-200 dark:border-slate-800'
                           }`}
                         >
-                          <div className="flex items-start gap-2 mb-3">
+                          <div className="flex items-start gap-2 mb-2.5">
                             <span className="w-5 h-5 rounded-full bg-[#002147] text-white text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                               {qIdx + 1}
                             </span>
-                            <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug">
+                            <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white leading-snug">
                               {q.question}
                             </span>
                           </div>
 
-                          <div className="space-y-2 pl-7">
+                          <div className="space-y-1.5 pl-7">
                             {q.options.map((opt, optIdx) => {
                               const isSelected = selectedAnswers[qIdx] === optIdx;
                               const isRightAnswer = submittedQuiz && optIdx === q.correctAnswerIndex;
@@ -772,8 +695,7 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                           </div>
 
                           {submittedQuiz && q.explanation && (
-                            <div className="mt-3 ml-7 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed border border-slate-200 dark:border-slate-700">
-                              <span className="font-bold text-slate-900 dark:text-white">Clinical Note: </span>
+                            <div className="mt-2.5 ml-7 p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed border border-slate-200 dark:border-slate-700">
                               {q.explanation}
                             </div>
                           )}
@@ -781,7 +703,7 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                       );
                     })}
 
-                    <div className="pt-2 flex items-center justify-end gap-2">
+                    <div className="pt-1 flex items-center justify-end gap-2">
                       {submittedQuiz ? (
                         <button
                           type="button"
@@ -789,20 +711,20 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                             setSubmittedQuiz(false);
                             setSelectedAnswers({});
                           }}
-                          className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer"
+                          className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
-                          <span>Retake Quiz</span>
+                          <span>Retake</span>
                         </button>
                       ) : (
                         <button
                           type="button"
                           onClick={handleSubmitQuiz}
                           disabled={Object.keys(selectedAnswers).length < courseQuizQuestions.length}
-                          className="px-5 py-2.5 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-md shadow-[#FF7F32]/20 flex items-center gap-1.5"
+                          className="px-4 py-2 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-xs flex items-center gap-1.5"
                         >
                           <CheckCircle2 className="w-4 h-4" />
-                          <span>Submit & Complete Lesson</span>
+                          <span>Submit Quiz</span>
                         </button>
                       )}
                     </div>
@@ -812,127 +734,85 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
 
               {/* TAB 3: ACCOMPANYING MATERIALS */}
               {activeTab === 'materials' && (
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-                      Accompanying Course Materials
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Supplementary clinical guides, textbooks, and protocol handouts.
-                    </p>
-                  </div>
-
+                <div className="space-y-3">
                   {accompanyingMaterials.length === 0 && accompanyingLinks.length === 0 ? (
                     <div className="p-8 text-center rounded-2xl bg-slate-50 dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 space-y-2">
                       <FileText className="w-8 h-8 text-slate-400 mx-auto" />
-                      <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                        No accompanying materials or links added yet.
-                      </p>
-                      <p className="text-[11px] text-slate-400">
-                        Admin handouts and guidelines stored on Cloudinary will appear here.
+                      <p className="text-xs font-medium text-slate-500">
+                        No materials added yet.
                       </p>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {accompanyingMaterials.length > 0 && (
-                        <div className="space-y-2">
-                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                            Documents & Handouts ({accompanyingMaterials.length})
-                          </span>
-                          <div className="space-y-2">
-                            {accompanyingMaterials.map((mat, idx) => (
-                              <div
-                                key={mat.id || idx}
-                                className="p-3.5 rounded-2xl bg-white dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shadow-xs"
-                              >
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#002147] dark:text-[#38BDF8] flex items-center justify-center shrink-0">
-                                    <FileText className="w-4 h-4" />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate block">
-                                      {mat.title}
-                                    </span>
-                                    <span className="text-[10px] text-slate-500 uppercase font-semibold">
-                                      {mat.type || 'Clinical Document'}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const isVid = mat.type === 'video' || mat.url.includes('youtube') || mat.url.includes('youtu.be');
-                                    setReadingMaterial({
-                                      id: mat.id || `mat_${idx}`,
-                                      title: mat.title,
-                                      course: course.title,
-                                      type: isVid ? 'video' : 'document',
-                                      fileSize: mat.size || 'In-App Material',
-                                      link: mat.url,
-                                      uploader: course.instructor || 'StudiRad Faculty',
-                                    });
-                                  }}
-                                  className="px-3 py-1.5 rounded-xl bg-[#002147] text-white hover:bg-[#0A3266] text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
-                                >
-                                  <BookOpen className="w-3.5 h-3.5 text-[#FF7F32]" />
-                                  <span>View In-App</span>
-                                </button>
-                              </div>
-                            ))}
+                    <div className="space-y-2">
+                      {accompanyingMaterials.map((mat, idx) => (
+                        <div
+                          key={mat.id || idx}
+                          className="p-3 rounded-2xl bg-white dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shadow-xs"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#002147] dark:text-[#38BDF8] flex items-center justify-center shrink-0">
+                              <FileText className="w-4 h-4" />
+                            </div>
+                            <span className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                              {mat.title}
+                            </span>
                           </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const isVid = mat.type === 'video' || mat.url.includes('youtube') || mat.url.includes('youtu.be');
+                              setReadingMaterial({
+                                id: mat.id || `mat_${idx}`,
+                                title: mat.title,
+                                course: course.title,
+                                type: isVid ? 'video' : 'document',
+                                fileSize: mat.size || 'In-App Material',
+                                link: mat.url,
+                                uploader: course.instructor || 'StudiRad Faculty',
+                              });
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-[#002147] text-white hover:bg-[#0A3266] text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+                          >
+                            <span>Open</span>
+                          </button>
                         </div>
-                      )}
+                      ))}
 
-                      {accompanyingLinks.length > 0 && (
-                        <div className="space-y-2">
-                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                            Reference Links & Guidelines ({accompanyingLinks.length})
-                          </span>
-                          <div className="space-y-2">
-                            {accompanyingLinks.map((link, idx) => (
-                              <div
-                                key={link.id || idx}
-                                className="p-3.5 rounded-2xl bg-white dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shadow-xs"
-                              >
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center shrink-0">
-                                    <LinkIcon className="w-4 h-4" />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate block">
-                                      {link.title}
-                                    </span>
-                                    <span className="text-[10px] text-slate-400 truncate block">
-                                      {link.url}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const isVid = link.url.includes('youtube') || link.url.includes('youtu.be');
-                                    setReadingMaterial({
-                                      id: link.id || `link_${idx}`,
-                                      title: link.title,
-                                      course: course.title,
-                                      type: isVid ? 'video' : 'document',
-                                      fileSize: 'Clinical Resource',
-                                      link: link.url,
-                                      uploader: course.instructor || 'StudiRad Faculty',
-                                    });
-                                  }}
-                                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
-                                >
-                                  <BookOpen className="w-3.5 h-3.5 text-[#002147] dark:text-[#38BDF8]" />
-                                  <span>Open In-App</span>
-                                </button>
-                              </div>
-                            ))}
+                      {accompanyingLinks.map((link, idx) => (
+                        <div
+                          key={link.id || idx}
+                          className="p-3 rounded-2xl bg-white dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shadow-xs"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center shrink-0">
+                              <LinkIcon className="w-4 h-4" />
+                            </div>
+                            <span className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                              {link.title}
+                            </span>
                           </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const isVid = link.url.includes('youtube') || link.url.includes('youtu.be');
+                              setReadingMaterial({
+                                id: link.id || `link_${idx}`,
+                                title: link.title,
+                                course: course.title,
+                                type: isVid ? 'video' : 'document',
+                                fileSize: 'Clinical Resource',
+                                link: link.url,
+                                uploader: course.instructor || 'StudiRad Faculty',
+                              });
+                            }}
+                            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+                          >
+                            <span>Open</span>
+                          </button>
                         </div>
-                      )}
+                      ))}
                     </div>
                   )}
                 </div>
@@ -940,35 +820,16 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
 
               {/* TAB 4: OVERVIEW */}
               {activeTab === 'overview' && (
-                <div className="space-y-4">
-                  <div>
-                    <span className="text-xs font-bold text-[#002147] dark:text-[#38BDF8] uppercase tracking-wider block mb-1">
-                      {course.institution}
-                    </span>
-                    <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                      {course.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      Instructor: <span className="font-semibold text-slate-800 dark:text-slate-200">{course.instructor}</span> ({course.instructorRole})
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#161F30] border border-slate-200 dark:border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Modality</span>
-                      <span className="font-bold text-slate-900 dark:text-white uppercase">{course.modality || 'General'}</span>
-                    </div>
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#161F30] border border-slate-200 dark:border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Certification</span>
-                      <span className="font-bold text-slate-900 dark:text-white">Verified Certificate</span>
-                    </div>
-                  </div>
-
+                <div className="space-y-3">
                   <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 space-y-2">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Course Syllabus & Overview</h4>
                     <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
-                      {course.overview}
+                      {course.overview || 'Comprehensive clinical radiography course module.'}
                     </p>
+                    {course.instructor && (
+                      <p className="text-xs text-slate-400 pt-1 border-t border-slate-200 dark:border-slate-800">
+                        Instructor: {course.instructor}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

@@ -673,15 +673,6 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                               <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-white/20 backdrop-blur-md text-white">
                                 {course.category || course.modality?.toUpperCase() || 'Course'}
                               </span>
-                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-black/60 backdrop-blur-md text-white">
-                                {course.level || 'All Levels'}
-                              </span>
-                              {hasVideo && (
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider bg-red-600/90 text-white flex items-center gap-1">
-                                  <Play className="w-2.5 h-2.5 fill-white" />
-                                  <span>In-App Video</span>
-                                </span>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -714,11 +705,6 @@ export const LearnTab: React.FC<LearnTabProps> = ({
 
                         {/* Badges for Curricular Features */}
                         <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[11px]">
-                          <span className="px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                            <Award className="w-3 h-3" />
-                            <span>Certificate Included</span>
-                          </span>
-
                           {modulesCount > 0 && (
                             <span className="px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 font-semibold flex items-center gap-1">
                               <Layers className="w-3 h-3" />

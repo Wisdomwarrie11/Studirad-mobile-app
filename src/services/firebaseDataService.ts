@@ -1498,7 +1498,11 @@ export async function submitTutorApplication(
     return { success: true, id: appId };
   } catch (error: any) {
     console.error('Error submitting tutor application:', error);
-    return { success: false, id: appId, error: error?.message || 'Failed to submit application' };
+    const rawMsg = String(error?.message || '');
+    const userFriendlyError = rawMsg.toLowerCase().includes('permission')
+      ? 'Unable to submit application due to a security authorization check. Please ensure you are signed in or try again.'
+      : 'Something went wrong while submitting your application. Please check your network and try again.';
+    return { success: false, id: appId, error: userFriendlyError };
   }
 }
 
@@ -1632,7 +1636,11 @@ export async function submitTutorialRequest(
     return { success: true, id: reqId };
   } catch (error: any) {
     console.error('Error submitting tutorial request:', error);
-    return { success: false, id: reqId, error: error?.message || 'Failed to submit request' };
+    const rawMsg = String(error?.message || '');
+    const userFriendlyError = rawMsg.toLowerCase().includes('permission')
+      ? 'Unable to submit request due to a security authorization check. Please ensure you are signed in or try again.'
+      : 'Something went wrong while submitting your request. Please check your network and try again.';
+    return { success: false, id: reqId, error: userFriendlyError };
   }
 }
 

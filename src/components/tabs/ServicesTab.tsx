@@ -125,7 +125,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
           Submit & Track Requests
         </h1>
         <p className="body-large text-[var(--text-secondary)] max-w-3xl">
-          Request academic assistance for dissertation, SPSS biostatistics, and research methodology review, or check upcoming 1-on-1 private tutoring cohorts.
+          Request academic assistance for all research papers, seminars and dissertation. Schedule a 1-on-1 private tutoring session.
         </p>
       </div>
 
@@ -138,7 +138,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
             setSuccessReference(null);
             setErrorMessage(null);
           }}
-          className={`flex-1 min-w-[140px] py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center gap-2 ${
+          className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center gap-2 ${
             activeFormTab === 'research'
               ? 'bg-[#002147] dark:bg-[#1B447A] text-white shadow-sm'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-elevated)]'
@@ -299,11 +299,8 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
         <form onSubmit={handleResearchSubmit} className="bg-[var(--bg-surface)] rounded-3xl p-6 sm:p-10 border border-[var(--border-subtle)] shadow-sm space-y-6">
           <div className="border-b border-[var(--border-subtle)] pb-4">
             <h2 className="heading-section text-[var(--text-primary)]">
-              Research & Dissertation Support Request
+              Research Assistance Request
             </h2>
-            <p className="body-standard text-[var(--text-secondary)] mt-1">
-              Receive structured guidance on undergraduate BSc dissertation design, MSc systematic reviews, SPSS/R medical statistics, and publication editing.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -350,9 +347,9 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                 <option value="General Diagnostic Radiography">General Diagnostic Radiography</option>
                 <option value="Computed Tomography (CT)">Computed Tomography (CT)</option>
                 <option value="Magnetic Resonance Imaging (MRI)">Magnetic Resonance Imaging (MRI)</option>
-                <option value="Ultrasound & Vascular Sonography">Ultrasound & Vascular Sonography</option>
-                <option value="Radiation Protection & Dosimetry">Radiation Protection & Dosimetry</option>
-                <option value="Nuclear Medicine & PET-CT">Nuclear Medicine & PET-CT</option>
+                <option value="Ultrasound & Vascular Sonography">Ultrasound</option>
+                <option value="Radiation Protection">Radiation Protection</option>
+                <option value="Nuclear Medicine">Nuclear Medicine</option>
               </select>
             </div>
 
@@ -366,11 +363,11 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                 onChange={(e) => setResAssistanceType(e.target.value)}
                 className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
               >
-                <option value="SPSS Biostatistics & Quantitative Analysis">SPSS Biostatistics & Quantitative Analysis</option>
-                <option value="Methodology & Research Proposal Design">Methodology & Research Proposal Design</option>
-                <option value="Literature Review & PRISMA Framework">Literature Review & PRISMA Framework</option>
-                <option value="Academic Proofreading & Journal Submission">Academic Proofreading & Journal Submission</option>
-                <option value="Clinical Audit Protocol Design">Clinical Audit Protocol Design</option>
+                <option value="Consultation">Consultation and enquiries</option>
+                <option value="Editing and Grammar check">Editing and Grammar check</option>
+                <option value="Data Analysis">Data Analysis</option>
+                <option value="Data Collection">Data Collection</option>
+                <option value="Proofreadingn">Proofreading</option>
               </select>
             </div>
           </div>
@@ -378,14 +375,17 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
           {/* Research Title */}
           <div className="flex flex-col gap-1.5">
             <label className="label-ui text-[var(--text-primary)]">
-              Research Topic or Working Title <span className="text-red-400">*</span>
+              Research Topic <span className="text-red-400">*</span>
+               <p className="body-standard text-[var(--text-secondary)]">
+               If no topic yet, just write 'No Topic Yet'
+            </p>
             </label>
             <input
               type="text"
               required
               value={resTitle}
               onChange={(e) => setResTitle(e.target.value)}
-              placeholder="e.g. Evaluation of Noise Reduction Filters in Ultra-Low Dose Pediatric Chest CT"
+              placeholder=""
               className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
             />
           </div>
@@ -401,11 +401,13 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                 onChange={(e) => setResCurrentStage(e.target.value)}
                 className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
               >
-                <option value="Idea & Research Proposal">Idea & Research Proposal</option>
-                <option value="Ethics & Governance Review">Ethics & Governance Review</option>
-                <option value="Data Collection / Protocol Design">Data Collection / Protocol Design</option>
-                <option value="Statistical Analysis & Interpretation">Statistical Analysis & Interpretation</option>
-                <option value="Draft Writing & Revision">Draft Writing & Revision</option>
+                <option value="Idea stage">Idea Stage</option>
+                <option value="Draft writing">Draft writing</option>
+                <option value="Data Collection">Data Collection</option>
+                <option value="Statistical Analysis">Statistical Analysis</option>
+                <option value="Draft Writing & Revision">Draft Writing</option>
+                <option value="None">None</option>
+
               </select>
             </div>
 
@@ -436,32 +438,14 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
               rows={4}
               value={resSupportDetails}
               onChange={(e) => setResSupportDetails(e.target.value)}
-              placeholder="Detail your sample size, specific statistical tests, data variables, or university rubric guidelines (optional)..."
+              placeholder=""
               className="w-full p-4 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
-            />
-          </div>
-
-          {/* Methodology Notes */}
-          <div className="flex flex-col gap-1.5">
-            <label className="label-ui text-[var(--text-primary)]">
-              Relevant Notes or Software Used (Optional)
-            </label>
-            <input
-              type="text"
-              value={resNotes}
-              onChange={(e) => setResNotes(e.target.value)}
-              placeholder="e.g. SPSS v29, EndNote, PRISMA 2020 flow, anonymized CSV"
-              className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
             />
           </div>
 
           {/* Submit Action */}
           <div className="pt-6 pb-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-t border-[var(--border-subtle)]">
-            <span className="text-xs text-[var(--text-muted)] max-w-sm">
-              Strict academic confidentiality and research standards enforced.
-            </span>
-
-            <button
+          <button
               type="submit"
               disabled={isSubmitting}
               className="w-full sm:w-auto min-h-[48px] px-8 py-3.5 rounded-xl bg-[#002147] dark:bg-[#1B447A] hover:bg-[#001733] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all disabled:opacity-60 cursor-pointer shrink-0"
@@ -488,9 +472,6 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
               <h2 className="heading-section text-[var(--text-primary)]">
                 Submitted Requests Tracking
               </h2>
-              <p className="body-secondary text-[var(--text-secondary)]">
-                Real-time review status of your tutoring sessions, research support briefs, and departmental service requests.
-              </p>
             </div>
           </div>
 
@@ -501,7 +482,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                 No Requests Submitted Yet
               </h3>
               <p className="body-standard text-[var(--text-secondary)] max-w-sm mx-auto">
-                Submit a request using the Private Classes, Research Assistance, or Clinical Services forms to track your requests here.
+                Submit a request using the Private Classes and Research Assistance forms to track your requests here.
               </p>
               <button
                 type="button"

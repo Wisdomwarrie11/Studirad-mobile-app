@@ -91,6 +91,82 @@
         "completedAt": { "type": "string", "maxLength": 100 }
       },
       "required": ["classId", "title"]
+    },
+    "tutorApplication": {
+      "title": "TutorApplication",
+      "description": "Application submitted by a radiography professional to join the instructor faculty",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "fullName": { "type": "string", "maxLength": 200 },
+        "email": { "type": "string", "maxLength": 200 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "bio": { "type": "string", "maxLength": 3000 },
+        "academicBackground": { "type": "string", "maxLength": 500 },
+        "areaOfExpertise": { "type": "array" },
+        "experienceYears": { "type": "string", "maxLength": 100 },
+        "summary": { "type": "string", "maxLength": 3000 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "appliedAt": { "type": "string", "format": "date-time" },
+        "reviewedAt": { "type": "string", "format": "date-time" },
+        "reviewedBy": { "type": "string", "maxLength": 200 },
+        "feedback": { "type": "string", "maxLength": 2000 }
+      },
+      "required": ["fullName", "email", "academicBackground", "bio", "status"]
+    },
+    "tutorialRequest": {
+      "title": "TutorialRequest",
+      "description": "Private 1-on-1 radiography tutorial booking request from a student",
+      "type": "object",
+      "properties": {
+        "courseId": { "type": "string", "maxLength": 128 },
+        "courseTitle": { "type": "string", "maxLength": 200 },
+        "instructorId": { "type": "string", "maxLength": 128 },
+        "instructorName": { "type": "string", "maxLength": 200 },
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 200 },
+        "studentEmail": { "type": "string", "maxLength": 200 },
+        "requestedDay": { "type": "string", "maxLength": 50 },
+        "requestedTime": { "type": "string", "maxLength": 50 },
+        "durationMinutes": { "type": "number" },
+        "calculatedFee": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 2000 },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "adminFeedback": { "type": "string", "maxLength": 2000 },
+        "meetingLink": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["courseId", "instructorId", "studentName", "status"]
+    },
+    "adminNotification": {
+      "title": "AdminNotification",
+      "description": "Platform notification for administrators regarding new requests, courses, and tutor applications",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "message": { "type": "string", "maxLength": 2000 },
+        "type": { "type": "string", "maxLength": 100 },
+        "targetRole": { "type": "string", "maxLength": 50 },
+        "relatedId": { "type": "string", "maxLength": 128 },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "linkTab": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["title", "message", "type"]
+    },
+    "notification": {
+      "title": "Notification",
+      "description": "User notification regarding tutorial confirmations, courses, or system notices",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "message": { "type": "string", "maxLength": 2000 },
+        "type": { "type": "string", "maxLength": 100 },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "message"]
     }
   },
   "firestore": {
@@ -113,6 +189,22 @@
     "/users/{userId}/completedClasses/{classId}": {
       "schema": "userCompletedClass",
       "description": "Completed classes and CPD accreditation log for the user"
+    },
+    "/tutor_applications/{applicationId}": {
+      "schema": "tutorApplication",
+      "description": "Instructor applications submitted by radiographers"
+    },
+    "/tutorial_requests/{requestId}": {
+      "schema": "tutorialRequest",
+      "description": "Private 1-on-1 tutorial bookings"
+    },
+    "/admin_notifications/{notificationId}": {
+      "schema": "adminNotification",
+      "description": "Admin activity feed alerts"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "notification",
+      "description": "Direct student and instructor notifications"
     }
   }
 }

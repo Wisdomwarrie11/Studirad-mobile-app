@@ -69,6 +69,12 @@ service cloud.firestore {
       allow write, delete: if isValidId(profileId);
     }
 
+    // Collection: Locums (Fallback locum collection)
+    match /locums/{locumId} {
+      allow read: if true;
+      allow write, delete: if isValidId(locumId);
+    }
+
     // Collection: Webinars (Recorded webinars and clinical presentations)
     match /webinars/{webinarId} {
       allow read: if true;
@@ -80,8 +86,23 @@ service cloud.firestore {
       allow read, write: if isValidId(requestId);
     }
 
+    // Collection: Tutor & Instructor Applications
+    match /tutor_applications/{applicationId} {
+      allow read, write: if isValidId(applicationId);
+    }
+
+    // Collection: Tutorial Requests (Private 1-on-1 bookings and custom sessions)
+    match /tutorial_requests/{requestId} {
+      allow read, write: if isValidId(requestId);
+    }
+
     // Collection: Admin Notifications
     match /admin_notifications/{notificationId} {
+      allow read, write: if isValidId(notificationId);
+    }
+
+    // Collection: User Notifications
+    match /notifications/{notificationId} {
       allow read, write: if isValidId(notificationId);
     }
 
@@ -90,25 +111,20 @@ service cloud.firestore {
       allow read, write: if isValidId(bookingId);
     }
 
-    // Collection: Users (User profile isolated per UID)
+    // Collection: Users (User profile and nested learning progress)
     match /users/{userId} {
       allow read: if true;
       allow write: if isValidId(userId);
 
-      // Subcollection: Completed Classes & CPD records
-      match /completedClasses/{classDocId} {
-        allow read, write: if isValidId(classDocId);
+      // Subcollections: Completed Classes, Enrolled Courses, Saved Opportunities
+      match /{allSubcollections=**} {
+        allow read, write: if isValidId(userId);
       }
+    }
 
-      // Subcollection: Saved Opportunities
-      match /saved_opportunities/{oppDocId} {
-        allow read, write: if isValidId(oppDocId);
-      }
-
-      // Subcollection: Enrolled Courses
-      match /enrolled_courses/{courseDocId} {
-        allow read, write: if isValidId(courseDocId);
-      }
+    // Collection: Health check test connection
+    match /test/{testId} {
+      allow read, write: if true;
     }
 
     // Collection: Admin registry
