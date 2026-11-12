@@ -62,7 +62,8 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
   if (!isOpen || !material) return null;
 
   const rawLink = (material.link || '').trim();
-  const config = COURSE_COLORS[material.course] || COURSE_COLORS.All;
+  const DEFAULT_CONFIG = { main: 'text-[#002147] dark:text-[#38BDF8]', light: 'bg-slate-100 dark:bg-slate-800', border: 'border-slate-200 dark:border-slate-700' };
+  const config = (material.course && COURSE_COLORS[material.course]) || COURSE_COLORS.All || DEFAULT_CONFIG;
 
   // Identify file types
   const isYouTube = rawLink.includes('youtube.com') || rawLink.includes('youtu.be');
@@ -81,15 +82,17 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
 
   // In-app embedded URLs
   const videoEmbedUrl = isEmbedVideo ? getVideoEmbedUrl(rawLink, false) : null;
-  const googleDocsViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(rawLink)}&embedded=true`;
+  const googleDocsViewerUrl = rawLink ? `https://docs.google.com/viewer?url=${encodeURIComponent(rawLink)}&embedded=true` : '';
 
   // Check if resource is cached in the service worker educational cache
   useEffect(() => {
     let isMounted = true;
     if (rawLink) {
-      isResourceCached(rawLink).then((cached) => {
-        if (isMounted) setIsCached(cached);
-      });
+      isResourceCached(rawLink)
+        .then((cached) => {
+          if (isMounted) setIsCached(cached);
+        })
+        .catch(() => {});
     }
     return () => {
       isMounted = false;
@@ -144,7 +147,8 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
         const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = blobUrl;
-        const filename = material.title.replace(/[^a-zA-Z0-9_-]/g, '_') + (isPDF ? '.pdf' : isDirectVideo ? '.mp4' : '');
+        const safeName = (material?.title || 'clinical_study_resource').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const filename = safeName + (isPDF ? '.pdf' : isDirectVideo ? '.mp4' : '');
         a.download = filename;
         document.body.appendChild(a);
         a.click();
@@ -154,7 +158,7 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
         // Fallback hidden anchor with download attribute without window.location navigation
         const a = document.createElement('a');
         a.href = rawLink;
-        a.download = material.title;
+        a.download = material?.title || 'study_resource';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -167,12 +171,21 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
   };
 
   const formatDate = (dateVal: any) => {
-    if (!dateVal) return 'Recent update';
-    if (typeof dateVal === 'string') return dateVal;
-    if (dateVal.toDate) {
-      return dateVal.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    try {
+      if (!dateVal) return 'Recent update';
+      if (typeof dateVal === 'string') return dateVal;
+      if (typeof dateVal?.toDate === 'function') {
+        return dateVal.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+      if (dateVal?.seconds) {
+        return new Date(dateVal.seconds * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) return 'Recent update';
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch {
+      return 'Recent update';
     }
-    return new Date(dateVal).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   return (

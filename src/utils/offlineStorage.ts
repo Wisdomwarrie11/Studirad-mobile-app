@@ -29,13 +29,13 @@ export interface OfflinePackData {
  * Check if a specific URL is already stored in the educational offline cache
  */
 export async function isResourceCached(url: string): Promise<boolean> {
-  if (!('caches' in window) || !url) return false;
   try {
-    const cache = await caches.open(EDUCATIONAL_CACHE_NAME);
-    const match = await cache.match(url);
+    if (typeof window === 'undefined' || !('caches' in window) || !window.caches || !url) return false;
+    const cache = await caches.open(EDUCATIONAL_CACHE_NAME).catch(() => null);
+    if (!cache) return false;
+    const match = await cache.match(url).catch(() => null);
     return !!match;
-  } catch (err) {
-    console.warn('[OfflineStorage] Cache match check failed:', err);
+  } catch {
     return false;
   }
 }

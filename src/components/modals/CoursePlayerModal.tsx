@@ -783,15 +783,16 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              const isVid = mat.type === 'video' || mat.url.includes('youtube') || mat.url.includes('youtu.be');
+                              const matUrl = (mat?.url || (mat as any)?.link || '').trim();
+                              const isVid = mat?.type === 'video' || matUrl.includes('youtube') || matUrl.includes('youtu.be');
                               setReadingMaterial({
-                                id: mat.id || `mat_${idx}`,
-                                title: mat.title,
-                                course: course.title,
+                                id: mat?.id || `mat_${idx}`,
+                                title: mat?.title || 'Course Material',
+                                course: course?.title || 'Course',
                                 type: isVid ? 'video' : 'document',
-                                fileSize: mat.size || 'In-App Material',
-                                link: mat.url,
-                                uploader: course.instructor || 'StudiRad Faculty',
+                                fileSize: mat?.size || (mat as any)?.fileSize || 'In-App Material',
+                                link: matUrl,
+                                uploader: course?.instructor || 'StudiRad Faculty',
                               });
                             }}
                             className="px-3 py-1.5 rounded-xl bg-[#002147] text-white hover:bg-[#0A3266] text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
@@ -818,15 +819,16 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              const isVid = link.url.includes('youtube') || link.url.includes('youtu.be');
+                              const linkUrl = (link?.url || (link as any)?.link || '').trim();
+                              const isVid = linkUrl.includes('youtube') || linkUrl.includes('youtu.be');
                               setReadingMaterial({
-                                id: link.id || `link_${idx}`,
-                                title: link.title,
-                                course: course.title,
+                                id: link?.id || `link_${idx}`,
+                                title: link?.title || 'Resource Link',
+                                course: course?.title || 'Course',
                                 type: isVid ? 'video' : 'document',
                                 fileSize: 'Clinical Resource',
-                                link: link.url,
-                                uploader: course.instructor || 'StudiRad Faculty',
+                                link: linkUrl,
+                                uploader: course?.instructor || 'StudiRad Faculty',
                               });
                             }}
                             className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
