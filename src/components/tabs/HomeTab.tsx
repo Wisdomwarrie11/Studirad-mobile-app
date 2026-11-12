@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { LiveClass, Opportunity, StudyMaterial, Course } from '../../types';
-import { RadiographyMarbleGame } from '../game/RadiographyMarbleGame';
 import { 
   subscribeOpportunities, 
   subscribeClasses, 
@@ -17,10 +16,7 @@ import {
   ChevronRight, 
   Play, 
   FileText, 
-  Gamepad2, 
-  Trophy, 
   Bot, 
-  ArrowLeft
   HelpCircle, 
   Clock, 
   Briefcase,
@@ -50,7 +46,6 @@ const CLASS_MODALITIES = ['All', 'X-ray', 'Ultrasound', 'MRI', 'CT', 'Nuclear Me
 export const HomeTab: React.FC<HomeTabProps> = ({
   onSelectCourse,
   onSelectLiveClass,
-  onOpenPlayer,
   onSelectOpportunity,
   onStartQuiz,
 }) => {
@@ -63,7 +58,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   const [liveCoursesList, setLiveCoursesList] = useState<Course[]>([]);
   const [studyMaterialsList, setStudyMaterialsList] = useState<StudyMaterial[]>([]);
   const [userCompletedClasses, setUserCompletedClasses] = useState<UserCompletedRecord[]>([]);
-  const [isGameActive, setIsGameActive] = useState<boolean>(false);
   const [selectedModality, setSelectedModality] = useState<string>('All');
   const [selectedMaterialForReader, setSelectedMaterialForReader] = useState<StudyMaterial | null>(null);
 
@@ -180,8 +174,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     return items;
   }, [liveClassesList, studyMaterialsList]);
 
-    
-
   // Classes filtered by selected modality
   const modalityFilteredClasses = useMemo(() => {
     if (selectedModality === 'All') {
@@ -205,33 +197,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       setSelectedMaterialForReader(item.originalData as StudyMaterial);
     }
   };
-
-  if (isLoading) {
-    return <DashboardSkeleton />;
-  }
-
-
-   // If user opened the game section, render the full interactive Game view
-  if (isGameActive) {
-    return (
-      <div className="w-full min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex flex-col pb-28 select-none text-left">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setIsGameActive(false)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Home Dashboard</span>
-            </button>
-          </div>
-
-          <RadiographyMarbleGame onOpenPlayer={onOpenPlayer} />
-        </div>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -274,8 +239,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               </div>
             </div>
           </div>
-
-
 
           {/* ================= CONTINUE LEARNING (BASED ON REAL DATA) ================= */}
           {registeredClass ? (
@@ -408,14 +371,16 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               </span>
             </button>
 
-           <button
-            type="button"
-            onClick={() => setIsGameActive(true)}
-            className="px-6 py-3 rounded-2xl bg-[#FF7F32] hover:bg-[#E86B20] text-white text-xs sm:text-sm font-black flex items-center gap-2 shadow-lg shadow-[#FF7F32]/25 active:scale-95 transition-all cursor-pointer"
+            <button
+              onClick={onStartQuiz}
+              className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 shadow-xs hover:border-[#002147] active:scale-95 transition-all group"
             >
-            <Trophy className="w-4 h-4 text-white" />
-            <span>Play Game</span>
-            <ChevronRight className="w-4 h-4" />
+              <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 text-[#002147] dark:text-[#38BDF8] flex items-center justify-center group-hover:scale-105 transition-transform">
+                <HelpCircle className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                Quizzes
+              </span>
             </button>
           </div>
         </section>
