@@ -59,26 +59,25 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
   const [isCached, setIsCached] = useState(false);
   const [isCaching, setIsCaching] = useState(false);
 
-  if (!isOpen || !material) return null;
-
-  const rawLink = (material.link || '').trim();
+  const rawLink = (material?.link || '').trim();
   const DEFAULT_CONFIG = { main: 'text-[#002147] dark:text-[#38BDF8]', light: 'bg-slate-100 dark:bg-slate-800', border: 'border-slate-200 dark:border-slate-700' };
-  const config = (material.course && COURSE_COLORS[material.course]) || COURSE_COLORS.All || DEFAULT_CONFIG;
+  const courseKey = material?.course || 'All';
+  const config = COURSE_COLORS[courseKey] || COURSE_COLORS.All || DEFAULT_CONFIG;
 
   // Identify file types
   const isYouTube = rawLink.includes('youtube.com') || rawLink.includes('youtu.be');
   const isGoogleDrive = rawLink.includes('drive.google.com');
   const isEmbedVideo = isYouTube || isGoogleDrive;
   const isDirectVideo = !isEmbedVideo && (
-    material.type === 'video' ||
+    material?.type === 'video' ||
     /\.(mp4|webm|ogg|mov)($|\?)/i.test(rawLink) ||
     rawLink.includes('/video/upload/') ||
     rawLink.includes('/storage/v1/object/public/videos')
   );
-  const isPDF = material.type === 'pdf' || /\.pdf($|\?)/i.test(rawLink) || rawLink.includes('.pdf');
+  const isPDF = material?.type === 'pdf' || /\.pdf($|\?)/i.test(rawLink) || rawLink.includes('.pdf');
   const isImage = /\.(jpg|jpeg|png|webp|gif|svg)($|\?)/i.test(rawLink) || rawLink.includes('/image/upload/');
   const isOfficeDoc = /\.(docx?|pptx?|xlsx?)($|\?)/i.test(rawLink);
-  const isLink = material.type === 'link' && !isEmbedVideo && !isDirectVideo && !isPDF && !isImage && !isOfficeDoc;
+  const isLink = material?.type === 'link' && !isEmbedVideo && !isDirectVideo && !isPDF && !isImage && !isOfficeDoc;
 
   // In-app embedded URLs
   const videoEmbedUrl = isEmbedVideo ? getVideoEmbedUrl(rawLink, false) : null;
@@ -87,17 +86,21 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
   // Check if resource is cached in the service worker educational cache
   useEffect(() => {
     let isMounted = true;
-    if (rawLink) {
+    if (isOpen && rawLink) {
       isResourceCached(rawLink)
         .then((cached) => {
           if (isMounted) setIsCached(cached);
         })
         .catch(() => {});
+    } else {
+      setIsCached(false);
     }
     return () => {
       isMounted = false;
     };
-  }, [rawLink]);
+  }, [isOpen, rawLink]);
+
+  if (!isOpen || !material) return null;
 
   const handleToggleOfflineSave = async () => {
     if (!rawLink || isCaching || isYouTube) return;
@@ -117,7 +120,9 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
 
   const handleCopyLink = () => {
     if (rawLink) {
-      navigator.clipboard.writeText(rawLink);
+      try {
+        navigator.clipboard?.writeText(rawLink).catch(() => {});
+      } catch {}
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -126,8 +131,8 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: `${material.title} | StudiRad Material`,
-        text: `Check out this radiography study resource on ${material.course}!`,
+        title: `${material?.title || 'Study Material'} | StudiRad Material`,
+        text: `Check out this radiography study resource on ${material?.course || 'Radiography'}!`,
         url: rawLink || window.location.href,
       }).catch(() => {});
     } else {
@@ -193,16 +198,16 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
       <div className="absolute inset-0" onClick={onClose}></div>
 
       <div 
-        className={`relative w-full h-full sm:h-[96vh] ${
-          isFullscreen ? 'sm:max-w-7xl' : 'sm:max-w-5xl md:max-w-6xl'
-        } bg-white dark:bg-[#121824] rounded-none sm:rounded-3xl flex flex-col shadow-2xl z-10 overflow-hidden text-left animate-slideUp border-0 sm:border border-slate-200 dark:border-slate-800 transition-all duration-300`}
+        className={`relative w-full h-[100dvh] ${
+          isFullscreen ? 'sm:max-w-none sm:h-[100dvh] rounded-none border-0' : 'sm:h-[96vh] sm:max-w-5xl md:max-w-6xl rounded-none sm:rounded-3xl border-0 sm:border'
+        } bg-white dark:bg-[#121824] flex flex-col shadow-2xl z-10 overflow-hidden text-left animate-slideUp border-slate-200 dark:border-slate-800 transition-all duration-300`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}
         <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-[#121824]">
           <div className="flex items-center gap-2 min-w-0 pr-2">
             <span className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${config.light} ${config.main} border ${config.border}`}>
-              {material.course}
+              {material?.course || 'Radiography'}
             </span>
             <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold truncate">
               {isYouTube || isDirectVideo 

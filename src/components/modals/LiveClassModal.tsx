@@ -29,10 +29,10 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
   onClose,
 }) => {
   const { requireAuth } = useAuth();
-  if (!liveClass) return null;
-
-  const [isRegistered, setIsRegistered] = useState(liveClass.isRegistered || false);
+  const [isRegistered, setIsRegistered] = useState(liveClass?.isRegistered || false);
   const [calendarAdded, setCalendarAdded] = useState(false);
+
+  if (!liveClass) return null;
 
   const handleRegister = () => {
     if (!requireAuth({

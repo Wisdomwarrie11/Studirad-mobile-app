@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="light">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
@@ -65,7 +65,7 @@
       (function() {
         try {
           var saved = localStorage.getItem('studirad_theme_preference');
-          var isDark = saved ? saved === 'dark' : false; // Default to light mode
+          var isDark = saved ? saved === 'dark' : true; // Default to dark mode
           if (isDark) {
             document.documentElement.classList.add('dark');
             document.documentElement.classList.remove('light');

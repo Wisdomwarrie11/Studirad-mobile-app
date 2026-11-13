@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Course, Lesson, CourseMaterialLink, CourseQuizQuestion, StudyMaterial } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { enrollUserInCourse } from '../../services/firebaseDataService';
@@ -109,11 +109,43 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
     }
   }, [currentUser?.id, course]);
 
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+
+  // Sync with native browser fullscreen exit (e.g., mobile back/ESC)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement && isVideoExpanded) {
+        // Keep CSS fullscreen active if user didn't click exit, or sync if native exited
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, [isVideoExpanded]);
+
+  const handleToggleVideoExpand = () => {
+    const next = !isVideoExpanded;
+    setIsVideoExpanded(next);
+    try {
+      if (next && videoContainerRef.current?.requestFullscreen) {
+        videoContainerRef.current.requestFullscreen().catch(() => {});
+      } else if (!next && document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch {
+      // Fallback to CSS full-screen viewport
+    }
+  };
+
   // Handle ESC key to exit expanded video
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isVideoExpanded) {
         setIsVideoExpanded(false);
+        try {
+          if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+          }
+        } catch {}
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -292,79 +324,86 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
   const hasNextLesson = currentLessonIndex < allLessons.length - 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xs transition-opacity text-slate-900 dark:text-slate-100 select-none">
+    <div className={`fixed inset-0 ${isVideoExpanded ? 'z-[100] bg-black' : 'z-50 flex items-center justify-center bg-black/85 backdrop-blur-xs'} transition-opacity text-slate-900 dark:text-slate-100 select-none`}>
       <div 
-        className={`relative w-full h-full bg-white dark:bg-[#121824] flex flex-col shadow-2xl overflow-hidden text-left border-0 sm:border border-slate-200 dark:border-slate-800 transition-all ${
+        className={`relative flex flex-col overflow-hidden text-left transition-all ${
           isVideoExpanded 
-            ? 'max-w-none max-h-none rounded-none' 
-            : 'sm:max-w-4xl md:max-w-5xl sm:h-[96vh] rounded-none sm:rounded-3xl animate-scaleIn'
+            ? 'fixed inset-0 w-screen h-[100dvh] bg-black rounded-none border-0 shadow-none z-[100]' 
+            : 'w-full h-[100dvh] sm:max-w-4xl md:max-w-5xl sm:h-[96vh] bg-white dark:bg-[#121824] rounded-none sm:rounded-3xl shadow-2xl border-0 sm:border border-slate-200 dark:border-slate-800 animate-scaleIn'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header */}
-        <div className="px-4 sm:px-5 py-3 bg-[#002147] text-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5 truncate pr-2">
-            <span className="px-2 py-0.5 rounded-lg bg-white/10 text-[11px] font-bold text-[#FF7F32] uppercase tracking-wider shrink-0">
-              {course.modality || 'Course'}
-            </span>
-            <span className="text-xs sm:text-sm font-bold text-white truncate">
-              {course.title}
-            </span>
+        {/* Top Header (Hidden in expanded fullscreen video mode so video covers entire device screen) */}
+        {!isVideoExpanded && (
+          <div className="px-4 sm:px-5 py-3 bg-[#002147] text-white flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2.5 truncate pr-2">
+              <span className="px-2 py-0.5 rounded-lg bg-white/10 text-[11px] font-bold text-[#FF7F32] uppercase tracking-wider shrink-0">
+                {course.modality || 'Course'}
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-white truncate">
+                {course.title}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              {/* Like Course Button */}
+              <button
+                type="button"
+                onClick={toggleCourseLike}
+                className={`p-1.5 rounded-full flex items-center gap-1 text-xs font-semibold transition-all cursor-pointer ${
+                  likedCourse
+                    ? 'bg-rose-500/20 text-rose-400'
+                    : 'bg-white/10 hover:bg-white/20 text-slate-300'
+                }`}
+                title={likedCourse ? 'Unlike Course' : 'Like Course'}
+              >
+                <Heart className={`w-4 h-4 ${likedCourse ? 'fill-rose-500 text-rose-500' : ''}`} />
+                <span className="text-[11px] pr-1">{(course.likes || 24) + (likedCourse ? 1 : 0)}</span>
+              </button>
+
+              {/* Expand / Minimize Fullscreen Toggle */}
+              <button
+                type="button"
+                onClick={handleToggleVideoExpand}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
+                title={isVideoExpanded ? 'Collapse Video' : 'Expand Video to Cover Screen'}
+              >
+                {isVideoExpanded ? (
+                  <Minimize2 className="w-4 h-4 text-[#FF7F32]" />
+                ) : (
+                  <Maximize2 className="w-4 h-4 text-white" />
+                )}
+              </button>
+
+              {/* Close Modal */}
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
+                aria-label="Close Course Player"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            {/* Like Course Button */}
-            <button
-              type="button"
-              onClick={toggleCourseLike}
-              className={`p-1.5 rounded-full flex items-center gap-1 text-xs font-semibold transition-all cursor-pointer ${
-                likedCourse
-                  ? 'bg-rose-500/20 text-rose-400'
-                  : 'bg-white/10 hover:bg-white/20 text-slate-300'
-              }`}
-              title={likedCourse ? 'Unlike Course' : 'Like Course'}
-            >
-              <Heart className={`w-4 h-4 ${likedCourse ? 'fill-rose-500 text-rose-500' : ''}`} />
-              <span className="text-[11px] pr-1">{(course.likes || 24) + (likedCourse ? 1 : 0)}</span>
-            </button>
-
-            {/* Expand / Minimize Fullscreen Toggle */}
-            <button
-              type="button"
-              onClick={() => setIsVideoExpanded((prev) => !prev)}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
-              title={isVideoExpanded ? 'Collapse Video' : 'Expand Video to Cover Screen'}
-            >
-              {isVideoExpanded ? (
-                <Minimize2 className="w-4 h-4 text-[#FF7F32]" />
-              ) : (
-                <Maximize2 className="w-4 h-4 text-white" />
-              )}
-            </button>
-
-            {/* Close Modal */}
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
-              aria-label="Close Course Player"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* Sleek Course Progress Line */}
-        <div className="w-full h-1 bg-slate-200 dark:bg-slate-800 shrink-0">
-          <div
-            className="h-full bg-[#FF7F32] transition-all duration-300"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+        {!isVideoExpanded && (
+          <div className="w-full h-1 bg-slate-200 dark:bg-slate-800 shrink-0">
+            <div
+              className="h-full bg-[#FF7F32] transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        )}
 
         {/* Video Player Container */}
-        <div className={`relative w-full bg-black flex flex-col justify-between shrink-0 overflow-hidden ${
-          isVideoExpanded ? 'flex-1 h-full' : 'aspect-video'
-        }`}>
+        <div
+          ref={videoContainerRef}
+          className={`relative w-full bg-black flex flex-col justify-between shrink-0 overflow-hidden ${
+            isVideoExpanded ? 'flex-1 w-screen h-[100dvh]' : 'aspect-video'
+          }`}
+        >
           {embedUrl ? (
             <div className="relative w-full h-full">
               <iframe
@@ -406,15 +445,15 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
           )}
 
           {/* Floating Expand/Collapse Button Overlay in Video Container */}
-          <div className="absolute bottom-2 right-2 z-30 flex items-center gap-1.5">
+          <div className={`absolute ${isVideoExpanded ? 'bottom-4 right-4' : 'bottom-2 right-2'} z-30 flex items-center gap-1.5`}>
             <button
               type="button"
-              onClick={() => setIsVideoExpanded((prev) => !prev)}
-              className="px-2.5 py-1 rounded-lg bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-[11px] font-semibold flex items-center gap-1 border border-white/20 transition-all cursor-pointer"
+              onClick={handleToggleVideoExpand}
+              className="px-3 py-1.5 rounded-lg bg-black/75 hover:bg-black/90 backdrop-blur-xs text-white text-xs font-semibold flex items-center gap-1.5 border border-white/25 transition-all cursor-pointer shadow-lg"
             >
               {isVideoExpanded ? (
                 <>
-                  <Minimize2 className="w-3.5 h-3.5 text-[#FF7F32]" />
+                  <Minimize2 className="w-4 h-4 text-[#FF7F32]" />
                   <span>Exit Fullscreen</span>
                 </>
               ) : (

@@ -25,18 +25,16 @@ export const QuizRunnerModal: React.FC<QuizRunnerModalProps> = ({
   onClose,
   onSaveScore,
 }) => {
-  if (!quiz) return null;
-
   // Step state: 'intro' | 'active' | 'review'
   const [stage, setStage] = useState<'intro' | 'active' | 'review'>('intro');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
-  const [timeLeftSec, setTimeLeftSec] = useState(quiz.durationMin * 60);
+  const [timeLeftSec, setTimeLeftSec] = useState((quiz?.durationMin || 10) * 60);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   // Timer countdown during active stage
   useEffect(() => {
-    if (stage !== 'active') return;
+    if (!quiz || stage !== 'active') return;
     const interval = setInterval(() => {
       setTimeLeftSec((prev) => {
         if (prev <= 1) {
@@ -48,7 +46,9 @@ export const QuizRunnerModal: React.FC<QuizRunnerModalProps> = ({
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [stage]);
+  }, [stage, quiz]);
+
+  if (!quiz) return null;
 
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

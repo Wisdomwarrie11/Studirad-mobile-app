@@ -28,12 +28,12 @@ export const TutorBookingModal: React.FC<TutorBookingModalProps> = ({
   onClose,
   onConfirmBooking,
 }) => {
-  if (!tutor) return null;
-
   const [selectedDate, setSelectedDate] = useState('Tomorrow');
   const [selectedSlot, setSelectedSlot] = useState('17:00 - 17:45 BST');
   const [topic, setTopic] = useState('Trauma Radiography & C-Spine Case Review');
   const [confirmed, setConfirmed] = useState(false);
+
+  if (!tutor) return null;
 
   const availableSlots = [
     '16:00 - 16:45 BST',

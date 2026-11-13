@@ -81,7 +81,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
     }
   })();
 
-  if (!isOpen) return null;
+  if (!isOpen || !currentUser || currentUser.isGuest) return null;
 
   const topicDisplayNames: Record<string, string> = {
     general_radiography: 'General Radiography',

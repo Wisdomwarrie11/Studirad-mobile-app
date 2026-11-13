@@ -17,7 +17,7 @@ import {
   Play, 
   FileText, 
   Bot, 
-  HelpCircle, 
+  Gamepad2, 
   Clock, 
   Briefcase,
   Building2,
@@ -213,15 +213,12 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#002147] dark:text-white tracking-tight">
               {getGreeting()}, {firstName}
             </h1>
-            <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-0.5">
-              Keep growing. Your clinical development is right on track.
-            </p>
           </div>
        
 
           {/* ================= HERO: TRANSFORM YOUR RADIOGRAPHY JOURNEY ================= */}
           <div className="relative w-full rounded-3xl overflow-hidden shadow-sm group border border-slate-200/80 dark:border-slate-800">
-            <div className="relative h-44 sm:h-52 w-full bg-[#002147] overflow-hidden">
+            <div className="relative w-full aspect-[16/9] max-h-[540px] bg-[#002147] overflow-hidden">
               <img
                 src="/transform_radiography.jpg"
                 alt="Transform your radiography journey"
@@ -230,10 +227,10 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   (e.target as HTMLImageElement).src = classesImg;
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#002147]/95 via-[#002147]/50 to-transparent flex flex-col justify-end p-5 text-left">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#002147]/95 via-[#002147]/45 to-transparent flex flex-col justify-end p-4 sm:p-6 text-left">
                 <span className="text-[11px] font-bold tracking-wider uppercase text-[#FF7F32] flex items-center gap-1.5 mb-1">
                 </span>
-                <h2 className="text-xl sm:text-2xl font-extrabold text-white leading-tight">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white leading-tight">
                   Transform your radiography journey
                 </h2>
               </div>
@@ -272,7 +269,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                 </span>
               </div>
             </div>
-          ) : latestCompletedClass ? (
+          ) : latestCompletedClass && currentUser && !currentUser.isGuest ? (
             // Real Completed Record from Firestore
             <div
               onClick={() => setActiveTab('profile')}
@@ -317,14 +314,10 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               </div>
 
               <h3 className="text-base font-bold text-white leading-snug">
-                Join an Upcoming Live Cohort
+                Join an Upcoming Live Class
               </h3>
-              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                Connect live with leading specialists, register for upcoming cohorts, and earn accredited CPD hours.
-              </p>
-
               <div className="mt-3 pt-2.5 border-t border-white/15 flex items-center justify-between text-xs">
-                <span className="text-slate-300">Live cohorts available in Learn tab</span>
+                <span className="text-slate-300">Live classes available in Learn tab</span>
                 <span className="font-bold text-[#FF7F32] flex items-center gap-1">
                   <span>Browse Classes</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -373,13 +366,13 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
             <button
               onClick={onStartQuiz}
-              className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 shadow-xs hover:border-[#002147] active:scale-95 transition-all group"
+              className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 shadow-xs hover:border-[#002147] active:scale-95 transition-all group cursor-pointer"
             >
               <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 text-[#002147] dark:text-[#38BDF8] flex items-center justify-center group-hover:scale-105 transition-transform">
-                <HelpCircle className="w-5 h-5" />
+                <Gamepad2 className="w-5 h-5 text-[#FF7F32]" />
               </div>
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                Quizzes
+                Game
               </span>
             </button>
           </div>

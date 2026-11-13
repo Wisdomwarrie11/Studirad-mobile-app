@@ -2,7 +2,7 @@ export type AppScreen = 'splash' | 'onboarding' | 'auth' | 'personalise' | 'comp
 
 export type AuthMode = 'signIn' | 'signUp' | 'adminLogin' | 'forgotPassword';
 
-export type NavTab = 'home' | 'learn' | 'search' | 'aiTutor' | 'services' | 'explore' | 'profile';
+export type NavTab = 'home' | 'learn' | 'search' | 'aiTutor' | 'services' | 'explore' | 'profile' | 'game';
 
 export type ClinicalModality = 
   | 'all' 

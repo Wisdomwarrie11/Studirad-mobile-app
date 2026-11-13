@@ -21,10 +21,10 @@ export const OpportunityDetailsModal: React.FC<OpportunityDetailsModalProps> = (
   onClose,
 }) => {
   const { requireAuth } = useAuth();
-  if (!opportunity) return null;
-
   const [isSaved, setIsSaved] = useState(false);
   const [applied, setApplied] = useState(false);
+
+  if (!opportunity) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity animate-fadeIn text-slate-900 dark:text-slate-100 select-none">

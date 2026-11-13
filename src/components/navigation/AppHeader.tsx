@@ -94,8 +94,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             )}
           </button>
 
-          {/* 4. Profile / Sign In Action */}
-          {currentUser ? (
+          {/* 4. Profile / Sign In Action (Account & Profile hidden for guest users) */}
+          {currentUser && !currentUser.isGuest ? (
             <button
               onClick={onOpenProfile}
               aria-label="Open user profile"
@@ -118,29 +118,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               </span>
             </button>
           ) : (
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                onClick={() => setScreen('auth')}
-                className="h-9 px-3 sm:px-3.5 rounded-xl bg-[#002147] hover:bg-[#001733] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1"
-                title="Sign In / Register"
-              >
-                <span>Sign In</span>
-              </button>
-              <button
-                onClick={onOpenProfile}
-                aria-label="Guest Menu"
-                title="Guest Settings"
-                className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-[#161F30] hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center transition-colors shrink-0"
-              >
-                <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[11px] font-bold text-slate-700 dark:text-slate-200">
-                  G
-                </div>
-              </button>
-            </div>
+            <button
+              onClick={() => setScreen('auth')}
+              className="h-9 px-3 sm:px-3.5 rounded-xl bg-[#002147] hover:bg-[#001733] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer shrink-0"
+              title="Sign In / Register"
+            >
+              <span>Sign In</span>
+            </button>
           )}
 
-          {/* 5. Admin Hub Shortcut (Visible to Admin or for Direct Navigation) */}
-          {(currentUser?.isAdmin || currentUser?.email?.toLowerCase().includes('studirad') || currentUser?.email?.toLowerCase().includes('admin') || currentUser?.email?.toLowerCase() === 'wisdomwarrie11@gmail.com') && (
+          {/* 5. Admin Hub Shortcut (Visible to authenticated Admin accounts only) */}
+          {currentUser && !currentUser.isGuest && (currentUser?.isAdmin || currentUser?.email?.toLowerCase().includes('studirad') || currentUser?.email?.toLowerCase().includes('admin') || currentUser?.email?.toLowerCase() === 'wisdomwarrie11@gmail.com') && (
             <button
               onClick={() => setScreen('admin')}
               aria-label="Admin Portal"

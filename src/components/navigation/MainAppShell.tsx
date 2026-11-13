@@ -13,6 +13,8 @@ import { ProfileTab } from '../tabs/ProfileTab';
 import { AiTutorTab } from '../tabs/AiTutorTab';
 import { ServicesTab } from '../tabs/ServicesTab';
 import { ExploreTab } from '../tabs/ExploreTab';
+import { RadiographyMarbleGame } from '../game/RadiographyMarbleGame';
+import { ArrowLeft } from 'lucide-react';
 
 // Interactive Modals
 import { CourseDetailsModal } from '../modals/CourseDetailsModal';
@@ -28,6 +30,7 @@ import { OfflineStudyPackModal } from '../modals/OfflineStudyPackModal';
 
 export const MainAppShell: React.FC = () => {
   const { 
+    currentUser,
     activeTab, 
     setActiveTab, 
     setScreen, 
@@ -36,6 +39,14 @@ export const MainAppShell: React.FC = () => {
     requireAuth 
   } = useAuth();
   const mainScrollRef = useRef<HTMLElement>(null);
+  const hasAccount = Boolean(currentUser && !currentUser.isGuest);
+
+  // Restrict guest users without an account from accessing Account / Profile
+  useEffect(() => {
+    if (!hasAccount && activeTab === 'profile') {
+      setActiveTab('home');
+    }
+  }, [hasAccount, activeTab, setActiveTab]);
 
   // Automatically reset scroll position to top whenever user switches tabs
   useEffect(() => {
@@ -75,15 +86,8 @@ export const MainAppShell: React.FC = () => {
     setPlayerCourse(course);
   };
 
-  const handleStartQuiz = () => {
-    if (!requireAuth({
-      title: 'Sign In to Start Quiz',
-      message: 'Create an account or sign in to test your clinical knowledge and save board exam spotter scores.',
-      actionText: 'Diagnostic Spotter Quiz',
-    })) {
-      return;
-    }
-    setIsQuizActive(true);
+  const handleOpenGame = () => {
+    setActiveTab('game');
   };
 
   const handleBookTutor = (tutor: Tutor) => {
@@ -140,7 +144,9 @@ export const MainAppShell: React.FC = () => {
       {/* Persistent App Header with Search and Profile at the top */}
       <AppHeader
         onOpenNotifications={() => setIsNotificationOpen(true)}
-        onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenProfile={() => {
+          if (hasAccount) setIsProfileOpen(true);
+        }}
       />
 
       {/* Main Content Area */}
@@ -151,7 +157,7 @@ export const MainAppShell: React.FC = () => {
             onOpenPlayer={handleOpenPlayer}
             onSelectLiveClass={(lc) => setSelectedLiveClass(lc)}
             onSelectOpportunity={(opp) => setSelectedOpportunity(opp)}
-            onStartQuiz={handleStartQuiz}
+            onStartQuiz={handleOpenGame}
             onOpenNotifications={() => setIsNotificationOpen(true)}
           />
         )}
@@ -161,7 +167,7 @@ export const MainAppShell: React.FC = () => {
             onSelectCourse={(course) => setSelectedCourse(course)}
             onOpenPlayer={handleOpenPlayer}
             onSelectLiveClass={(lc) => setSelectedLiveClass(lc)}
-            onStartQuiz={handleStartQuiz}
+            onStartQuiz={handleOpenGame}
           />
         )}
 
@@ -190,7 +196,23 @@ export const MainAppShell: React.FC = () => {
           />
         )}
 
-        {activeTab === 'profile' && (
+        {activeTab === 'game' && (
+          <div className="w-full min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F17] pb-28">
+            <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 space-y-4">
+              <button
+                type="button"
+                onClick={() => setActiveTab('home')}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#FF7F32] transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4 text-[#FF7F32]" />
+                <span>Back to Home</span>
+              </button>
+              <RadiographyMarbleGame onNavigateTab={(tab) => setActiveTab(tab)} />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'profile' && hasAccount && (
           <ProfileTab
             onEditTopics={() => setScreen('personalise')}
             onOpenPlayer={handleOpenPlayer}
@@ -208,15 +230,17 @@ export const MainAppShell: React.FC = () => {
         onNavigateTab={(tab) => setActiveTab(tab)}
       />
 
-      {/* Profile Drawer */}
-      <ProfileDrawer
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        onEditTopics={() => {
-          setIsProfileOpen(false);
-          setScreen('personalise');
-        }}
-      />
+      {/* Profile Drawer (Account holders only) */}
+      {hasAccount && (
+        <ProfileDrawer
+          isOpen={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          onEditTopics={() => {
+            setIsProfileOpen(false);
+            setScreen('personalise');
+          }}
+        />
+      )}
 
       {/* Interactive Modals */}
       <CourseDetailsModal
