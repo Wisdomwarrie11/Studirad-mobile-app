@@ -26,6 +26,7 @@ import {
 } from '../types';
 import { MOCK_OPPORTUNITIES, MOCK_LIVE_CLASSES, MOCK_WEBINARS, MOCK_COURSES, MOCK_RESOURCES } from '../data/mockData';
 import { getYouTubeThumbnail } from '../utils/youtube';
+import { RESEARCH_REPRESENTATIVES, RepresentativeInfo } from './researchAssistanceConfig';
 
 export type { EnrolledCourseRecord };
 
@@ -1323,6 +1324,7 @@ export function subscribeUserRequests(
     (snapshot) => {
       const list: any[] = [];
       snapshot.forEach((docSnap) => {
+        if (docSnap.id === '_rep_routing') return;
         const data = docSnap.data();
         if (
           !userEmailOrId ||
@@ -1398,13 +1400,84 @@ export function subscribeAllRequests(
     (snapshot) => {
       const all: any[] = [];
       snapshot.forEach((docSnap) => {
+        if (docSnap.id === '_rep_routing') return;
         all.push({ id: docSnap.id, ...docSnap.data() });
       });
       all.sort((a, b) => new Date(b.submittedAt || b.createdAt || 0).getTime() - new Date(a.submittedAt || a.createdAt || 0).getTime());
       onUpdate(all);
     },
-    (err) => console.warn('Admin requests subscription notice:', err)
+    (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'requests');
+    }
   );
+}
+
+/**
+ * Select a research representative dynamically based on live traffic counts in Firestore,
+ * falling back to balanced round-robin alternation on ties or offline states.
+ */
+export async function selectRepresentativeByTraffic(): Promise<RepresentativeInfo> {
+  const rep1 = RESEARCH_REPRESENTATIVES[0];
+  const rep2 = RESEARCH_REPRESENTATIVES[1];
+  const storageKey = 'studirad_rep_rr_index';
+
+  const getLocalTieBreak = (): RepresentativeInfo => {
+    try {
+      const prev = Number(localStorage.getItem(storageKey) || '0');
+      const next = prev % 2 === 0 ? 1 : 0;
+      localStorage.setItem(storageKey, String(next));
+      return RESEARCH_REPRESENTATIVES[next];
+    } catch {
+      return Date.now() % 2 === 0 ? rep1 : rep2;
+    }
+  };
+
+  try {
+    const snap = await getDocs(collection(db, 'requests'));
+    let rep1Count = 0;
+    let rep2Count = 0;
+    let lastAssignedId: string | undefined;
+
+    snap.forEach((docSnap) => {
+      if (docSnap.id === '_rep_routing') {
+        lastAssignedId = docSnap.data()?.lastAssignedId;
+        return;
+      }
+      const data = docSnap.data();
+      if (data?.category !== 'research') return;
+
+      const phone = data.assignedRepPhone || data.assignedRepresentative?.displayPhone || '';
+      if (phone === rep1.displayPhone) rep1Count++;
+      else if (phone === rep2.displayPhone) rep2Count++;
+    });
+
+    let chosen: RepresentativeInfo;
+    if (rep1Count < rep2Count) {
+      chosen = rep1;
+    } else if (rep2Count < rep1Count) {
+      chosen = rep2;
+    } else {
+      // Exact traffic tie: alternate strictly against the last assigned representative
+      chosen = lastAssignedId === rep1.id ? rep2 : rep1;
+    }
+
+    await setDoc(
+      doc(db, 'requests', '_rep_routing'),
+      {
+        lastAssignedId: chosen.id,
+        lastAssignedPhone: chosen.displayPhone,
+        rep1Count: rep1Count + (chosen.id === rep1.id ? 1 : 0),
+        rep2Count: rep2Count + (chosen.id === rep2.id ? 1 : 0),
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    ).catch(() => {});
+
+    return chosen;
+  } catch (err) {
+    handleFirestoreError(err, OperationType.LIST, 'requests');
+    return getLocalTieBreak();
+  }
 }
 
 /**
@@ -1418,51 +1491,158 @@ export async function pushResearchRequestToFirestore(requestData: {
   discipline: string;
   assistanceType: string;
   currentStage: string;
+  customStage?: string;
   supportDetails?: string;
   deadline: string;
   methodologyNotes?: string;
-}): Promise<{ success: boolean; referenceCode: string; error?: string }> {
+  academicLevel?: string;
+  serviceCategory?: string;
+  selectedServices?: string[];
+  priceDisplay?: string;
+  othersDescription?: string;
+  whatsappMessage?: string;
+  assignedRepresentative?: RepresentativeInfo;
+}): Promise<{
+  success: boolean;
+  id?: string;
+  referenceCode: string;
+  assignedRepresentative?: RepresentativeInfo;
+  submittedAt?: string;
+  error?: string;
+}> {
   try {
+    const chosenRep = requestData.assignedRepresentative || (await selectRepresentativeByTraffic());
     const randomNum = Math.floor(10000 + Math.random() * 90000);
     const referenceCode = `SR-RES-${randomNum}`;
-    const reqId = 'req_' + Date.now();
+    const reqId = `req_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const submittedAt = new Date().toISOString();
 
     const payload = {
       ...requestData,
       id: reqId,
       referenceCode,
       category: 'research',
-      status: 'Submitted',
-      statusNotes: 'Research inquiry received. An academic supervisor will review your project brief.',
-      submittedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
+      status: 'New Request',
+      statusNotes: `Request logged and routed to ${chosenRep.label} (${chosenRep.displayPhone}). Speak with your representative on WhatsApp to finalize your requirements.`,
+      assignedRepresentative: chosenRep,
+      assignedRepLabel: chosenRep.label,
+      assignedRepPhone: chosenRep.displayPhone,
+      assignedRepWhatsapp: chosenRep.whatsappNumber,
+      submittedAt,
+      createdAt: submittedAt,
     };
 
     await setDoc(doc(db, 'requests', reqId), payload, { merge: true });
     await setDoc(doc(adminDb, 'requests', reqId), payload, { merge: true }).catch(() => {});
+    if (appletDb) {
+      await setDoc(doc(appletDb, 'requests', reqId), payload, { merge: true }).catch(() => {});
+    }
 
     // Save notification for admin side
-    const notifId = 'notif_' + Date.now();
+    const notifId = `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const categoryLabel = requestData.serviceCategory || requestData.assistanceType;
+    const levelPrefix = requestData.academicLevel ? `[${requestData.academicLevel}] ` : '';
     const notifPayload = {
       id: notifId,
       type: 'research_request',
-      title: `New Research Request: ${requestData.researchTitle}`,
-      message: `${requestData.userName} (${requestData.userEmail}) requested support for ${requestData.assistanceType}.`,
+      linkTab: 'research',
+      title: `New Research Request: ${levelPrefix}${categoryLabel}`,
+      message: `${requestData.userName} (${requestData.userEmail}) submitted a ${categoryLabel} request (${requestData.researchTitle}). Assigned to ${chosenRep.label} (${chosenRep.displayPhone}).`,
       referenceCode,
       applicantName: requestData.userName,
       applicantEmail: requestData.userEmail,
-      discipline: requestData.discipline,
-      assistanceType: requestData.assistanceType,
-      createdAt: new Date().toISOString(),
+      academicLevel: requestData.academicLevel || '',
+      serviceCategory: categoryLabel,
+      selectedServices: requestData.selectedServices || [],
+      priceDisplay: requestData.priceDisplay || '',
+      assignedRepLabel: chosenRep.label,
+      assignedRepPhone: chosenRep.displayPhone,
+      createdAt: submittedAt,
       read: false,
     };
     await setDoc(doc(db, 'admin_notifications', notifId), notifPayload, { merge: true }).catch(() => {});
     await setDoc(doc(adminDb, 'admin_notifications', notifId), notifPayload, { merge: true }).catch(() => {});
 
-    return { success: true, referenceCode };
+    // Notify logged-in user in their notifications feed
+    if (requestData.userId) {
+      const userNotifId = `notif_user_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      const userNotif = {
+        id: userNotifId,
+        title: `Research Request Submitted (${referenceCode})`,
+        message: `Your ${levelPrefix}${categoryLabel} inquiry has been logged as "New Request" and assigned to ${chosenRep.label} (${chosenRep.displayPhone}).`,
+        type: 'research_request',
+        targetRole: 'user',
+        targetUserId: requestData.userId,
+        relatedId: reqId,
+        read: false,
+        createdAt: submittedAt,
+      };
+      await setDoc(doc(db, 'notifications', userNotifId), userNotif, { merge: true }).catch(() => {});
+    }
+
+    return {
+      success: true,
+      id: reqId,
+      referenceCode,
+      assignedRepresentative: chosenRep,
+      submittedAt,
+    };
   } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, 'requests');
     console.error('Error pushing research request:', error);
-    return { success: false, referenceCode: '', error: 'Could not submit request. Please check your internet connection.' };
+    return {
+      success: false,
+      referenceCode: '',
+      error: 'Could not submit request. Please check your internet connection and try again.',
+    };
+  }
+}
+
+/**
+ * Admin: Update a Research Request's review status and coordinator notes
+ */
+export async function updateResearchRequestStatus(
+  requestId: string,
+  status: 'New Request' | 'Under Review' | 'In Progress' | 'Scheduled' | 'Completed',
+  statusNotes?: string,
+  userId?: string,
+  referenceCode?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const updatePayload = {
+      status,
+      ...(statusNotes !== undefined ? { statusNotes } : {}),
+      updatedAt: new Date().toISOString(),
+    };
+    await setDoc(doc(db, 'requests', requestId), updatePayload, { merge: true });
+    await setDoc(doc(adminDb, 'requests', requestId), updatePayload, { merge: true }).catch(() => {});
+    if (appletDb) {
+      await setDoc(doc(appletDb, 'requests', requestId), updatePayload, { merge: true }).catch(() => {});
+    }
+
+    if (userId) {
+      const notifId = `notif_user_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      await setDoc(
+        doc(db, 'notifications', notifId),
+        {
+          id: notifId,
+          title: `Research Request Update (${referenceCode || requestId})`,
+          message: `Status changed to "${status}". ${statusNotes ? statusNotes : ''}`.trim(),
+          type: 'research_request',
+          targetRole: 'user',
+          targetUserId: userId,
+          relatedId: requestId,
+          read: false,
+          createdAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch(() => {});
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    handleFirestoreError(error, OperationType.UPDATE, `requests/${requestId}`);
+    return { success: false, error: error?.message || 'Failed to update research request status' };
   }
 }
 

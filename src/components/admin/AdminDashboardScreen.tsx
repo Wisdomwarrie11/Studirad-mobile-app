@@ -36,7 +36,9 @@ import {
   reviewTutorApplication,
   subscribeTutorialRequests,
   updateTutorialRequestStatus,
-  approveCourseByAdmin
+  approveCourseByAdmin,
+  subscribeAllRequests,
+  updateResearchRequestStatus
 } from '../../services/firebaseDataService';
 import { uploadFileToCloudinary } from '../../services/cloudinaryService';
 import { Wordmark } from '../brand/Wordmark';
@@ -80,13 +82,14 @@ import {
   ImageIcon,
   Bell,
   GraduationCap,
-  UserCheck
+  UserCheck,
+  ClipboardList
 } from 'lucide-react';
 import classesImg from '../../assets/images/onboarding_classes_1792606674536.jpg';
 import radiographyImg from '../../assets/images/onboarding_radiography_1792606674447.jpg';
 import careersImg from '../../assets/images/onboarding_careers_1792606674049.jpg';
 
-type AdminTab = 'courses' | 'classes' | 'opportunities' | 'materials' | 'tutors' | 'tutorials';
+type AdminTab = 'courses' | 'classes' | 'opportunities' | 'materials' | 'tutors' | 'tutorials' | 'research';
 
 const COURSE_CATEGORIES = [
   'Anatomy',
@@ -128,6 +131,7 @@ export const AdminDashboardScreen: React.FC = () => {
   const [materials, setMaterials] = useState<ClinicalResource[]>([]);
   const [tutorApplications, setTutorApplications] = useState<TutorApplication[]>([]);
   const [tutorialRequests, setTutorialRequests] = useState<TutorialRequest[]>([]);
+  const [researchRequests, setResearchRequests] = useState<any[]>([]);
   const [adminNotifications, setAdminNotifications] = useState<any[]>([]);
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
 
@@ -159,6 +163,9 @@ export const AdminDashboardScreen: React.FC = () => {
     const unsubRequests = subscribeTutorialRequests((list) => {
       setTutorialRequests(list);
     });
+    const unsubResearch = subscribeAllRequests((list) => {
+      setResearchRequests(list.filter((r) => !r.category || r.category === 'research'));
+    });
     const unsubNotifs = subscribeAdminNotifications((list) => {
       setAdminNotifications(list);
     });
@@ -170,6 +177,7 @@ export const AdminDashboardScreen: React.FC = () => {
       unsubMats();
       unsubApps();
       unsubRequests();
+      unsubResearch();
       unsubNotifs();
     };
   }, []);
@@ -718,8 +726,10 @@ export const AdminDashboardScreen: React.FC = () => {
                         onClick={async () => {
                           await markNotificationAsRead(n.id);
                           setShowNotificationsDropdown(false);
-                          if (n.linkTab && ['courses', 'classes', 'opportunities', 'materials', 'tutors', 'tutorials'].includes(n.linkTab)) {
+                          if (n.linkTab && ['courses', 'classes', 'opportunities', 'materials', 'tutors', 'tutorials', 'research'].includes(n.linkTab)) {
                             setActiveTab(n.linkTab as AdminTab);
+                          } else if (n.type === 'research_request') {
+                            setActiveTab('research');
                           }
                         }}
                         className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
@@ -790,7 +800,7 @@ export const AdminDashboardScreen: React.FC = () => {
       {/* Main Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Metric Cards Banner */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           <div 
             onClick={() => setActiveTab('courses')}
             className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
@@ -907,6 +917,29 @@ export const AdminDashboardScreen: React.FC = () => {
             </div>
             <span className="text-[9px] text-slate-400 mt-1 block truncate">1-on-1 Requests</span>
           </div>
+
+          <div
+            onClick={() => setActiveTab('research')}
+            className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
+              activeTab === 'research'
+                ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10'
+                : 'bg-[#121824] border-slate-800 hover:border-slate-700'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-semibold text-slate-400">Research</span>
+              <ClipboardList className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
+            <div className="text-xl font-bold font-mono text-white flex items-center justify-between">
+              <span>{researchRequests.length}</span>
+              {researchRequests.filter((r) => r.status === 'New Request' || r.status === 'Submitted').length > 0 && (
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  {researchRequests.filter((r) => r.status === 'New Request' || r.status === 'Submitted').length} new
+                </span>
+              )}
+            </div>
+            <span className="text-[9px] text-slate-400 mt-1 block truncate">Research Desk</span>
+          </div>
         </div>
 
         {/* Action Header & Tabs */}
@@ -971,6 +1004,19 @@ export const AdminDashboardScreen: React.FC = () => {
               {tutorialRequests.filter((r) => r.status === 'pending').length > 0 && (
                 <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-bold">
                   {tutorialRequests.filter((r) => r.status === 'pending').length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('research')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'research' ? 'bg-[#FF7F32] text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>Research Requests</span>
+              {researchRequests.filter((r) => r.status === 'New Request' || r.status === 'Submitted').length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-500 text-white text-[9px] font-bold">
+                  {researchRequests.filter((r) => r.status === 'New Request' || r.status === 'Submitted').length}
                 </span>
               )}
             </button>
@@ -1900,6 +1946,201 @@ export const AdminDashboardScreen: React.FC = () => {
                       </div>
                     </div>
                   ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ---------------------------------------------------- */}
+        {/* TAB 7: RESEARCH ASSISTANCE REQUESTS                  */}
+        {/* ---------------------------------------------------- */}
+        {activeTab === 'research' && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-base font-extrabold text-white">
+                  Research Assistance Requests
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Track incoming BSc, PGD, MSc, and PhD research inquiries, representative traffic routing, and review statuses.
+                </p>
+              </div>
+              <span className="text-xs text-slate-400 font-semibold">
+                {researchRequests.length} total requests ({researchRequests.filter((r) => r.status === 'New Request' || r.status === 'Submitted').length} new)
+              </span>
+            </div>
+
+            {researchRequests.length === 0 ? (
+              <div className="p-12 text-center bg-[#121824] rounded-2xl border border-slate-800 text-slate-400 text-xs space-y-2">
+                <ClipboardList className="w-10 h-10 text-slate-600 mx-auto" />
+                <p className="font-semibold text-slate-300">No research assistance requests logged yet</p>
+                <p className="text-[11px] text-slate-500">
+                  Requests submitted via the Research Assistance workflow will appear here immediately with assigned representative details.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {researchRequests
+                  .filter((req) =>
+                    !searchQuery.trim() ||
+                    req.userName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    req.userEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    req.researchTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    req.serviceCategory?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    req.academicLevel?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    req.referenceCode?.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map((req) => {
+                    const selectedList: string[] = Array.isArray(req.selectedServices) ? req.selectedServices : [];
+                    const repDisplay = req.assignedRepPhone
+                      ? `${req.assignedRepLabel || 'Rep'} (${req.assignedRepPhone})`
+                      : 'Unassigned';
+
+                    return (
+                      <div
+                        key={req.id}
+                        className="p-5 rounded-2xl bg-[#121824] border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-all space-y-4 text-left"
+                      >
+                        <div className="space-y-3">
+                          {/* Top Row: Reference, Name & Status */}
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-[11px] font-bold text-[#FF7F32]">
+                                  {req.referenceCode || req.id}
+                                </span>
+                                {req.academicLevel && (
+                                  <span className="px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30 text-[10px] font-bold">
+                                    {req.academicLevel}
+                                  </span>
+                                )}
+                              </div>
+                              <h4 className="text-sm font-extrabold text-white mt-1">
+                                {req.userName || 'Researcher'}
+                              </h4>
+                              <p className="text-[11px] text-slate-400">
+                                {req.userEmail}
+                              </p>
+                            </div>
+
+                            <span
+                              className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+                                req.status === 'Completed'
+                                  ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30'
+                                  : req.status === 'Scheduled'
+                                  ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                                  : req.status === 'In Progress'
+                                  ? 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
+                                  : req.status === 'Under Review'
+                                  ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                  : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/40'
+                              }`}
+                            >
+                              {req.status || 'New Request'}
+                            </span>
+                          </div>
+
+                          {/* Topic & Category/Price */}
+                          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1.5">
+                            <div className="flex items-center justify-between gap-2 text-xs font-bold text-white">
+                              <span className="truncate">{req.serviceCategory || req.assistanceType || 'Research Service'}</span>
+                              {req.priceDisplay && (
+                                <span className="text-[#FF7F32] font-mono shrink-0">{req.priceDisplay}</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-200 font-semibold">
+                              Topic: {req.researchTitle}
+                            </p>
+                            {selectedList.length > 0 && (
+                              <div className="flex flex-wrap gap-1 pt-1">
+                                {selectedList.map((srv) => (
+                                  <span
+                                    key={srv}
+                                    className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300 border border-slate-700"
+                                  >
+                                    {srv}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Stage, Deadline & Assigned Rep */}
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
+                              <span className="text-[10px] text-slate-500 block">Stage</span>
+                              <span className="font-semibold text-slate-200 text-[11px] line-clamp-1">
+                                {req.currentStage || 'N/A'}
+                              </span>
+                            </div>
+                            <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
+                              <span className="text-[10px] text-slate-500 block">Deadline</span>
+                              <span className="font-mono font-bold text-slate-200 text-[11px]">
+                                {req.deadline || 'N/A'}
+                              </span>
+                            </div>
+                            <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
+                              <span className="text-[10px] text-slate-500 block">Assigned Rep</span>
+                              <span className="font-bold text-[#FF7F32] text-[11px] line-clamp-1">
+                                {req.assignedRepPhone || 'Unassigned'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Additional description if provided */}
+                          {(req.othersDescription || req.supportDetails) && (
+                            <div className="p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/60 text-xs text-slate-300 space-y-0.5">
+                              <strong className="text-[10px] text-slate-500 font-bold uppercase block">
+                                Brief / Description
+                              </strong>
+                              <p className="leading-relaxed line-clamp-3">
+                                {req.othersDescription || req.supportDetails}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Footer: Submission timestamp & Admin Status Action */}
+                        <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                          <div className="text-[10px] text-slate-400">
+                            <div>Submitted: {req.submittedAt ? new Date(req.submittedAt).toLocaleString() : 'Recently'}</div>
+                            <div>Routed to: {repDisplay}</div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={req.status || 'New Request'}
+                              onChange={async (e) => {
+                                const nextStatus = e.target.value as
+                                  | 'New Request'
+                                  | 'Under Review'
+                                  | 'In Progress'
+                                  | 'Scheduled'
+                                  | 'Completed';
+                                const res = await updateResearchRequestStatus(
+                                  req.id,
+                                  nextStatus,
+                                  `Updated to "${nextStatus}" by StudiRad Admin.`,
+                                  req.userId,
+                                  req.referenceCode
+                                );
+                                if (res.success) {
+                                  triggerSuccess(`Research request ${req.referenceCode || req.id} updated to "${nextStatus}".`);
+                                }
+                              }}
+                              className="h-8 px-2.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32] cursor-pointer"
+                            >
+                              <option value="New Request">New Request</option>
+                              <option value="Under Review">Under Review</option>
+                              <option value="In Progress">In Progress</option>
+                              <option value="Scheduled">Scheduled</option>
+                              <option value="Completed">Completed</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             )}
           </div>

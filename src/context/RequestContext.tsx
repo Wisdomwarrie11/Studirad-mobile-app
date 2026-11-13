@@ -1,9 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { subscribeUserRequests, pushResearchRequestToFirestore } from '../services/firebaseDataService';
+import { RepresentativeInfo } from '../services/researchAssistanceConfig';
 
 export type RequestCategory = 'service' | 'research' | 'private_class';
 
-export type RequestStatus = 'Submitted' | 'Under Review' | 'Scheduled' | 'In Progress' | 'Completed';
+export type RequestStatus =
+  | 'New Request'
+  | 'Submitted'
+  | 'Under Review'
+  | 'Scheduled'
+  | 'In Progress'
+  | 'Completed';
 
 export interface BaseRequest {
   id: string;
@@ -32,9 +40,20 @@ export interface ResearchRequest extends BaseRequest {
   discipline: string;
   assistanceType: string;
   currentStage: string;
+  customStage?: string;
   supportDetails: string;
   deadline: string;
   methodologyNotes?: string;
+  academicLevel?: string;
+  serviceCategory?: string;
+  selectedServices?: string[];
+  priceDisplay?: string;
+  othersDescription?: string;
+  assignedRepresentative?: RepresentativeInfo;
+  assignedRepLabel?: string;
+  assignedRepPhone?: string;
+  assignedRepWhatsapp?: string;
+  whatsappMessage?: string;
 }
 
 export interface PrivateClassRequest extends BaseRequest {
@@ -50,16 +69,29 @@ export interface PrivateClassRequest extends BaseRequest {
 
 export type UserRequest = ServiceRequest | ResearchRequest | PrivateClassRequest;
 
+export interface SubmitResearchResult {
+  success: boolean;
+  referenceCode?: string;
+  requestId?: string;
+  assignedRepresentative?: RepresentativeInfo;
+  submittedAt?: string;
+  error?: string;
+}
+
 interface RequestContextType {
   requests: UserRequest[];
-  submitServiceRequest: (data: Omit<ServiceRequest, 'id' | 'referenceCode' | 'category' | 'submittedAt' | 'status'>) => Promise<{ success: boolean; referenceCode?: string; error?: string }>;
-  submitResearchRequest: (data: Omit<ResearchRequest, 'id' | 'referenceCode' | 'category' | 'submittedAt' | 'status'>) => Promise<{ success: boolean; referenceCode?: string; error?: string }>;
-  submitPrivateClassRequest: (data: Omit<PrivateClassRequest, 'id' | 'referenceCode' | 'category' | 'submittedAt' | 'status'>) => Promise<{ success: boolean; referenceCode?: string; error?: string }>;
+  submitServiceRequest: (
+    data: Omit<ServiceRequest, 'id' | 'referenceCode' | 'category' | 'submittedAt' | 'status'>
+  ) => Promise<{ success: boolean; referenceCode?: string; error?: string }>;
+  submitResearchRequest: (
+    data: Omit<ResearchRequest, 'id' | 'referenceCode' | 'category' | 'submittedAt' | 'status'>
+  ) => Promise<SubmitResearchResult>;
+  submitPrivateClassRequest: (
+    data: Omit<PrivateClassRequest, 'id' | 'referenceCode' | 'category' | 'submittedAt' | 'status'>
+  ) => Promise<{ success: boolean; referenceCode?: string; error?: string }>;
   getRequestById: (id: string) => UserRequest | undefined;
   cancelRequest: (id: string) => void;
 }
-
-import { subscribeUserRequests, pushResearchRequestToFirestore } from '../services/firebaseDataService';
 
 const STORAGE_KEY_REQUESTS = 'studirad_user_requests';
 
@@ -67,9 +99,16 @@ const RequestContext = createContext<RequestContextType | undefined>(undefined);
 
 export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser } = useAuth();
-  const [requests, setRequests] = useState<UserRequest[]>([]);
+  const [requests, setRequests] = useState<UserRequest[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_REQUESTS);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
-  // Real-time synchronization with Firestore requests collection
+  // Real-time synchronization with Firestore requests collection when signed in; preserve session requests for guests
   useEffect(() => {
     if (currentUser?.id || currentUser?.email) {
       const unsub = subscribeUserRequests(currentUser.id || currentUser.email || '', (realRequests) => {
@@ -77,6 +116,16 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
       return () => unsub?.();
     } else {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_REQUESTS);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setRequests(parsed.filter((r: any) => !r?.userId));
+            return;
+          }
+        }
+      } catch {}
       setRequests([]);
     }
   }, [currentUser?.id, currentUser?.email]);
@@ -121,34 +170,47 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const submitResearchRequest = async (
     data: Omit<ResearchRequest, 'id' | 'referenceCode' | 'category' | 'submittedAt' | 'status'>
-  ) => {
+  ): Promise<SubmitResearchResult> => {
     if (!data.researchTitle.trim()) {
-      return { success: false, error: 'Please provide your research topic or title.' };
+      return { success: false, error: 'Please provide your research topic or enter "No topic yet".' };
     }
 
     try {
-      // Write to real Firestore collection and trigger admin notification
       const res = await pushResearchRequestToFirestore({
         ...data,
-        userId: currentUser?.id,
+        userId: currentUser?.id || undefined,
         userName: data.userName || currentUser?.fullName || 'Researcher',
-        userEmail: data.userEmail || currentUser?.email || 'scholar@studirad.org',
+        userEmail: data.userEmail || currentUser?.email || '',
         supportDetails: data.supportDetails?.trim() || 'Not specified',
       });
 
       if (res.success && res.referenceCode) {
+        const chosenRep = res.assignedRepresentative;
+        const submittedAt = res.submittedAt || new Date().toISOString();
         const newRequest: ResearchRequest = {
           ...data,
-          id: 'req_' + Date.now(),
+          id: res.id || `req_${Date.now()}`,
           referenceCode: res.referenceCode,
           category: 'research',
-          userId: currentUser?.id,
-          submittedAt: new Date().toISOString(),
-          status: 'Submitted',
-          statusNotes: 'Research inquiry received. An academic supervisor will review your project brief.',
+          userId: currentUser?.id || undefined,
+          submittedAt,
+          status: 'New Request',
+          assignedRepresentative: chosenRep,
+          assignedRepLabel: chosenRep?.label,
+          assignedRepPhone: chosenRep?.displayPhone,
+          assignedRepWhatsapp: chosenRep?.whatsappNumber,
+          statusNotes: chosenRep
+            ? `Request logged and routed to ${chosenRep.label} (${chosenRep.displayPhone}). Speak with your representative on WhatsApp to finalize your requirements.`
+            : 'Research inquiry received. An academic supervisor will review your project brief.',
         };
-        setRequests((prev) => [newRequest, ...prev.filter(r => r.referenceCode !== res.referenceCode)]);
-        return { success: true, referenceCode: res.referenceCode };
+        setRequests((prev) => [newRequest, ...prev.filter((r) => r.referenceCode !== res.referenceCode)]);
+        return {
+          success: true,
+          referenceCode: res.referenceCode,
+          requestId: res.id,
+          assignedRepresentative: chosenRep,
+          submittedAt,
+        };
       }
       return { success: false, error: res.error || 'Failed to submit research request.' };
     } catch (err) {
