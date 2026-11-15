@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { scrollToTopInstant } from '../../utils/scrollTop';
 import { Course, LiveClass, Opportunity, Tutor, ResearchService, TutorBooking } from '../../types';
 import { MOCK_COURSES, MOCK_LIVE_CLASSES, MOCK_QUIZ } from '../../data/mockData';
 import { AppHeader } from './AppHeader';
@@ -36,7 +37,8 @@ export const MainAppShell: React.FC = () => {
     setScreen, 
     authPrompt, 
     closeAuthPrompt, 
-    requireAuth 
+    requireAuth,
+    learnInitialView
   } = useAuth();
   const mainScrollRef = useRef<HTMLElement>(null);
   const hasAccount = Boolean(currentUser && !currentUser.isGuest);
@@ -48,15 +50,10 @@ export const MainAppShell: React.FC = () => {
     }
   }, [hasAccount, activeTab, setActiveTab]);
 
-  // Automatically reset scroll position to top whenever user switches tabs
-  useEffect(() => {
-    if (mainScrollRef.current) {
-      mainScrollRef.current.scrollTop = 0;
-    }
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-  }, [activeTab]);
+  // Automatically reset scroll position to top whenever user switches tabs or routes
+  useLayoutEffect(() => {
+    scrollToTopInstant(mainScrollRef.current);
+  }, [activeTab, learnInitialView]);
 
   // Drawer states
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -150,7 +147,7 @@ export const MainAppShell: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <main ref={mainScrollRef} className="flex-1 w-full flex flex-col relative overflow-y-auto no-scrollbar">
+      <main ref={mainScrollRef} className="flex-1 w-full flex flex-col relative">
         {activeTab === 'home' && (
           <HomeTab
             onSelectCourse={(course) => setSelectedCourse(course)}

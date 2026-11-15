@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { scrollToTopInstant } from '../../utils/scrollTop';
 import { Wordmark } from '../brand/Wordmark';
 import { ChevronRight, ChevronLeft, ArrowRight } from 'lucide-react';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -43,6 +44,10 @@ export const OnboardingScreen: React.FC = () => {
       setScreen('app');
     }
   }, [currentUser, setScreen]);
+
+  useLayoutEffect(() => {
+    scrollToTopInstant();
+  }, [activeIndex]);
 
   const minSwipeDistance = 45;
 

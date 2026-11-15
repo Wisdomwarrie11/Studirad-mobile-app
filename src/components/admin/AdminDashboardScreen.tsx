@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useCurrency } from '../../context/CurrencyContext';
+import { scrollToTopInstant } from '../../utils/scrollTop';
 import { 
   Course, 
   LiveClass, 
@@ -169,6 +170,10 @@ export const AdminDashboardScreen: React.FC = () => {
 
   // Private Classes Admin View & Modals
   const [privateClassSubTab, setPrivateClassSubTab] = useState<'bookings' | 'catalog'>('bookings');
+
+  useLayoutEffect(() => {
+    scrollToTopInstant();
+  }, [activeTab, privateClassSubTab]);
   const [isPrivateClassModalOpen, setIsPrivateClassModalOpen] = useState(false);
   const [pcSlotDraft, setPcSlotDraft] = useState('');
   const [isSavingPcAdmin, setIsSavingPcAdmin] = useState(false);

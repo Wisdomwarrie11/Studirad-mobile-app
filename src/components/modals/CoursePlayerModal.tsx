@@ -583,7 +583,10 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
             )}
 
             {/* Tab Content Body */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 no-scrollbar text-slate-800 dark:text-slate-200">
+            <div
+              key={`${course.id}_${activeTab}`}
+              className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 no-scrollbar text-slate-800 dark:text-slate-200"
+            >
               
               {/* TAB 1: CURRICULUM */}
               {activeTab === 'curriculum' && (

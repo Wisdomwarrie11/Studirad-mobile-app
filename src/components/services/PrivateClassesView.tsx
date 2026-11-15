@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { PrivateClass } from '../../types';
 import { subscribePrivateClasses } from '../../services/firebaseDataService';
+import { scrollToTopInstant } from '../../utils/scrollTop';
 import {
   PrivateClassDetailPage,
   getPrivateClassFallbackImage,
@@ -25,6 +26,10 @@ export const PrivateClassesView: React.FC<PrivateClassesViewProps> = ({
     });
     return () => unsub?.();
   }, []);
+
+  useLayoutEffect(() => {
+    scrollToTopInstant();
+  }, [selectedClass?.id]);
 
   const categories = useMemo(() => {
     const unique = Array.from(new Set(classes.map((c) => c.category))).filter(Boolean);

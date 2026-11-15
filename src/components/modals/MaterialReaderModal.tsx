@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { StudyMaterial } from '../../types';
@@ -107,6 +107,13 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const renderTaskRef = useRef<any>(null);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+
+  useLayoutEffect(() => {
+    if (bodyRef.current) {
+      bodyRef.current.scrollTop = 0;
+    }
+  }, [material?.id]);
 
   const rawLink = (material?.link || (material as any)?.downloadUrl || (material as any)?.url || '').trim();
   const DEFAULT_CONFIG = {
@@ -694,7 +701,10 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
         </div>
 
         {/* Scrollable Reader Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+        <div
+          ref={bodyRef}
+          className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4"
+        >
           {/* 1. LOADING STATE */}
           {contentKind === 'loading' && (
             <div className="w-full h-[52vh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0D131F] flex flex-col items-center justify-center gap-3">

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { scrollToTopInstant } from '../../utils/scrollTop';
 import { Wordmark } from '../brand/Wordmark';
 import { 
   Mail, 
@@ -46,6 +47,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
       setMode(authInitialTab);
     }
   }, [initialMode, authInitialTab]);
+
+  useLayoutEffect(() => {
+    scrollToTopInstant();
+  }, [mode]);
 
   // Sign In State (User)
   const [signInEmail, setSignInEmail] = useState('');

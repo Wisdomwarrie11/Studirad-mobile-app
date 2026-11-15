@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { PrivateClass } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useCurrency } from '../../context/CurrencyContext';
 import { formatMoney } from '../../utils/currency';
 import { formatTime12h } from '../../utils/timeFormat';
+import { scrollToTopInstant } from '../../utils/scrollTop';
 import { submitPrivateClassBooking } from '../../services/firebaseDataService';
 import { getVideoEmbedUrl } from '../../utils/youtube';
 import {
@@ -92,12 +93,12 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
     setVideoWatchSeconds(0);
     setVideoCompleted(false);
     setSubmittedRefCode('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToTopInstant();
   }, [privateClass.id]);
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [step]);
+  useLayoutEffect(() => {
+    scrollToTopInstant();
+  }, [privateClass.id, step]);
 
   // Watch timer when user is on the mandatory promise video gate
   useEffect(() => {

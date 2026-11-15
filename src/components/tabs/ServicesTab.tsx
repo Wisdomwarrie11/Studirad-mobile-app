@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests, UserRequest } from '../../context/RequestContext';
 import { useCurrency } from '../../context/CurrencyContext';
 import { formatPriceString, formatMoney } from '../../utils/currency';
 import { formatDateTime12h, formatTime12h } from '../../utils/timeFormat';
+import { scrollToTopInstant } from '../../utils/scrollTop';
 import { ResearchAssistanceWizard } from '../services/ResearchAssistanceWizard';
 import { PrivateClassesView } from '../services/PrivateClassesView';
 import {
@@ -29,6 +30,10 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
 
   const [activeFormTab, setActiveFormTab] = useState<'private_class' | 'research' | 'my_requests'>('research');
   const [selectedDetailRequest, setSelectedDetailRequest] = useState<UserRequest | null>(null);
+
+  useLayoutEffect(() => {
+    scrollToTopInstant();
+  }, [activeFormTab]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {

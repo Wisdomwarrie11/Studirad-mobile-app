@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { useCurrency } from '../../context/CurrencyContext';
 import { Wordmark } from '../brand/Wordmark';
 import { Bell, Search, ShieldCheck } from 'lucide-react';
 import { NavTab } from '../../types';
@@ -17,7 +16,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 }) => {
   const { currentUser, unreadNotificationCount, activeTab, setActiveTab, setScreen } = useAuth();
   const { theme } = useTheme();
-  const { currency, toggleCurrency } = useCurrency();
 
   const userInitial = currentUser?.fullName
     ? currentUser.fullName.charAt(0).toUpperCase()

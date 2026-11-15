@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect, useRef } from 'react';
 import { LiveClass } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -35,6 +35,13 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
   const { currency } = useCurrency();
   const [isRegistered, setIsRegistered] = useState(liveClass?.isRegistered || false);
   const [calendarAdded, setCalendarAdded] = useState(false);
+  const scrollBodyRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (liveClass && scrollBodyRef.current) {
+      scrollBodyRef.current.scrollTop = 0;
+    }
+  }, [liveClass?.id]);
 
   if (!liveClass) return null;
 
@@ -94,7 +101,7 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 no-scrollbar">
+        <div ref={scrollBodyRef} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 no-scrollbar">
           
           {/* Banner Image */}
           <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden bg-slate-900 shadow-inner">

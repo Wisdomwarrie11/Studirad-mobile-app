@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Course } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -34,6 +34,13 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
   const { currency } = useCurrency();
   const [liked, setLiked] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const scrollBodyRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (course && scrollBodyRef.current) {
+      scrollBodyRef.current.scrollTop = 0;
+    }
+  }, [course?.id]);
 
   useEffect(() => {
     if (course?.id) {
@@ -91,7 +98,7 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 no-scrollbar">
+        <div ref={scrollBodyRef} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 no-scrollbar">
           {/* Hero Thumbnail */}
           <div className="relative w-full h-48 sm:h-52 rounded-2xl overflow-hidden bg-slate-900 shadow-sm group">
             <img

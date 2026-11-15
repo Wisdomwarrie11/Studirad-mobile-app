@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { RequestProvider } from './context/RequestContext';
+import { scrollToTopInstant } from './utils/scrollTop';
 import { SplashScreen } from './components/steps/SplashScreen';
 import { OnboardingScreen } from './components/steps/OnboardingScreen';
 import { AuthScreen } from './components/steps/AuthScreen';
@@ -21,11 +22,9 @@ import { AdminProtectedRoute } from './components/admin/AdminProtectedRoute';
 const AppContent: React.FC = () => {
   const { currentScreen } = useAuth();
 
-  // Reset scroll to top on every screen transition
-  React.useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+  // Reset scroll to top synchronously & after paint on every screen transition
+  useLayoutEffect(() => {
+    scrollToTopInstant();
   }, [currentScreen]);
 
   return (

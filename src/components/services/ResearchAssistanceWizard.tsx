@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   AcademicLevel,
   ACADEMIC_LEVEL_OPTIONS,
@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../context/RequestContext';
 import { useCurrency } from '../../context/CurrencyContext';
+import { scrollToTopInstant } from '../../utils/scrollTop';
 import {
   AlertCircle,
   ArrowLeft,
@@ -112,8 +113,12 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
 
   const scrollToWizardTop = () => {
     setErrorMessage(null);
-    containerTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    scrollToTopInstant();
   };
+
+  useLayoutEffect(() => {
+    scrollToTopInstant();
+  }, [step]);
 
   const activeCategoryDef = useMemo(
     () => (selectedCategory ? getCategoryDefinition(selectedCategory) : null),

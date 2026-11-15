@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { scrollToTopInstant } from '../../utils/scrollTop';
 import {
   FILL_BLANK_ITEMS,
   WORD_SCRAMBLE_ITEMS,
@@ -71,7 +72,6 @@ const GAME_CATALOG: {
   id: GameMode;
   title: string;
   tagline: string;
-  description: string;
   countLabel: string;
   icon: React.FC<{ className?: string }>;
   gradient: string;
@@ -80,9 +80,8 @@ const GAME_CATALOG: {
   {
     id: 'fill_blank',
     title: 'Fill in the Blanks',
-    tagline: 'Spelling & Recall',
-    description: 'Spell missing radiographic terms in colorful letter slots while dodging tricky phonetic decoy tiles.',
-    countLabel: '75 Challenges · 3 Tiers',
+    tagline: 'Complete missing terms',
+    countLabel: '75 Qs',
     icon: Puzzle,
     gradient: 'from-blue-600 to-indigo-600',
     badgeBg: 'bg-blue-500/12 text-blue-600 dark:text-blue-300 border-blue-500/25',
@@ -90,9 +89,8 @@ const GAME_CATALOG: {
   {
     id: 'word_scramble',
     title: 'Word Scramble',
-    tagline: 'Unscramble Terms',
-    description: 'Rearrange shuffled radiography letters from the clue to reconstruct core clinical terms.',
-    countLabel: '45 Terms · 3 Tiers',
+    tagline: 'Unscramble terms',
+    countLabel: '45 Qs',
     icon: Shuffle,
     gradient: 'from-amber-500 to-orange-600',
     badgeBg: 'bg-amber-500/12 text-amber-600 dark:text-amber-300 border-amber-500/25',
@@ -100,9 +98,8 @@ const GAME_CATALOG: {
   {
     id: 'memory_match',
     title: 'Memory Match',
-    tagline: 'Card Pairs',
-    description: 'Flip colorful cards to match anatomical landmarks, modalities, contrast agents, and artifacts.',
-    countLabel: '9 Decks · 3 Tiers',
+    tagline: 'Match card pairs',
+    countLabel: '9 Decks',
     icon: Layers,
     gradient: 'from-emerald-500 to-teal-600',
     badgeBg: 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-300 border-emerald-500/25',
@@ -110,9 +107,8 @@ const GAME_CATALOG: {
   {
     id: 'true_false',
     title: 'True or False',
-    tagline: 'Clinical Judgment',
-    description: 'Evaluate real clinical positioning, CT, MRI, ultrasound, and safety statements at speed.',
-    countLabel: '45 Statements · 3 Tiers',
+    tagline: 'Fast clinical facts',
+    countLabel: '45 Qs',
     icon: Grid2x2Check,
     gradient: 'from-rose-500 to-pink-600',
     badgeBg: 'bg-rose-500/12 text-rose-600 dark:text-rose-300 border-rose-500/25',
@@ -408,6 +404,11 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
   const tfComplete = rawTfIdx >= tfLevelItems.length;
   const currentTfItem = !tfComplete ? tfLevelItems[rawTfIdx] : null;
 
+  // Scroll cleanly to top whenever opening a game, switching tiers, or returning to Hub
+  useLayoutEffect(() => {
+    scrollToTopInstant();
+  }, [selectedGame, currentLevel]);
+
   // Active word puzzle reference when playing fill_blank or word_scramble
   const activeWordItem = useMemo(() => {
     if (selectedGame === 'fill_blank' && currentFillItem) {
@@ -425,7 +426,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
       return {
         id: currentScrambleItem.id,
         targetWord: currentScrambleItem.word.toUpperCase().replace(/[^A-Z]/g, ''),
-        question: 'Rearrange every scrambled tile below to spell the correct radiographic term:',
+        question: currentScrambleItem.clue,
         clue: currentScrambleItem.clue,
         category: currentScrambleItem.category,
         explanation: currentScrambleItem.explanation,
@@ -799,17 +800,12 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
   // =========================================================================
   if (selectedGame === null) {
     return (
-      <div className="w-full space-y-6 select-none text-left">
+      <div className="w-full space-y-5 select-none text-left">
         {/* Hub Header */}
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Radiography Games
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              Choose a game below to start playing. Your scores sync directly to your profile.
-            </p>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Games
+          </h1>
           <button
             type="button"
             onClick={() => setMuted((m) => !m)}
@@ -821,10 +817,10 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
         </div>
 
         {/* REAL PLAYER RECORDED STATS CARD */}
-        <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-[#002147] via-[#092C5C] to-[#0E1E38] text-white border border-slate-700/70 shadow-md space-y-4">
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-[#002147] via-[#092C5C] to-[#0E1E38] text-white border border-slate-700/70 shadow-md space-y-3.5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-[#FF7F32]/20 border border-[#FF7F32]/40 text-[#FF7F32] flex items-center justify-center font-black text-base shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-[#FF7F32]/20 border border-[#FF7F32]/40 text-[#FF7F32] flex items-center justify-center font-black text-sm shrink-0">
                 {currentUser?.fullName
                   ? currentUser.fullName
                       .split(' ')
@@ -834,23 +830,16 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                       .toUpperCase()
                   : 'PL'}
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base sm:text-lg font-extrabold text-white">
-                    {isSignedInAccount ? currentUser?.fullName : 'Guest Player'}
-                  </h2>
-                  {isSignedInAccount && (
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-bold inline-flex items-center gap-1">
-                      <UserCheck className="w-3 h-3" />
-                      Profile Synced
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-300">
-                  {isSignedInAccount
-                    ? currentUser?.role || 'Radiography Scholar'
-                    : 'Sign in to save your total score to your profile & leaderboard'}
-                </p>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-extrabold text-white">
+                  {isSignedInAccount ? currentUser?.fullName : 'Guest'}
+                </h2>
+                {isSignedInAccount && (
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-bold inline-flex items-center gap-1">
+                    <UserCheck className="w-3 h-3" />
+                    Synced
+                  </span>
+                )}
               </div>
             </div>
 
@@ -860,7 +849,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                 onClick={() => openAuthWithTab('signIn')}
                 className="px-3.5 py-2 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white text-xs font-extrabold cursor-pointer transition-colors"
               >
-                Sign In to Sync Score
+                Sign In
               </button>
             )}
           </div>
@@ -869,9 +858,9 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
             <div className="p-3 rounded-2xl bg-white/10 border border-white/10">
               <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300">
                 <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                <span>Total Score</span>
+                <span>Score</span>
               </div>
-              <div className="text-xl font-black tabular-nums mt-0.5">
+              <div className="text-lg font-black tabular-nums mt-0.5">
                 {progress.totalScore.toLocaleString()}
               </div>
             </div>
@@ -879,9 +868,9 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
             <div className="p-3 rounded-2xl bg-white/10 border border-white/10">
               <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300">
                 <Flame className="w-3.5 h-3.5 text-[#FF7F32]" />
-                <span>Best Streak</span>
+                <span>Streak</span>
               </div>
-              <div className="text-xl font-black tabular-nums mt-0.5">
+              <div className="text-lg font-black tabular-nums mt-0.5">
                 {progress.bestStreak}
               </div>
             </div>
@@ -891,7 +880,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Solved</span>
               </div>
-              <div className="text-xl font-black tabular-nums mt-0.5">
+              <div className="text-lg font-black tabular-nums mt-0.5">
                 {totalSolvedCount}
               </div>
             </div>
@@ -901,7 +890,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                 <Target className="w-3.5 h-3.5 text-cyan-300" />
                 <span>Accuracy</span>
               </div>
-              <div className="text-xl font-black tabular-nums mt-0.5">
+              <div className="text-lg font-black tabular-nums mt-0.5">
                 {progress.attemptsCount ? `${accuracyPct}%` : '—'}
               </div>
             </div>
@@ -909,84 +898,65 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
         </div>
 
         {/* ALL GAMES SELECTION LIST */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Select a Game to Play
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {GAME_CATALOG.map((game) => {
-              const Icon = game.icon;
-              const modeScore = progress.modeScores?.[game.id] ?? 0;
-              const modeSolved =
-                game.id === 'memory_match'
-                  ? progress.memoryCompletedDecks?.length ?? 0
-                  : progress.modeSolved?.[game.id] ?? 0;
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {GAME_CATALOG.map((game) => {
+            const Icon = game.icon;
+            const modeScore = progress.modeScores?.[game.id] ?? 0;
 
-              return (
-                <button
-                  key={game.id}
-                  type="button"
-                  onClick={() => {
-                    sfx.tap();
-                    setSelectedGame(game.id);
-                    persistProgress({ ...progress, activeMode: game.id });
-                  }}
-                  className="group p-5 rounded-3xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 hover:border-[#FF7F32] dark:hover:border-[#FF7F32] shadow-xs text-left flex flex-col justify-between gap-4 transition-all cursor-pointer active:scale-[0.99]"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${game.gradient} text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform shrink-0`}>
-                        <Icon className="w-6 h-6" />
-                      </div>
-                      <span className={`px-2.5 py-1 rounded-xl border text-[11px] font-extrabold ${game.badgeBg}`}>
-                        {game.countLabel}
-                      </span>
+            return (
+              <button
+                key={game.id}
+                type="button"
+                onClick={() => {
+                  sfx.tap();
+                  setSelectedGame(game.id);
+                  persistProgress({ ...progress, activeMode: game.id });
+                }}
+                className="group p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 hover:border-[#FF7F32] dark:hover:border-[#FF7F32] shadow-xs text-left flex flex-col justify-between gap-3.5 transition-all cursor-pointer active:scale-[0.99]"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${game.gradient} text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform shrink-0`}>
+                      <Icon className="w-5 h-5" />
                     </div>
-
-                    <div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                        {game.tagline}
-                      </span>
-                      <h4 className="text-lg font-black text-slate-900 dark:text-white mt-0.5 group-hover:text-[#FF7F32] transition-colors">
+                    <div className="min-w-0">
+                      <h4 className="text-base sm:text-lg font-black text-slate-900 dark:text-white group-hover:text-[#FF7F32] transition-colors truncate">
                         {game.title}
                       </h4>
-                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mt-1">
-                        {game.description}
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        {game.tagline}
                       </p>
                     </div>
                   </div>
+                  <span className={`px-2.5 py-1 rounded-xl border text-[11px] font-extrabold shrink-0 ${game.badgeBg}`}>
+                    {game.countLabel}
+                  </span>
+                </div>
 
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                    <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold tabular-nums">
-                      Score: <strong className="text-slate-800 dark:text-white">{modeScore}</strong> ·{' '}
-                      {game.id === 'memory_match' ? `Decks: ${modeSolved}` : `Solved: ${modeSolved}`}
-                    </div>
-                    <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 group-hover:bg-[#FF7F32] group-hover:text-white text-xs font-extrabold transition-colors">
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>Play</span>
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-bold tabular-nums">
+                    {modeScore} pts
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 group-hover:bg-[#FF7F32] group-hover:text-white text-xs font-extrabold transition-colors">
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>Play</span>
+                  </span>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {/* REAL FIRESTORE LEADERBOARD / PLAYER SCORES */}
-        <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 space-y-4">
+        <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/12 text-amber-500 flex items-center justify-center">
-                <Medal className="w-5 h-5" />
+              <div className="w-8 h-8 rounded-xl bg-amber-500/12 text-amber-500 flex items-center justify-center">
+                <Medal className="w-4 h-4" />
               </div>
-              <div>
-                <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
-                  Player Scoreboard
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Live verified player scores from Firestore
-                </p>
-              </div>
+              <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
+                Scoreboard
+              </h3>
             </div>
             <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
               <Users className="w-3.5 h-3.5" />
@@ -995,13 +965,10 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
           </div>
 
           {leaderboard.length === 0 ? (
-            <div className="p-6 rounded-2xl bg-slate-50 dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 text-center space-y-1.5">
-              <Trophy className="w-7 h-7 text-slate-400 mx-auto" />
-              <p className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
-                No recorded player scores yet
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Sign in and complete challenges in any game above to post your real score here.
+            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 text-center space-y-1">
+              <Trophy className="w-6 h-6 text-slate-400 mx-auto" />
+              <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                No scores yet
               </p>
             </div>
           ) : (
@@ -1043,16 +1010,13 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                           )}
                         </div>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                          {player.role} · Solved: {player.solvedCount} · Best Streak: {player.bestStreak}
+                          {player.solvedCount} solved
                         </p>
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0">
-                      <div className="text-sm font-black text-slate-900 dark:text-white tabular-nums">
-                        {player.totalScore.toLocaleString()}
-                      </div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase">pts</div>
+                    <div className="text-sm font-black text-slate-900 dark:text-white tabular-nums shrink-0">
+                      {player.totalScore.toLocaleString()} pts
                     </div>
                   </div>
                 );
@@ -1093,16 +1057,11 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
             className="min-h-[44px] px-3.5 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 flex items-center gap-1.5 text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:border-[#FF7F32] cursor-pointer transition-colors shrink-0"
           >
             <ArrowLeft className="w-4 h-4 text-[#FF7F32]" />
-            <span>All Games</span>
+            <span>Games</span>
           </button>
-          <div className="min-w-0">
-            <h1 className="text-base sm:text-lg font-black text-slate-900 dark:text-white truncate">
-              {activeMeta.title}
-            </h1>
-            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">
-              Mode Score: {progress.modeScores?.[selectedGame] ?? 0} pts
-            </p>
-          </div>
+          <h1 className="text-base sm:text-lg font-black text-slate-900 dark:text-white truncate">
+            {activeMeta.title}
+          </h1>
         </div>
 
         {/* Live Streak, Total Score & Sound Toggle */}
@@ -1158,16 +1117,16 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
 
       {/* LEVEL COMPLETED SUMMARY STATE */}
       {isTierCompleted && (
-        <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 text-center space-y-5 shadow-sm">
-          <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center mx-auto shadow-lg">
-            <Trophy className="w-8 h-8" />
+        <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 text-center space-y-4 shadow-sm">
+          <div className="w-14 h-14 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center mx-auto shadow-lg">
+            <Trophy className="w-7 h-7" />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <h2 className="text-xl font-black text-slate-900 dark:text-white">
-              {currentLevel.toUpperCase()} Tier Mastered!
+              {currentLevel.toUpperCase()} Complete
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-              You completed all {activeMeta.title} challenges in the {currentLevel} level. Total score: {progress.totalScore.toLocaleString()} pts.
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
+              {progress.totalScore.toLocaleString()} pts
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
@@ -1177,7 +1136,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
               className="px-5 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-white flex items-center gap-2 cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" />
-              <span>Replay {currentLevel}</span>
+              <span>Replay</span>
             </button>
             {currentLevel !== 'difficult' && (
               <button
@@ -1190,7 +1149,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                 }
                 className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#FF7F32] to-amber-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-md cursor-pointer"
               >
-                <span>Advance to {currentLevel === 'easy' ? 'Medium' : 'Difficult'}</span>
+                <span>Next Tier</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             )}
@@ -1233,26 +1192,19 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-snug">
-                  {activeWordItem.question}
-                </h2>
-                {selectedGame === 'word_scramble' && (
-                  <p className="text-sm font-semibold text-amber-600 dark:text-amber-300 bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3">
-                    Definition: {activeWordItem.clue}
-                  </p>
-                )}
-              </div>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-snug">
+                {activeWordItem.question}
+              </h2>
 
               {selectedGame === 'fill_blank' && showClue && (
-                <div className="p-3.5 rounded-2xl bg-amber-500/12 border border-amber-500/30 flex items-start gap-2.5 text-xs sm:text-sm text-amber-800 dark:text-amber-200 font-semibold">
+                <div className="p-3 rounded-2xl bg-amber-500/12 border border-amber-500/30 flex items-start gap-2 text-xs sm:text-sm text-amber-800 dark:text-amber-200 font-semibold">
                   <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                   <span>{activeWordItem.clue}</span>
                 </div>
               )}
 
               {/* COLORFUL BLANK LETTER SPACES */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
                   {slots.map((placed, idx) => {
                     const colorTheme = TILE_COLORS[idx % TILE_COLORS.length];
@@ -1297,7 +1249,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                 {wordStatus === 'wrong' && (
                   <p className="text-center text-xs font-extrabold text-rose-500 dark:text-rose-400 mt-3 flex items-center justify-center gap-1.5">
                     <XCircle className="w-4 h-4" />
-                    <span>Not quite right — tap any colored tile above to swap letters!</span>
+                    <span>Try again — tap a tile to swap</span>
                   </p>
                 )}
               </div>
@@ -1311,20 +1263,20 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                         sfx.tap();
                         setShowClue((s) => !s);
                       }}
-                      className="px-3.5 py-2 rounded-xl bg-amber-500/12 hover:bg-amber-500/20 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px]"
+                      className="px-3 py-2 rounded-xl bg-amber-500/12 hover:bg-amber-500/20 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px]"
                     >
                       <Lightbulb className="w-3.5 h-3.5" />
-                      <span>{showClue ? 'Hide Hint' : 'Hint'}</span>
+                      <span>{showClue ? 'Hide' : 'Hint'}</span>
                     </button>
                   )}
 
                   <button
                     type="button"
                     onClick={handleRevealOneLetter}
-                    className="px-3.5 py-2 rounded-xl bg-violet-500/12 hover:bg-violet-500/20 border border-violet-500/30 text-violet-700 dark:text-violet-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px]"
+                    className="px-3 py-2 rounded-xl bg-violet-500/12 hover:bg-violet-500/20 border border-violet-500/30 text-violet-700 dark:text-violet-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px]"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Place Letter</span>
+                    <span>Letter</span>
                   </button>
 
                   {selectedGame === 'word_scramble' && (
@@ -1335,17 +1287,17 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                         handleClearSlots();
                         setScrambleReshuffleCount((c) => c + 1);
                       }}
-                      className="px-3.5 py-2 rounded-xl bg-cyan-500/12 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-700 dark:text-cyan-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px]"
+                      className="px-3 py-2 rounded-xl bg-cyan-500/12 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-700 dark:text-cyan-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px]"
                     >
                       <Shuffle className="w-3.5 h-3.5" />
-                      <span>Reshuffle</span>
+                      <span>Shuffle</span>
                     </button>
                   )}
 
                   <button
                     type="button"
                     onClick={handleBackspace}
-                    className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px]"
+                    className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px]"
                   >
                     <Delete className="w-3.5 h-3.5" />
                     <span>Undo</span>
@@ -1354,7 +1306,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                   <button
                     type="button"
                     onClick={handleClearSlots}
-                    className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px]"
+                    className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer min-h-[40px]"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>Clear</span>
@@ -1364,16 +1316,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
             </div>
 
             {wordStatus !== 'correct' && (
-              <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 space-y-3 shadow-sm">
-                <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  <span>
-                    {selectedGame === 'fill_blank'
-                      ? 'Tap tiles to fill blanks (watch out for tricky decoy letters)'
-                      : 'Tap tiles to unscramble the word'}
-                  </span>
-                  <span>{letterBank.length} Tiles</span>
-                </div>
-
+              <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
                   {letterBank.map((letter, idx) => {
                     const isUsed = usedBankIndices.has(idx);
@@ -1400,11 +1343,11 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
             )}
 
             {wordStatus === 'correct' && (
-              <div className="p-5 rounded-3xl bg-emerald-500/12 border border-emerald-500/35 space-y-3 animate-fadeIn">
+              <div className="p-4 sm:p-5 rounded-3xl bg-emerald-500/12 border border-emerald-500/35 space-y-3 animate-fadeIn">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-black text-sm">
                     <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                    <span>Correct! +{activeWordItem.points} pts</span>
+                    <span>+{activeWordItem.points} pts</span>
                   </div>
                   <span className="px-2.5 py-1 rounded-xl bg-emerald-500 text-white text-xs font-extrabold">
                     {activeWordItem.targetWord}
@@ -1416,9 +1359,9 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                 <button
                   type="button"
                   onClick={handleNextWordPuzzle}
-                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer transition-transform active:scale-[0.99]"
+                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer transition-transform active:scale-[0.99]"
                 >
-                  <span>Next Challenge</span>
+                  <span>Next</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
@@ -1436,8 +1379,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                   {activeDeck.title}
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Match {activeDeck.pairs.length} pairs · Moves:{' '}
-                  <strong className="text-slate-800 dark:text-white">{memoryMoves}</strong> · Matched:{' '}
+                  {memoryMoves} moves ·{' '}
                   <strong className="text-emerald-600 dark:text-emerald-400">
                     {matchedPairIds.length}/{activeDeck.pairs.length}
                   </strong>
@@ -1475,7 +1417,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                     }`}
                   >
                     {isDone && <Check className="w-3.5 h-3.5" />}
-                    <span>Deck {dIdx + 1}: {deck.category}</span>
+                    <span>Deck {dIdx + 1}</span>
                   </button>
                 );
               })}
@@ -1495,7 +1437,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                   type="button"
                   onClick={() => handleCardFlip(card)}
                   disabled={isMatched}
-                  className={`min-h-[96px] sm:min-h-[108px] p-3 rounded-2xl border-2 border-b-4 flex flex-col items-center justify-center text-center transition-all duration-200 cursor-pointer ${
+                  className={`min-h-[92px] sm:min-h-[104px] p-3 rounded-2xl border-2 border-b-4 flex items-center justify-center text-center transition-all duration-200 cursor-pointer ${
                     isMatched
                       ? 'bg-emerald-500/15 border-emerald-500 text-emerald-700 dark:text-emerald-300 scale-[0.98]'
                       : isRevealed
@@ -1506,29 +1448,11 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                   }`}
                 >
                   {isRevealed ? (
-                    <>
-                      <span
-                        className={`text-[9px] font-black uppercase tracking-wider mb-1 px-2 py-0.5 rounded-md ${
-                          isMatched
-                            ? 'bg-emerald-500 text-white'
-                            : card.side === 'left'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-amber-500 text-white'
-                        }`}
-                      >
-                        {card.side === 'left' ? 'Term / Landmark' : 'Match'}
-                      </span>
-                      <span className="text-xs sm:text-sm font-extrabold leading-snug">
-                        {card.text}
-                      </span>
-                    </>
+                    <span className="text-xs sm:text-sm font-extrabold leading-snug">
+                      {card.text}
+                    </span>
                   ) : (
-                    <div className="flex flex-col items-center gap-1 opacity-95">
-                      <HelpCircle className="w-6 h-6" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">
-                        Flip
-                      </span>
-                    </div>
+                    <HelpCircle className="w-6 h-6 opacity-90" />
                   )}
                 </button>
               );
@@ -1536,31 +1460,28 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
           </div>
 
           {deckSolved && (
-            <div className="p-5 rounded-3xl bg-emerald-500/12 border border-emerald-500/35 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="p-4 sm:p-5 rounded-3xl bg-emerald-500/12 border border-emerald-500/35 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <Trophy className="w-8 h-8 text-emerald-500 shrink-0" />
+                <Trophy className="w-7 h-7 text-emerald-500 shrink-0" />
                 <div>
                   <h3 className="text-sm font-black text-emerald-700 dark:text-emerald-300">
-                    Deck Cleared in {memoryMoves} Moves!
+                    Cleared in {memoryMoves} moves (+{activeDeck.points} pts)
                   </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-300">
-                    +{activeDeck.points} points recorded to your profile.
-                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={resetMemoryBoard}
-                  className="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold cursor-pointer"
                 >
-                  Replay Deck
+                  Replay
                 </button>
                 {selectedDeckIdx < memoryLevelDecks.length - 1 && (
                   <button
                     type="button"
                     onClick={() => setSelectedDeckIdx((i) => i + 1)}
-                    className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-extrabold cursor-pointer flex items-center gap-1"
+                    className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-extrabold cursor-pointer flex items-center gap-1"
                   >
                     <span>Next Deck</span>
                     <ChevronRight className="w-4 h-4" />
@@ -1575,7 +1496,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
       {/* MODE 4: TRUE OR FALSE */}
       {selectedGame === 'true_false' && !isTierCompleted && currentTfItem && (
         <div className="space-y-4">
-          <div className="p-5 sm:p-7 rounded-3xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
+          <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
             <div className="flex items-center justify-between gap-2">
               <span className="px-3 py-1 rounded-xl bg-rose-500/12 border border-rose-500/25 text-rose-600 dark:text-rose-300 text-[11px] font-extrabold uppercase tracking-wider">
                 {currentTfItem.category}
@@ -1605,7 +1526,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
             </div>
 
             <h2 className="text-base sm:text-xl font-bold text-slate-900 dark:text-white leading-relaxed">
-              “{currentTfItem.statement}”
+              {currentTfItem.statement}
             </h2>
 
             <div className="grid grid-cols-2 gap-3 pt-1">
@@ -1613,7 +1534,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                 type="button"
                 disabled={tfAnswer !== null}
                 onClick={() => handleTrueFalsePick(true)}
-                className={`py-4 px-4 rounded-2xl border-b-4 font-black text-base flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[58px] ${
+                className={`py-4 px-4 rounded-2xl border-b-4 font-black text-base flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[56px] ${
                   tfAnswer === null
                     ? 'bg-emerald-500 hover:bg-emerald-600 border-emerald-700 text-white shadow-md active:translate-y-0.5'
                     : currentTfItem.isTrue
@@ -1631,7 +1552,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                 type="button"
                 disabled={tfAnswer !== null}
                 onClick={() => handleTrueFalsePick(false)}
-                className={`py-4 px-4 rounded-2xl border-b-4 font-black text-base flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[58px] ${
+                className={`py-4 px-4 rounded-2xl border-b-4 font-black text-base flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[56px] ${
                   tfAnswer === null
                     ? 'bg-rose-500 hover:bg-rose-600 border-rose-700 text-white shadow-md active:translate-y-0.5'
                     : !currentTfItem.isTrue
@@ -1649,7 +1570,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
 
           {tfAnswer !== null && (
             <div
-              className={`p-5 rounded-3xl border space-y-3 animate-fadeIn ${
+              className={`p-4 sm:p-5 rounded-3xl border space-y-3 animate-fadeIn ${
                 tfAnswer === currentTfItem.isTrue
                   ? 'bg-emerald-500/12 border-emerald-500/35'
                   : 'bg-rose-500/12 border-rose-500/35'
@@ -1660,14 +1581,14 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                   <>
                     <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                     <span className="text-emerald-700 dark:text-emerald-300">
-                      Spot On! +{currentTfItem.points} pts
+                      +{currentTfItem.points} pts
                     </span>
                   </>
                 ) : (
                   <>
                     <XCircle className="w-5 h-5 text-rose-500" />
                     <span className="text-rose-700 dark:text-rose-300">
-                      Not Correct — Answer is {currentTfItem.isTrue ? 'TRUE' : 'FALSE'}
+                      Answer: {currentTfItem.isTrue ? 'TRUE' : 'FALSE'}
                     </span>
                   </>
                 )}
@@ -1678,9 +1599,9 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
               <button
                 type="button"
                 onClick={handleNextTrueFalse}
-                className="w-full py-3.5 rounded-2xl bg-[#002147] hover:bg-[#0A3266] text-white font-extrabold text-sm flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3 rounded-2xl bg-[#002147] hover:bg-[#0A3266] text-white font-extrabold text-sm flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Next Statement</span>
+                <span>Next</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>

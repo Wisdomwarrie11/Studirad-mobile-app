@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect, useRef } from 'react';
 import { Opportunity } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -26,6 +26,13 @@ export const OpportunityDetailsModal: React.FC<OpportunityDetailsModalProps> = (
   const { currency } = useCurrency();
   const [isSaved, setIsSaved] = useState(false);
   const [applied, setApplied] = useState(false);
+  const scrollBodyRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (opportunity && scrollBodyRef.current) {
+      scrollBodyRef.current.scrollTop = 0;
+    }
+  }, [opportunity?.id]);
 
   if (!opportunity) return null;
 
@@ -71,7 +78,7 @@ export const OpportunityDetailsModal: React.FC<OpportunityDetailsModalProps> = (
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 no-scrollbar">
+        <div ref={scrollBodyRef} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 no-scrollbar">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">

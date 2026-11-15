@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useLayoutEffect } from 'react';
 import { Course, LiveClass, StudyMaterial } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useCurrency } from '../../context/CurrencyContext';
 import { formatPriceString } from '../../utils/currency';
 import { formatTime12h } from '../../utils/timeFormat';
+import { scrollToTopInstant } from '../../utils/scrollTop';
 import { subscribeClasses, subscribeStudyMaterials, subscribeCourses } from '../../services/firebaseDataService';
 import { MaterialReaderModal } from '../modals/MaterialReaderModal';
 import { 
@@ -96,6 +97,10 @@ export const LearnTab: React.FC<LearnTabProps> = ({
       setActiveMainView(learnInitialView);
     }
   }, [learnInitialView]);
+
+  useLayoutEffect(() => {
+    scrollToTopInstant();
+  }, [activeMainView]);
 
   // --- Classes State ---
   const [classesList, setClassesList] = useState<LiveClass[]>([]);
