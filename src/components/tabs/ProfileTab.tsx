@@ -29,7 +29,10 @@ import {
   Smartphone,
   ExternalLink,
   MapPin,
-  Building2
+  Building2,
+  Gamepad2,
+  Flame,
+  Trophy
 } from 'lucide-react';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ProfileSkeleton } from '../common/Skeletons';
@@ -530,6 +533,74 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                   Track lesson completions, pass knowledge check quizzes, and earn verifiable course certificates.
                 </p>
               </div>
+            </div>
+
+            {/* 2b. Radiography Games Real Scoreboard Card (Synced from Firestore) */}
+            <div className="w-full bg-white dark:bg-[#121824] rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/12 text-[#FF7F32] flex items-center justify-center shrink-0">
+                    <Gamepad2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Radiography Games Score
+                    </h3>
+                    <span className="text-lg font-extrabold text-slate-900 dark:text-white tabular-nums">
+                      {(currentUser?.gameScore ?? 0).toLocaleString()} pts
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('game')}
+                  className="px-3 py-1.5 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white text-xs font-bold cursor-pointer transition-colors shrink-0"
+                >
+                  Play Games
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-amber-500 shrink-0" />
+                  <div>
+                    <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Best Streak</div>
+                    <div className="text-xs font-extrabold text-slate-900 dark:text-white tabular-nums">
+                      {currentUser?.bestStreak ?? 0}
+                    </div>
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <div>
+                    <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Solved</div>
+                    <div className="text-xs font-extrabold text-slate-900 dark:text-white tabular-nums">
+                      {currentUser?.gamesSolved ?? 0}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {currentUser?.gameStats && (
+                <div className="grid grid-cols-2 gap-1.5 pt-1 text-[11px]">
+                  <div className="px-2.5 py-1.5 rounded-lg bg-blue-500/8 text-blue-700 dark:text-blue-300 flex items-center justify-between font-semibold">
+                    <span>Fill Blanks</span>
+                    <span className="font-bold tabular-nums">{currentUser.gameStats.fill_blank?.score ?? 0}</span>
+                  </div>
+                  <div className="px-2.5 py-1.5 rounded-lg bg-amber-500/8 text-amber-700 dark:text-amber-300 flex items-center justify-between font-semibold">
+                    <span>Scramble</span>
+                    <span className="font-bold tabular-nums">{currentUser.gameStats.word_scramble?.score ?? 0}</span>
+                  </div>
+                  <div className="px-2.5 py-1.5 rounded-lg bg-emerald-500/8 text-emerald-700 dark:text-emerald-300 flex items-center justify-between font-semibold">
+                    <span>Memory</span>
+                    <span className="font-bold tabular-nums">{currentUser.gameStats.memory_match?.score ?? 0}</span>
+                  </div>
+                  <div className="px-2.5 py-1.5 rounded-lg bg-rose-500/8 text-rose-700 dark:text-rose-300 flex items-center justify-between font-semibold">
+                    <span>True/False</span>
+                    <span className="font-bold tabular-nums">{currentUser.gameStats.true_false?.score ?? 0}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 3. Learning Interests & Specialties */}

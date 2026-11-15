@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Opportunity } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { useCurrency } from '../../context/CurrencyContext';
+import { formatPriceString } from '../../utils/currency';
 import { 
   X, 
   Building2, 
@@ -21,6 +23,7 @@ export const OpportunityDetailsModal: React.FC<OpportunityDetailsModalProps> = (
   onClose,
 }) => {
   const { requireAuth } = useAuth();
+  const { currency } = useCurrency();
   const [isSaved, setIsSaved] = useState(false);
   const [applied, setApplied] = useState(false);
 
@@ -106,7 +109,7 @@ export const OpportunityDetailsModal: React.FC<OpportunityDetailsModalProps> = (
           {/* Rate / Remuneration Card */}
           <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Remuneration / Band:</span>
-            <span className="text-base font-bold text-[#002147] dark:text-[#38BDF8]">{opportunity.rate}</span>
+            <span className="text-base font-bold text-[#002147] dark:text-[#38BDF8]">{formatPriceString(opportunity.rate, currency)}</span>
           </div>
 
           {/* Description */}

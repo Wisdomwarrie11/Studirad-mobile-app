@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Course } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { useCurrency } from '../../context/CurrencyContext';
+import { formatPriceString, formatAmountInCurrency } from '../../utils/currency';
 import { enrollUserInCourse } from '../../services/firebaseDataService';
 import { getYouTubeThumbnail } from '../../utils/youtube';
 import { 
@@ -29,6 +31,7 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
   onOpenPlayer,
 }) => {
   const { currentUser, requireAuth } = useAuth();
+  const { currency } = useCurrency();
   const [liked, setLiked] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
 
@@ -103,7 +106,7 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent flex flex-col justify-end p-4 sm:p-5">
               <div className="flex items-center gap-2 mb-1.5">
                 <span className="px-2.5 py-0.5 rounded-lg bg-[#FF7F32] text-white text-xs font-bold">
-                  {course.isFree ? 'Free Access' : course.price}
+                  {course.isFree ? 'Free Access' : formatPriceString(course.price, currency)}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-lg bg-black/60 text-white text-xs font-semibold uppercase">
                   {course.modality || 'Clinical'}
@@ -190,7 +193,7 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
                   </h4>
                 </div>
                 <span className="text-xs font-extrabold text-[#002147] dark:text-white px-2.5 py-1 rounded-lg bg-white dark:bg-[#121824] border border-orange-200 dark:border-orange-800/60 shadow-2xs">
-                  {course.tutorAvailability.currency || '£'}{course.tutorAvailability.ratePer30Min} / 30 min
+                  {formatAmountInCurrency(course.tutorAvailability.ratePer30Min, course.tutorAvailability.currency || '£', currency)} / 30 min
                 </span>
               </div>
 
@@ -261,7 +264,7 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
           <div>
             <span className="text-xs text-slate-400 font-medium block">Tuition</span>
             <span className="text-base font-bold text-[#002147] dark:text-white">
-              {course.isFree ? 'Free Access' : course.price}
+              {course.isFree ? 'Free Access' : formatPriceString(course.price, currency)}
             </span>
           </div>
 

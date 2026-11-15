@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useCurrency } from '../../context/CurrencyContext';
+import { formatPriceString } from '../../utils/currency';
 import { Course, LiveClass, Opportunity, ClinicalResource, ClinicalModality } from '../../types';
 
 import { 
@@ -25,6 +27,8 @@ import {
   Star
 } from 'lucide-react';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { MaterialReaderModal } from '../modals/MaterialReaderModal';
+import { StudyMaterial } from '../../types';
 
 interface SearchTabProps {
   onSelectCourse: (course: Course) => void;
@@ -61,6 +65,8 @@ export const SearchTab: React.FC<SearchTabProps> = ({
   onSelectLiveClass,
   onSelectOpportunity,
 }) => {
+  const { currency } = useCurrency();
+  const { requireAuth } = useAuth();
   const [liveOpps, setLiveOpps] = useState<Opportunity[]>([]);
   const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
   const [liveCourses, setLiveCourses] = useState<Course[]>([]);
@@ -69,6 +75,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<SearchFilterCategory>('all');
   const [selectedModality, setSelectedModality] = useState<ClinicalModality | 'all'>('all');
   const [downloadedResources, setDownloadedResources] = useState<string[]>([]);
+  const [readingMaterial, setReadingMaterial] = useState<StudyMaterial | null>(null);
 
   useEffect(() => {
     const unsubOpps = subscribeOpportunities((opps) => {
@@ -91,9 +98,30 @@ export const SearchTab: React.FC<SearchTabProps> = ({
     };
   }, []);
 
-  const handleDownload = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDownloadedResources((prev) => [...prev, id]);
+  const handleOpenResource = (res: ClinicalResource) => {
+    if (!requireAuth({
+      title: 'Sign In to Read Study Material',
+      message: 'Create a free account or sign in to open and read clinical materials inside StudiRad.',
+      actionText: 'Open Material',
+    })) {
+      return;
+    }
+    const resolvedLink = (res.downloadUrl || res.link || '').trim();
+    const isVid =
+      res.format?.toLowerCase() === 'video' ||
+      resolvedLink.includes('youtube.com') ||
+      resolvedLink.includes('youtu.be');
+    setDownloadedResources((prev) => (prev.includes(res.id) ? prev : [...prev, res.id]));
+    setReadingMaterial({
+      id: res.id,
+      title: res.title,
+      course: res.course || res.category || 'Radiography',
+      uploader: res.uploader || 'StudiRad Faculty',
+      link: resolvedLink,
+      type: isVid ? 'video' : res.format?.toLowerCase() === 'pdf' ? 'pdf' : 'document',
+      fileSize: res.size,
+      description: res.description,
+    });
   };
 
   const cleanQuery = query.trim().toLowerCase();
@@ -377,7 +405,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({
                         {opp.title}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
-                        {opp.organisation} · {opp.rate}
+                        {opp.organisation} · {formatPriceString(opp.rate, currency)}
                       </p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-[#002147] dark:group-hover:text-white shrink-0" />
@@ -400,7 +428,8 @@ export const SearchTab: React.FC<SearchTabProps> = ({
                   return (
                     <div
                       key={res.id}
-                      className="p-3.5 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 group"
+                      onClick={() => handleOpenResource(res)}
+                      className="p-3.5 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 hover:border-[#002147] dark:hover:border-slate-600 flex items-center justify-between gap-3 group cursor-pointer transition-colors"
                     >
                       <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                         <FileText className="w-5 h-5" />
@@ -420,14 +449,18 @@ export const SearchTab: React.FC<SearchTabProps> = ({
                         </p>
                       </div>
                       <button
-                        onClick={(e) => handleDownload(res.id, e)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenResource(res);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
                           isDownloaded
                             ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
                             : 'bg-[#002147] text-white hover:bg-[#002d62]'
                         }`}
                       >
-                        {isDownloaded ? 'Downloaded' : 'Download'}
+                        {isDownloaded ? 'Open Again' : 'Read'}
                       </button>
                     </div>
                   );
@@ -464,6 +497,12 @@ export const SearchTab: React.FC<SearchTabProps> = ({
         </div>
 
       </div>
+
+      <MaterialReaderModal
+        isOpen={Boolean(readingMaterial)}
+        material={readingMaterial}
+        onClose={() => setReadingMaterial(null)}
+      />
     </div>
   );
 };

@@ -1,661 +1,1915 @@
 export type GameLevel = 'easy' | 'medium' | 'difficult';
+export type GameMode = 'fill_blank' | 'word_scramble' | 'memory_match' | 'true_false';
 
-export type GameItemType = 'missing_word' | 'marble_trivia';
-
-export interface RadiographicGameItem {
+export interface FillBlankItem {
   id: string;
-  type: GameItemType;
   level: GameLevel;
   category: string;
   question: string;
   clue: string;
-  // For 'missing_word' game items
-  targetWord?: string; // Uppercase word to spell, e.g. "ALARA"
-  // For 'marble_trivia' game items
-  options?: string[]; // 4 options
-  correctIndex?: number;
+  targetWord: string; // Uppercase A-Z word to spell
   explanation: string;
   points: number;
 }
 
-export const RADIOGRAPHIC_GAME_ITEMS: RadiographicGameItem[] = [
-  // ==========================================
-  // LEVEL 1: EASY (Foundational Radiography)
-  // ==========================================
+export interface WordScrambleItem {
+  id: string;
+  level: GameLevel;
+  category: string;
+  word: string; // Uppercase A-Z word
+  clue: string;
+  explanation: string;
+  points: number;
+}
+
+export interface MemoryPair {
+  id: string;
+  left: string; // Term / Structure / Modality
+  right: string; // Definition / Association / Pairing
+}
+
+export interface MemoryMatchDeck {
+  id: string;
+  level: GameLevel;
+  title: string;
+  category: string;
+  pairs: MemoryPair[];
+  points: number;
+}
+
+export interface TrueFalseItem {
+  id: string;
+  level: GameLevel;
+  category: string;
+  statement: string;
+  isTrue: boolean;
+  explanation: string;
+  points: number;
+}
+
+// Deterministic pseudo-random helper seeded by string
+export function seededHash(str: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+export function seededShuffle<T>(arr: T[], seedStr: string): T[] {
+  const copy = [...arr];
+  let seed = seededHash(seedStr);
+  for (let i = copy.length - 1; i > 0; i--) {
+    seed = (Math.imul(1664525, seed) + 1013904223) >>> 0;
+    const j = seed % (i + 1);
+    const tmp = copy[i];
+    copy[i] = copy[j];
+    copy[j] = tmp;
+  }
+  return copy;
+}
+
+// Phonetic & orthographic neighbor map for realistic confusing decoy tiles
+const CONFUSING_NEIGHBORS: Record<string, string[]> = {
+  A: ['E', 'O', 'U', 'I'],
+  B: ['P', 'D', 'V', 'R'],
+  C: ['K', 'S', 'G', 'Q'],
+  D: ['T', 'B', 'P', 'G'],
+  E: ['I', 'A', 'Y', 'O'],
+  F: ['V', 'P', 'H', 'T'],
+  G: ['J', 'C', 'K', 'D'],
+  H: ['N', 'K', 'F', 'R'],
+  I: ['E', 'Y', 'L', 'A'],
+  J: ['G', 'Y', 'I', 'L'],
+  K: ['C', 'Q', 'G', 'X'],
+  L: ['R', 'I', 'T', 'N'],
+  M: ['N', 'W', 'H', 'B'],
+  N: ['M', 'R', 'V', 'H'],
+  O: ['U', 'A', 'Q', 'E'],
+  P: ['B', 'F', 'R', 'T'],
+  Q: ['K', 'O', 'C', 'G'],
+  R: ['L', 'N', 'P', 'K'],
+  S: ['C', 'Z', 'X', 'T'],
+  T: ['D', 'P', 'L', 'F'],
+  U: ['O', 'V', 'A', 'Y'],
+  V: ['F', 'U', 'W', 'B'],
+  W: ['M', 'V', 'U', 'N'],
+  X: ['S', 'Z', 'K', 'C'],
+  Y: ['I', 'E', 'J', 'U'],
+  Z: ['S', 'X', 'C', 'T'],
+};
+
+/**
+ * Generates a shuffled bank containing every letter of targetWord PLUS
+ * 5–6 confusing decoy letters closely related to the spelling/phonetics of the answer.
+ */
+export function generateConfusingLetterBank(targetWord: string, seedId: string): string[] {
+  const cleanWord = targetWord.toUpperCase().replace(/[^A-Z]/g, '');
+  const answerLetters = cleanWord.split('');
+  const answerSet = new Set(answerLetters);
+
+  const decoyPool: string[] = [];
+
+  // 1. Pull phonetic/orthographic neighbors for letters present in targetWord
+  for (const ch of answerLetters) {
+    const neighbors = CONFUSING_NEIGHBORS[ch] || [];
+    for (const nb of neighbors) {
+      if (!decoyPool.includes(nb)) {
+        decoyPool.push(nb);
+      }
+    }
+  }
+
+  // 2. Include duplicate-letter traps (letters already inside targetWord confuse length/double consonants)
+  const sortedFreqChars = seededShuffle(Array.from(answerSet), seedId + '_dup');
+
+  const decoyCount = cleanWord.length <= 4 ? 5 : 6;
+  const chosenDecoys: string[] = [];
+
+  // Prefer unused neighbor letters first so bank stays close to the target word's sound & shape
+  const shuffledPool = seededShuffle(decoyPool, seedId + '_nb');
+  for (const candidate of shuffledPool) {
+    if (chosenDecoys.length >= decoyCount) break;
+    if (!answerSet.has(candidate) && !chosenDecoys.includes(candidate)) {
+      chosenDecoys.push(candidate);
+    }
+  }
+
+  // Add 1-2 double-letter traps from the word itself if room remains or to reinforce spelling challenge
+  for (const dup of sortedFreqChars) {
+    if (chosenDecoys.length >= decoyCount) break;
+    if (!chosenDecoys.includes(dup)) {
+      chosenDecoys.push(dup);
+    }
+  }
+
+  // Fallback common radiographic letters if still short
+  for (const fallback of ['E', 'A', 'R', 'T', 'S', 'I', 'O', 'N', 'C', 'L']) {
+    if (chosenDecoys.length >= decoyCount) break;
+    if (!chosenDecoys.includes(fallback)) {
+      chosenDecoys.push(fallback);
+    }
+  }
+
+  return seededShuffle([...answerLetters, ...chosenDecoys], seedId + '_bank');
+}
+
+// ============================================================================
+// GAME 1: FILL IN THE BLANKS (75 Puzzles — 25 Easy, 25 Medium, 25 Difficult)
+// Strictly fill-in-the-blank only; clues never spoil or name the answer!
+// ============================================================================
+export const FILL_BLANK_ITEMS: FillBlankItem[] = [
+  // ---------- EASY (25) ----------
   {
-    id: 'easy_mw_1',
-    type: 'missing_word',
+    id: 'fb_e1',
     level: 'easy',
     category: 'Radiation Safety',
-    question: 'The golden principle of radiation protection ensuring patient exposures are kept as low as reasonably achievable is known as:',
-    clue: 'Guiding safety acronym for time, distance, and shielding in clinical imaging.',
+    question: 'The foundational optimization principle requiring patient dose to be kept minimal without losing diagnostic value is called ____.',
+    clue: 'Five-letter safety acronym built around time, distance, and shielding.',
     targetWord: 'ALARA',
-    explanation: 'ALARA (As Low As Reasonably Achievable) is the fundamental radiation protection principle governing all medical radiographic exposures.',
+    explanation: 'ALARA (As Low As Reasonably Achievable) guides every clinical radiographic exposure decision.',
     points: 100,
   },
   {
-    id: 'easy_tr_2',
-    type: 'marble_trivia',
-    level: 'easy',
-    category: 'Radiation Safety',
-    question: 'Which material is standardly used in aprons and room barriers to shield against scattered secondary X-rays?',
-    clue: 'Dense element with atomic number 82.',
-    options: ['Lead', 'Aluminum', 'Copper', 'Titanium'],
-    correctIndex: 0,
-    explanation: 'Lead (Pb) has a high atomic number (Z=82) and high density, making it optimal for absorbing diagnostic secondary scatter radiation.',
-    points: 100,
-  },
-  {
-    id: 'easy_mw_3',
-    type: 'missing_word',
+    id: 'fb_e2',
     level: 'easy',
     category: 'X-Ray Physics',
-    question: 'The parameter that primarily controls the penetrability and beam quality of the X-ray beam is:',
-    clue: 'Unit measured in thousands of volts applied across the X-ray tube.',
+    question: 'Tube voltage setting that controls beam energy and tissue penetration is abbreviated ____.',
+    clue: 'Measured in thousands of volts across the X-ray tube.',
     targetWord: 'KVP',
-    explanation: 'Kilovoltage peak (kVp) controls the maximum energy of photons in the X-ray beam, thereby dictating radiographic penetrability and subject contrast.',
+    explanation: 'Kilovoltage peak (kVp) dictates maximum photon energy, penetrability, and subject contrast scale.',
     points: 100,
   },
   {
-    id: 'easy_mw_4',
-    type: 'missing_word',
+    id: 'fb_e3',
     level: 'easy',
     category: 'X-Ray Equipment',
-    question: 'The scatter-reduction device composed of alternating lead strips placed between the patient and image receptor is a:',
-    clue: 'Invented by Dr. Gustav Bucky in 1913 to clean up scatter radiation.',
+    question: 'A device of thin metallic strips placed before the detector to absorb oblique scatter photons is a ____.',
+    clue: 'Placed between the patient and receptor to boost image contrast.',
     targetWord: 'GRID',
-    explanation: 'A radiographic grid absorbs oblique scattered photons emitted by the patient before they hit the receptor, dramatically improving contrast.',
+    explanation: 'A radiographic grid traps angled scatter radiation before it fogs the diagnostic receptor.',
     points: 100,
   },
   {
-    id: 'easy_tr_5',
-    type: 'marble_trivia',
-    level: 'easy',
-    category: 'X-Ray Physics',
-    question: 'Which component in the X-ray tube serves as the rotating or stationary target where electrons decelerate to produce X-rays?',
-    clue: 'The positive electrode made of tungsten.',
-    options: ['Anode', 'Cathode', 'Focusing cup', 'Rotor stator'],
-    correctIndex: 0,
-    explanation: 'The anode is the positive electrode containing the tungsten target where high-speed electrons strike to produce bremsstrahlung and characteristic X-rays.',
-    points: 100,
-  },
-  {
-    id: 'easy_mw_6',
-    type: 'missing_word',
+    id: 'fb_e4',
     level: 'easy',
     category: 'Radiation Safety',
-    question: 'Restricting the dimensions of the X-ray beam to match only the anatomical region of interest is called:',
-    clue: 'Adjusted using manual or automatic lead shutters on the tube housing.',
+    question: 'Tightly narrowing the primary X-ray field to match only the anatomy under study is called ____.',
+    clue: 'Controlled with adjustable shutters on the tube housing.',
     targetWord: 'COLLIMATION',
-    explanation: 'Strict beam collimation reduces total irradiated patient volume, drastically lowers scatter production, and sharpens radiographic detail.',
+    explanation: 'Strict collimation lowers irradiated tissue volume, decreases scatter fog, and sharpens contrast.',
     points: 100,
   },
   {
-    id: 'easy_tr_7',
-    type: 'marble_trivia',
+    id: 'fb_e5',
+    level: 'easy',
+    category: 'Chest Positioning',
+    question: 'In a routine upright chest radiograph where photons enter the patient from behind, the projection is ____.',
+    clue: 'Two-letter direction code that minimizes heart magnification.',
+    targetWord: 'PA',
+    explanation: 'In a PA chest projection, the anterior heart sits right next to the image receptor.',
+    points: 100,
+  },
+  {
+    id: 'fb_e6',
+    level: 'easy',
+    category: 'X-Ray Tube',
+    question: 'The positive electrode housing the rotating tungsten disk inside the X-ray tube is the ____.',
+    clue: 'Receives accelerated electrons to emit photons and heat.',
+    targetWord: 'ANODE',
+    explanation: 'The anode serves as the positive target electrode where high-energy electrons decelerate.',
+    points: 100,
+  },
+  {
+    id: 'fb_e7',
+    level: 'easy',
+    category: 'X-Ray Tube',
+    question: 'The negative electrode assembly containing the heated wire filaments is the ____.',
+    clue: 'Emits thermionic electrons inside the glass envelope.',
+    targetWord: 'CATHODE',
+    explanation: 'The cathode filament boils off electrons and directs them via the focusing cup.',
+    points: 100,
+  },
+  {
+    id: 'fb_e8',
+    level: 'easy',
+    category: 'Radiation Shielding',
+    question: 'Dense bluish-gray metal with atomic number 82 used in protective aprons and walls is ____.',
+    clue: 'Heavy shielding element ideal for stopping diagnostic scatter.',
+    targetWord: 'LEAD',
+    explanation: 'Lead (Z = 82) efficiently attenuates diagnostic X-rays via the photoelectric effect.',
+    points: 100,
+  },
+  {
+    id: 'fb_e9',
     level: 'easy',
     category: 'Image Quality',
-    question: 'What is the primary factor controlling the total quantity of X-ray photons emitted during an exposure?',
-    clue: 'Product of tube current and exposure duration.',
-    options: ['mAs (Milliampere-seconds)', 'Focal spot size', 'Source-to-image distance', 'Filtration'],
-    correctIndex: 0,
-    explanation: 'mAs (tube current multiplied by exposure time in seconds) directly controls beam quantity and total optical density/exposure level.',
+    question: 'Total photon quantity produced during an X-ray exposure is directly controlled by ____.',
+    clue: 'Three-letter product of tube current and exposure seconds.',
+    targetWord: 'MAS',
+    explanation: 'Milliampere-seconds (mAs) scales linearly with total photon count reaching the receptor.',
     points: 100,
   },
   {
-    id: 'easy_mw_8',
-    type: 'missing_word',
+    id: 'fb_e10',
     level: 'easy',
-    category: 'General Anatomy',
-    question: 'The most commonly performed projection in upright chest radiography where the beam enters posteriorly is:',
-    clue: 'Standard two-letter acronym for Posterior-Anterior projection.',
-    targetWord: 'PA',
-    explanation: 'The PA (posteroanterior) chest projection minimizes cardiac magnification because the heart lies anteriorly, closest to the detector.',
+    category: 'Patient Positioning',
+    question: 'When a patient lies flat facing upward toward the X-ray tube, the body position is ____.',
+    clue: 'Opposite of lying face-down.',
+    targetWord: 'SUPINE',
+    explanation: 'Supine indicates dorsal recumbency with the anterior surface facing upward.',
     points: 100,
   },
   {
-    id: 'easy_tr_9',
-    type: 'marble_trivia',
+    id: 'fb_e11',
     level: 'easy',
-    category: 'Radiographic Anatomy',
-    question: 'Which anatomical structure displays the highest radiopacity (appears brightest white) on plain film radiography?',
-    clue: 'Dense cortical bone and metal implants.',
-    options: ['Cortical Bone', 'Subcutaneous Fat', 'Aerated Lung', 'Pectoral Muscle'],
-    correctIndex: 0,
-    explanation: 'Cortical bone possesses the highest physical density and effective atomic number among normal tissues, resulting in maximum X-ray absorption (white).',
+    category: 'Patient Positioning',
+    question: 'Lying flat with the chest and abdomen pressing down against the table describes the ____ position.',
+    clue: 'Five-letter recumbent stance with face turned aside.',
+    targetWord: 'PRONE',
+    explanation: 'Prone indicates ventral recumbency on the examination tabletop.',
     points: 100,
   },
   {
-    id: 'easy_mw_10',
-    type: 'missing_word',
+    id: 'fb_e12',
     level: 'easy',
-    category: 'Radiographic Tech',
-    question: 'The negative electrode of the X-ray tube containing the heated filament is the:',
-    clue: 'Emits electrons through thermionic emission.',
-    targetWord: 'CATHODE',
-    explanation: 'The cathode is the negative electrode containing the tungsten filament; heating it causes thermionic emission of electrons.',
+    category: 'Radiography Anatomy',
+    question: 'The largest sesamoid bone embedded in the quadriceps tendon at the knee joint is the ____.',
+    clue: 'Also called the kneecap.',
+    targetWord: 'PATELLA',
+    explanation: 'The patella protects the anterior knee articular surface and increases quadriceps leverage.',
     points: 100,
   },
   {
-    id: 'easy_tr_11',
-    type: 'marble_trivia',
+    id: 'fb_e13',
     level: 'easy',
-    category: 'Radiation Safety',
-    question: 'According to the Inverse Square Law, if you double your distance from a radiation source, the intensity drops to:',
-    clue: 'One divided by distance squared.',
-    options: ['1/4 of original intensity', '1/2 of original intensity', '1/8 of original intensity', 'Zero intensity'],
-    correctIndex: 0,
-    explanation: 'Intensity is inversely proportional to the square of the distance (I ∝ 1/d²). Doubling distance reduces exposure intensity to one-fourth (25%).',
+    category: 'Radiography Anatomy',
+    question: 'The slender S-shaped collar bone articulating with the manubrium and acromion is the ____.',
+    clue: 'Commonly fractured shoulder-girdle bone.',
+    targetWord: 'CLAVICLE',
+    explanation: 'The clavicle acts as a strut stabilizing the glenohumeral joint laterally.',
     points: 100,
   },
   {
-    id: 'easy_mw_12',
-    type: 'missing_word',
+    id: 'fb_e14',
     level: 'easy',
-    category: 'Radiographic Media',
-    question: 'The light-tight container historically used to hold radiographic film or phosphor storage plates is a:',
-    clue: 'Rigid cassette loaded into bucky trays.',
-    targetWord: 'CASSETTE',
-    explanation: 'A cassette holds radiographic film or computed radiography (CR) imaging plates securely in place while shielding them from ambient light.',
+    category: 'Radiography Anatomy',
+    question: 'The distal forearm bone located on the thumb (lateral) side is the ____.',
+    clue: 'Forms the main articular surface of the wrist joint.',
+    targetWord: 'RADIUS',
+    explanation: 'The radius expands distally to articulate with the scaphoid and lunate.',
     points: 100,
   },
   {
-    id: 'easy_tr_13',
-    type: 'marble_trivia',
+    id: 'fb_e15',
     level: 'easy',
-    category: 'Chest Radiography',
-    question: 'A good inspiratory adult PA chest radiograph should clearly demonstrate at least how many posterior ribs above the diaphragm?',
-    clue: 'Standard diagnostic inspiratory count.',
-    options: ['10 posterior ribs', '6 posterior ribs', '12 posterior ribs', '4 posterior ribs'],
-    correctIndex: 0,
-    explanation: 'Adequate adult inspiratory effort is demonstrated by visualizing at least 9 to 10 posterior ribs (or 6 anterior ribs) above the right hemidiaphragm.',
+    category: 'Radiography Anatomy',
+    question: 'The large central dome muscle separating the thoracic and abdominal cavities is the ____.',
+    clue: 'Elevated on expiration and flattened on deep inspiration.',
+    targetWord: 'DIAPHRAGM',
+    explanation: 'The right hemidiaphragm normally sits slightly higher than the left due to the liver.',
     points: 100,
   },
   {
-    id: 'easy_mw_14',
-    type: 'missing_word',
+    id: 'fb_e16',
     level: 'easy',
-    category: 'Physics & Units',
-    question: 'The SI unit for absorbed radiation dose representing 1 Joule of energy absorbed per kilogram of tissue is the:',
-    clue: 'Abbreviated Gy, named after English physicist Louis Harold Gray.',
-    targetWord: 'GRAY',
-    explanation: 'The Gray (Gy) is the international SI unit of absorbed ionizing radiation dose (1 Gy = 1 J/kg).',
+    category: 'Dosimetry',
+    question: 'The wearable badge clipped near a radiographer’s collar to track cumulative occupational exposure is a ____.',
+    clue: 'Monitors personal radiation dose over monthly or quarterly cycles.',
+    targetWord: 'DOSIMETER',
+    explanation: 'Personal OSL or TLD dosimeters record cumulative occupational dose at the collar.',
     points: 100,
   },
   {
-    id: 'easy_tr_15',
-    type: 'marble_trivia',
+    id: 'fb_e17',
     level: 'easy',
-    category: 'Clinical Practice',
-    question: 'Which anatomical landmark aligns with the fifth cervical vertebra (C5) in surface positioning?',
-    clue: 'Prominent cartilage in the anterior neck.',
-    options: ['Thyroid cartilage (Adam\'s apple)', 'Mastoid tip', 'Jugular notch', 'Sternal angle'],
-    correctIndex: 0,
-    explanation: 'The prominence of the thyroid cartilage typically marks the level of the C5 vertebra (with C4 at the superior margin).',
+    category: 'X-Ray Tube',
+    question: 'High-melting-point metallic element (Z = 74) preferred for X-ray tube target tracks is ____.',
+    clue: 'Hard metal chosen for its 3422°C melting threshold.',
+    targetWord: 'TUNGSTEN',
+    explanation: 'Tungsten resists thermal cracking and produces high-efficiency bremsstrahlung output.',
+    points: 100,
+  },
+  {
+    id: 'fb_e18',
+    level: 'easy',
+    category: 'Image Quality',
+    question: 'Random unwanted photons deflected in different directions inside tissue are known as ____.',
+    clue: 'Reduces radiographic contrast unless controlled by collimation or a grid.',
+    targetWord: 'SCATTER',
+    explanation: 'Compton scatter degrades subject contrast and increases occupational exposure.',
+    points: 100,
+  },
+  {
+    id: 'fb_e19',
+    level: 'easy',
+    category: 'Imaging Modalities',
+    question: 'Diagnostic imaging technique using high-frequency sound waves without ionizing radiation is ____.',
+    clue: 'Real-time modality commonly used in obstetrics and vascular exams.',
+    targetWord: 'ULTRASOUND',
+    explanation: 'Diagnostic sonography relies on acoustic echoes transmitted through a coupling gel.',
+    points: 100,
+  },
+  {
+    id: 'fb_e20',
+    level: 'easy',
+    category: 'Radiography Anatomy',
+    question: 'The weight-bearing shin bone running medially along the lower leg is the ____.',
+    clue: 'Paired laterally with the slender fibula.',
+    targetWord: 'TIBIA',
+    explanation: 'The tibia transmits body weight from the femoral condyles to the talus.',
+    points: 100,
+  },
+  {
+    id: 'fb_e21',
+    level: 'easy',
+    category: 'Chest Positioning',
+    question: 'A horizontal central ray taken with the patient lying on their side to visualize air-fluid levels is a ____ view.',
+    clue: 'Essential for spotting small pleural effusions or free air.',
+    targetWord: 'DECUBITUS',
+    explanation: 'Lateral decubitus views allow free fluid to layer dependently or air to rise uppermost.',
+    points: 100,
+  },
+  {
+    id: 'fb_e22',
+    level: 'easy',
+    category: 'Contrast Studies',
+    question: 'Dense metallic suspension swallowed or administered rectally to outline the GI tract is ____.',
+    clue: 'White radiopaque chalky salt used in enemas and swallows.',
+    targetWord: 'BARIUM',
+    explanation: 'Barium sulfate (Z = 56) coats mucosal folds for fluoroscopic gastrointestinal evaluation.',
+    points: 100,
+  },
+  {
+    id: 'fb_e23',
+    level: 'easy',
+    category: 'Image Acquisition',
+    question: 'Distance measured from the X-ray focal spot to the flat detector surface is abbreviated ____.',
+    clue: 'Three-letter geometry metric typically set to 100 cm or 180 cm.',
+    targetWord: 'SID',
+    explanation: 'Source-to-Image Distance (SID) governs magnification and beam intensity via the inverse square law.',
+    points: 100,
+  },
+  {
+    id: 'fb_e24',
+    level: 'easy',
+    category: 'X-Ray Tube',
+    question: 'Thin metallic sheets inserted near the tube port to remove weak low-energy photons provide ____.',
+    clue: 'Aluminum layers that harden the beam and protect patient skin.',
+    targetWord: 'FILTRATION',
+    explanation: 'Total filtration strips soft photons that would otherwise raise skin dose without reaching the detector.',
+    points: 100,
+  },
+  {
+    id: 'fb_e25',
+    level: 'easy',
+    category: 'Radiography Anatomy',
+    question: 'The long heavy proximal bone of the lower limb between hip and knee is the ____.',
+    clue: 'Strongest and longest tubular bone in the human skeleton.',
+    targetWord: 'FEMUR',
+    explanation: 'The femoral neck and trochanters are common sites assessed for hip trauma.',
     points: 100,
   },
 
-  // ==========================================
-  // LEVEL 2: MEDIUM (Cross-Sectional & System Imaging)
-  // ==========================================
+  // ---------- MEDIUM (25) ----------
   {
-    id: 'med_mw_1',
-    type: 'missing_word',
+    id: 'fb_m1',
+    level: 'medium',
+    category: 'Radiation Units',
+    question: 'The SI unit equal to one joule of ionizing energy absorbed per kilogram of tissue is the ____.',
+    clue: 'Standard metric unit of absorbed radiation dose (Gy).',
+    targetWord: 'GRAY',
+    explanation: 'One Gray (1 Gy = 1 J/kg) quantifies physical radiation energy deposited in matter.',
+    points: 150,
+  },
+  {
+    id: 'fb_m2',
+    level: 'medium',
+    category: 'Radiation Units',
+    question: 'The SI unit for equivalent and effective dose that incorporates tissue weighting is the ____.',
+    clue: 'Abbreviated Sv; reflects biological risk rather than raw energy alone.',
+    targetWord: 'SIEVERT',
+    explanation: 'The Sievert (Sv) adjusts absorbed dose by radiation quality and organ sensitivity factors.',
+    points: 150,
+  },
+  {
+    id: 'fb_m3',
+    level: 'medium',
+    category: 'Imaging Physics',
+    question: 'Photon-matter interaction where an incident photon loses partial energy to an outer-shell electron is ____ scatter.',
+    clue: 'Predominant source of occupational exposure and image fog in diagnostic imaging.',
+    targetWord: 'COMPTON',
+    explanation: 'Compton scattering ejects a recoil electron and deflects a lower-energy photon.',
+    points: 150,
+  },
+  {
+    id: 'fb_m4',
+    level: 'medium',
+    category: 'Upper Extremity',
+    question: 'Frequently fractured carpal bone sitting in the anatomical snuffbox below the radial styloid is the ____.',
+    clue: 'Boat-shaped lateral wrist bone prone to avascular necrosis.',
+    targetWord: 'SCAPHOID',
+    explanation: 'Ulnar deviation extends and opens the scaphoid waist to detect occult hairline fractures.',
+    points: 150,
+  },
+  {
+    id: 'fb_m5',
+    level: 'medium',
+    category: 'Spine Positioning',
+    question: 'In a correctly obliqued lumbar spine radiograph, the posterior elements resemble a tiny ____.',
+    clue: 'Canine silhouette whose collar represents a pars fracture.',
+    targetWord: 'SCOTTYDOG',
+    explanation: 'A broken "neck" on this classic oblique silhouette signifies spondylolysis.',
+    points: 150,
+  },
+  {
+    id: 'fb_m6',
     level: 'medium',
     category: 'Computed Tomography',
-    question: 'The numerical quantitative scale used in CT to describe radiodensity relative to water (0 HU) and air (-1000 HU) is:',
-    clue: 'Named after Sir Godfrey, Nobel laureate who co-invented CT.',
-    targetWord: 'HOUNSFIELD',
-    explanation: 'Hounsfield Units (HU) calibrate CT pixel values from air (-1000 HU) through pure water (0 HU) to dense cortical bone (+1000 to +3000 HU).',
-    points: 150,
-  },
-  {
-    id: 'med_tr_2',
-    type: 'marble_trivia',
-    level: 'medium',
-    category: 'MRI Physics',
-    question: 'In magnetic resonance imaging, which atomic nucleus is predominantly imaged due to its abundance in the human body and high gyromagnetic ratio?',
-    clue: 'Single proton nucleus in water and fat molecules.',
-    options: ['Hydrogen (1H)', 'Carbon (12C)', 'Sodium (23Na)', 'Phosphorus (31P)'],
-    correctIndex: 0,
-    explanation: 'Hydrogen (1H) consists of a single proton with a large magnetic moment and is ubiquitous in biological tissue (water and lipids).',
-    points: 150,
-  },
-  {
-    id: 'med_mw_3',
-    type: 'missing_word',
-    level: 'medium',
-    category: 'Ultrasound Imaging',
-    question: 'The change in frequency or pitch of sound waves reflected from moving red blood cells is the principle of:',
-    clue: 'Named after Christian Doppler, used for vascular blood flow mapping.',
-    targetWord: 'DOPPLER',
-    explanation: 'The Doppler effect calculates blood velocity and direction based on the frequency shift between transmitted and reflected ultrasound waves.',
-    points: 150,
-  },
-  {
-    id: 'med_tr_4',
-    type: 'marble_trivia',
-    level: 'medium',
-    category: 'Computed Tomography',
-    question: 'What is the standard CT Hounsfield Unit (HU) measurement for pure unenhanced water?',
-    clue: 'Baseline reference point on the CT number scale.',
-    options: ['0 HU', '-1000 HU', '+50 HU', '-50 HU'],
-    correctIndex: 0,
-    explanation: 'Water is explicitly defined as 0 HU. Air is calibrated to -1000 HU and dense bone reaches +1000 HU or greater.',
-    points: 150,
-  },
-  {
-    id: 'med_mw_5',
-    type: 'missing_word',
-    level: 'medium',
-    category: 'MRI Contrast',
-    question: 'The paramagnetic rare-earth metal ion used as the active agent in intravenous MRI contrast media is:',
-    clue: 'Shortens T1 relaxation times of nearby tissues.',
-    targetWord: 'GADOLINIUM',
-    explanation: 'Gadolinium-based contrast agents (GBCAs) contain seven unpaired electrons that markedly shorten T1 relaxation, causing bright enhancement.',
-    points: 150,
-  },
-  {
-    id: 'med_tr_6',
-    type: 'marble_trivia',
-    level: 'medium',
-    category: 'MRI Weighting',
-    question: 'On a standard T2-weighted MRI scan, how does simple free cerebrospinal fluid (CSF) appear?',
-    clue: 'Long T2 decay time gives fluids high signal.',
-    options: ['Bright (Hyperintense)', 'Dark (Hypointense)', 'Intermediate gray', 'Completely black void'],
-    correctIndex: 0,
-    explanation: 'Free water and CSF have long T2 relaxation times and appear hyperintense (bright white) on T2-weighted sequences ("T2 is H2O").',
-    points: 150,
-  },
-  {
-    id: 'med_mw_7',
-    type: 'missing_word',
-    level: 'medium',
-    category: 'CT Technology',
-    question: 'In helical CT scanning, the ratio of patient table travel per 360-degree gantry rotation to the total X-ray beam width is the:',
-    clue: 'Ratio determining scan speed and overlap; values > 1 increase speed and lower dose.',
+    question: 'Ratio comparing table travel per 360° gantry rotation to total beam collimation width in helical CT is ____.',
+    clue: 'Determines scan speed, slice overlap, and radiation dose.',
     targetWord: 'PITCH',
-    explanation: 'CT pitch = Table distance traveled per gantry rotation / Beam collimation. Pitch > 1 extends coverage and reduces patient dose.',
+    explanation: 'Increasing helical pitch stretches table movement per rotation and lowers patient dose.',
     points: 150,
   },
   {
-    id: 'med_tr_8',
-    type: 'marble_trivia',
+    id: 'fb_m7',
     level: 'medium',
-    category: 'Ultrasound Transducers',
-    question: 'What physical property allows piezoelectric crystals in ultrasound probes to convert electrical voltage into mechanical sound waves?',
-    clue: 'Discovered by the Curie brothers in 1880.',
-    options: ['Piezoelectric effect', 'Photoelectric effect', 'Compton scattering', 'Thermionic emission'],
-    correctIndex: 0,
-    explanation: 'The piezoelectric effect expands and contracts lead zirconate titanate (PZT) crystals when electrical voltage is applied, emitting ultrasonic sound.',
+    category: 'Ultrasound',
+    question: 'Acoustic effect measuring frequency shifts caused by moving red blood cells is the ____ shift.',
+    clue: 'Powers color flow and spectral waveforms in vascular sonography.',
+    targetWord: 'DOPPLER',
+    explanation: 'Frequency increases when erythrocytes move toward the probe and drops when moving away.',
     points: 150,
   },
   {
-    id: 'med_mw_9',
-    type: 'missing_word',
-    level: 'medium',
-    category: 'Digital Radiography',
-    question: 'A 3-dimensional volume element representing depth in cross-sectional CT or MRI imaging is called a:',
-    clue: 'Volume counterpart of a 2D pixel.',
-    targetWord: 'VOXEL',
-    explanation: 'A voxel (volumetric pixel) represents a 3D unit of volume defined by pixel width, pixel height, and slice thickness.',
-    points: 150,
-  },
-  {
-    id: 'med_tr_10',
-    type: 'marble_trivia',
-    level: 'medium',
-    category: 'Radiation Interactions',
-    question: 'Which fundamental X-ray interaction with matter is predominantly responsible for occupational dose and image fog in diagnostic radiography?',
-    clue: 'Inelastic collision with outer-shell electron.',
-    options: ['Compton scattering', 'Photoelectric absorption', 'Coherent scattering', 'Pair production'],
-    correctIndex: 0,
-    explanation: 'Compton scattering dominates in soft tissue at diagnostic energies (70–120 kVp), deflecting scattered photons toward technologists and image receptors.',
-    points: 150,
-  },
-  {
-    id: 'med_mw_11',
-    type: 'missing_word',
-    level: 'medium',
-    category: 'Ultrasound Artifacts',
-    question: 'The acoustic artifact where sound waves are completely reflected or absorbed by bone or gallstones, leaving a black void beneath, is acoustic:',
-    clue: 'Dark drop-out beneath high-attenuator structures.',
-    targetWord: 'SHADOWING',
-    explanation: 'Acoustic shadowing occurs distal to highly attenuating or reflective interfaces (such as calculi or cortical bone), creating an anechoic shadow.',
-    points: 150,
-  },
-  {
-    id: 'med_tr_12',
-    type: 'marble_trivia',
-    level: 'medium',
-    category: 'CT Post-Processing',
-    question: 'In CT image display, narrowing the Window Width (WW) while keeping Window Level (WL) constant has what effect on visual contrast?',
-    clue: 'Fewer HU numbers distributed across 256 gray shades.',
-    options: ['Increases image contrast', 'Decreases image contrast', 'Has no effect on contrast', 'Inverts the image grayscale'],
-    correctIndex: 0,
-    explanation: 'Narrowing the Window Width assigns the available grayscale shades across a smaller range of Hounsfield units, producing higher visual contrast.',
-    points: 150,
-  },
-  {
-    id: 'med_mw_13',
-    type: 'missing_word',
-    level: 'medium',
-    category: 'Contrast Agents',
-    question: 'The water-soluble element universally used as the radio-opaque component in intravascular CT contrast media is:',
-    clue: 'Halogen with atomic number 53.',
-    targetWord: 'IODINE',
-    explanation: 'Iodine has an atomic number of 53 and a k-edge of 33.2 keV, which aligns well with diagnostic CT X-ray spectra for strong photoelectric attenuation.',
-    points: 150,
-  },
-  {
-    id: 'med_tr_14',
-    type: 'marble_trivia',
-    level: 'medium',
-    category: 'Fluoroscopy Safety',
-    question: 'In mobile C-arm fluoroscopy, where should the X-ray tube be placed relative to the patient to minimize operator scatter dose?',
-    clue: 'Underneath the operating table.',
-    options: ['Under the patient table (tube below, detector above)', 'Above the patient (tube on top)', 'Directly at eye level with the surgeon', 'Touching the sterile surgical field'],
-    correctIndex: 0,
-    explanation: 'Placing the tube underneath the table directs backscatter toward the floor rather than toward the operator\'s upper body, thyroid, and eyes.',
-    points: 150,
-  },
-  {
-    id: 'med_mw_15',
-    type: 'missing_word',
+    id: 'fb_m8',
     level: 'medium',
     category: 'Image Artifacts',
-    question: 'In CT, dark streaks seen between two highly dense objects like metal dental fillings or hip prostheses are caused by beam:',
-    clue: 'Selective filtration of low-energy photons as the polyenergetic beam traverses metal.',
-    targetWord: 'HARDENING',
-    explanation: 'Beam hardening occurs when lower-energy photons are preferentially absorbed by dense structures, shifting the beam spectrum and creating dark streak artifacts.',
+    question: 'Wavy interference stripes seen when grid line frequency clashes with digital sampling pitch is a ____ pattern.',
+    clue: 'Visual ripple artifact prevented by higher-line-rate stationary or moving grids.',
+    targetWord: 'MOIRE',
+    explanation: 'Moiré aliasing arises when parallel grid strips align awkwardly with detector pixel rows.',
+    points: 150,
+  },
+  {
+    id: 'fb_m9',
+    level: 'medium',
+    category: 'MRI Basics',
+    question: 'Element whose abundant single-proton nucleus generates nearly all clinical MR signals is ____.',
+    clue: 'Lightest chemical element plentiful in human water and fat.',
+    targetWord: 'HYDROGEN',
+    explanation: 'Hydrogen-1 possesses a strong magnetic moment and high biological abundance.',
+    points: 150,
+  },
+  {
+    id: 'fb_m10',
+    level: 'medium',
+    category: 'Imaging Physics',
+    question: 'The most desirable photon absorption interaction responsible for clear bony contrast is the ____ effect.',
+    clue: 'Completely absorbs low-to-medium energy photons on inner-shell electrons.',
+    targetWord: 'PHOTOELECTRIC',
+    explanation: 'Probability scales steeply with atomic number cubed (Z³), differentiating bone from soft tissue.',
+    points: 150,
+  },
+  {
+    id: 'fb_m11',
+    level: 'medium',
+    category: 'Contrast Media',
+    question: 'Radiopaque intravenous element with atomic number 53 routinely used for vascular and CT enhancement is ____.',
+    clue: 'Halogen element present in water-soluble contrast agents.',
+    targetWord: 'IODINE',
+    explanation: 'Iodine’s K-edge (~33.2 keV) matches diagnostic X-ray spectra for crisp vessel opacification.',
+    points: 150,
+  },
+  {
+    id: 'fb_m12',
+    level: 'medium',
+    category: 'Skull & Facial',
+    question: 'Parietoacanthial facial bone projection with chin elevated 37° to project petrous ridges below maxillary sinuses is the ____ view.',
+    clue: 'Five-letter trauma view commonly used for orbital floor fractures.',
+    targetWord: 'WATERS',
+    explanation: 'The Waters projection provides an unobstructed view of maxillary sinuses and zygomatic arches.',
+    points: 150,
+  },
+  {
+    id: 'fb_m13',
+    level: 'medium',
+    category: 'Skull & Facial',
+    question: 'Anteroposterior axial skull projection angled 30° caudad to profile the occipital bone and dorsum sellae is the ____ view.',
+    clue: 'Five-letter projection placing the foramen magnum cleanly in view.',
+    targetWord: 'TOWNE',
+    explanation: 'AP axial Towne brings the posterior cranial fossa and petrous pyramids into sharp relief.',
+    points: 150,
+  },
+  {
+    id: 'fb_m14',
+    level: 'medium',
+    category: 'Spine Anatomy',
+    question: 'Vertical tooth-like peg projecting upward from C2 around which the first cervical vertebra rotates is the ____.',
+    clue: 'Visualized through an open-mouth AP cervical view.',
+    targetWord: 'ODONTOID',
+    explanation: 'The odontoid process (dens) acts as the pivot for atlantoaxial rotation.',
+    points: 150,
+  },
+  {
+    id: 'fb_m15',
+    level: 'medium',
+    category: 'Mammography',
+    question: 'Mechanical paddle flattening used in breast imaging to reduce thickness and motion blur is ____.',
+    clue: 'Evens out tissue density and lowers glandular radiation dose.',
+    targetWord: 'COMPRESSION',
+    explanation: 'Firm uniform compression spreads overlapping parenchyma and reduces scatter considerably.',
+    points: 150,
+  },
+  {
+    id: 'fb_m16',
+    level: 'medium',
+    category: 'CT Reconstruction',
+    question: 'Adjusting gray-scale brightness midpoint on a CT workstation alters the ____ level.',
+    clue: 'Controls which attenuation range appears medium gray.',
+    targetWord: 'WINDOW',
+    explanation: 'Window level sets center brightness while window width governs contrast scale.',
+    points: 150,
+  },
+  {
+    id: 'fb_m17',
+    level: 'medium',
+    category: 'Radiology Pathology',
+    question: 'Free air trapped beneath the right hemidiaphragm after bowel perforation is known as ____.',
+    clue: 'Best detected on an upright chest or left lateral decubitus radiograph.',
+    targetWord: 'PNEUMOPERITONEUM',
+    explanation: 'Crescentic gas below the diaphragm signals hollow viscus rupture until ruled out.',
+    points: 150,
+  },
+  {
+    id: 'fb_m18',
+    level: 'medium',
+    category: 'Ultrasound',
+    question: 'Special ceramic element inside an ultrasound probe that vibrates electrically to emit sound is a ____ crystal.',
+    clue: 'Converts voltage pulses into mechanical pressure waves.',
+    targetWord: 'PIEZOELECTRIC',
+    explanation: 'Lead zirconate titanate (PZT) converts electrical energy into acoustic waves and back.',
+    points: 150,
+  },
+  {
+    id: 'fb_m19',
+    level: 'medium',
+    category: 'Image Quality',
+    question: 'Unwanted enlargement of an anatomical structure compared with its true size on a radiograph is ____.',
+    clue: 'Minimized by placing the body part close to the detector and increasing SID.',
+    targetWord: 'MAGNIFICATION',
+    explanation: 'Short OID and long SID reduce geometric magnification distortion.',
+    points: 150,
+  },
+  {
+    id: 'fb_m20',
+    level: 'medium',
+    category: 'Detector Tech',
+    question: 'Smallest individual picture element making up a two-dimensional digital radiographic matrix is a ____.',
+    clue: 'Smaller size yields higher spatial resolution.',
+    targetWord: 'PIXEL',
+    explanation: 'Digital matrix spatial resolution improves as pixel pitch shrinks.',
+    points: 150,
+  },
+  {
+    id: 'fb_m21',
+    level: 'medium',
+    category: 'CT Physics',
+    question: 'Three-dimensional volume element corresponding to slice thickness times pixel area in CT is a ____.',
+    clue: 'Volumetric cousin of the 2D screen unit.',
+    targetWord: 'VOXEL',
+    explanation: 'Isotropic voxels allow distortion-free multiplanar reformations (MPR).',
+    points: 150,
+  },
+  {
+    id: 'fb_m22',
+    level: 'medium',
+    category: 'X-Ray Tube',
+    question: 'Boiling off free electrons from an incandescent tungsten filament when heated is ____ emission.',
+    clue: 'Thermal process supplying the tube current cloud.',
+    targetWord: 'THERMIONIC',
+    explanation: 'Raising filament current (mA) boosts heat and liberates more electrons via thermionic emission.',
+    points: 150,
+  },
+  {
+    id: 'fb_m23',
+    level: 'medium',
+    category: 'Shoulder Positioning',
+    question: 'Tangential Y-shaped scapular projection used to assess anterior or posterior humeral head luxation is the ____ Y view.',
+    clue: 'Named after the flat triangular shoulder blade.',
+    targetWord: 'SCAPULAR',
+    explanation: 'The humeral head centers directly over the glenoid intersection of the Y when normally located.',
+    points: 150,
+  },
+  {
+    id: 'fb_m24',
+    level: 'medium',
+    category: 'Radiation Biology',
+    question: 'Unpredictable radiation effects like carcinogenesis whose probability increases with dose but without a threshold are ____ effects.',
+    clue: 'Random biological risks rather than deterministic skin burns.',
+    targetWord: 'STOCHASTIC',
+    explanation: 'Stochastic effects have no safe lower threshold; severity is independent of dose.',
+    points: 150,
+  },
+  {
+    id: 'fb_m25',
+    level: 'medium',
+    category: 'MRI Safety',
+    question: 'Sudden boil-off venting of liquid helium inside an MRI magnet room is a magnet ____.',
+    clue: 'Emergency loss of superconductivity accompanied by cryogenic gas.',
+    targetWord: 'QUENCH',
+    explanation: 'Vent pipes must exhaust expanding helium safely outdoors to prevent room asphyxiation.',
     points: 150,
   },
 
-  // ==========================================
-  // LEVEL 3: DIFFICULT (Advanced Modalities & Pathology)
-  // ==========================================
+  // ---------- DIFFICULT (25) ----------
   {
-    id: 'diff_mw_1',
-    type: 'missing_word',
+    id: 'fb_d1',
+    level: 'difficult',
+    category: 'CT Attenuation',
+    question: 'Quantitative CT radiodensity scale setting distilled water to 0 and air to −1000 is the ____ scale.',
+    clue: 'Measures linear tissue attenuation relative to water.',
+    targetWord: 'HOUNSFIELD',
+    explanation: 'Bone typically measures +400 to +1000+ HU while fat ranges from −50 to −100 HU.',
+    points: 200,
+  },
+  {
+    id: 'fb_d2',
     level: 'difficult',
     category: 'MRI Physics',
-    question: 'The raw frequency domain data matrix in MRI where raw spatial frequency signals are collected prior to 2D Fourier Transformation is called:',
-    clue: 'Letter "k" space representing spatial frequency.',
+    question: 'Raw two-dimensional spatial frequency grid stored before Fourier transformation yields an MR image is ____.',
+    clue: 'Data matrix filled line-by-line during phase encoding.',
     targetWord: 'KSPACE',
-    explanation: 'k-space is the temporary spatial frequency matrix in MRI memory. Its central lines dictate contrast and peripheral lines encode fine spatial resolution.',
+    explanation: 'Central lines govern image contrast while peripheral lines carry fine edge detail.',
     points: 200,
   },
   {
-    id: 'diff_tr_2',
-    type: 'marble_trivia',
-    level: 'difficult',
-    category: 'Nuclear Medicine',
-    question: 'Which radioisotope is the most widely utilized diagnostic radiotracer in SPECT imaging due to its 6-hour half-life and 140 keV gamma emission?',
-    clue: 'Metastable isotope derived from Molybdenum-99 generators.',
-    options: ['Technetium-99m (99mTc)', 'Fluorine-18 (18F)', 'Iodine-131 (131I)', 'Thallium-201 (201Tl)'],
-    correctIndex: 0,
-    explanation: 'Technetium-99m (99mTc) is the clinical workhorse of nuclear medicine, emitting pure 140 keV gamma rays with an ideal 6.02-hour physical half-life.',
-    points: 200,
-  },
-  {
-    id: 'diff_mw_3',
-    type: 'missing_word',
+    id: 'fb_d3',
     level: 'difficult',
     category: 'MRI Physics',
-    question: 'The mathematical equation stating that the precession frequency of hydrogen protons is proportional to magnetic field strength (ω = γB0) is the:',
-    clue: 'Named after Irish physicist Sir Joseph Larmor.',
+    question: 'Exact precessional frequency of hydrogen protons governed by magnetic field strength and gyromagnetic ratio is the ____ frequency.',
+    clue: 'Dictates exact RF excitation bandwidth required for resonance.',
     targetWord: 'LARMOR',
-    explanation: 'The Larmor Equation (f = γB0 / 2π) governs MRI resonant frequency, dictating that 1H protons precess at 63.86 MHz in a 1.5 Tesla magnetic field.',
+    explanation: 'At 1.5 Tesla, hydrogen protons precess at approximately 63.87 MHz.',
     points: 200,
   },
   {
-    id: 'diff_tr_4',
-    type: 'marble_trivia',
+    id: 'fb_d4',
     level: 'difficult',
-    category: 'PET Imaging',
-    question: 'In Positron Emission Tomography (PET), what happens when an emitted positron collides with an orbital electron in tissue?',
-    clue: 'Energy conversion into two 511 keV photons traveling in opposite directions.',
-    options: ['Annihilation producing two 511 keV photons at 180°', 'Compton scattering without gamma emission', 'Photoelectric capture generating Bremsstrahlung', 'Coherent internal conversion'],
-    correctIndex: 0,
-    explanation: 'Electron-positron annihilation converts rest mass into two 511 keV coincidence gamma rays traveling approximately 180 degrees apart.',
+    category: 'X-Ray Production',
+    question: 'Continuous spectrum of X-rays generated when fast electrons decelerate near tungsten nuclei is ____ radiation.',
+    clue: 'German-derived term meaning braking radiation.',
+    targetWord: 'BREMSSTRAHLUNG',
+    explanation: 'Roughly 80–90% of diagnostic X-ray photons arise from bremsstrahlung deceleration.',
     points: 200,
   },
   {
-    id: 'diff_mw_5',
-    type: 'missing_word',
-    level: 'difficult',
-    category: 'Interventional Radiology',
-    question: 'The real-time continuous X-ray visualization technique used to guide catheters, stents, and needles during angiographic procedures is:',
-    clue: 'Dynamic projection imaging using pulsed X-ray tubes and flat panel detectors.',
-    targetWord: 'FLUOROSCOPY',
-    explanation: 'Fluoroscopy provides dynamic, real-time radiographic visualization essential for catheter manipulation and stent positioning.',
-    points: 200,
-  },
-  {
-    id: 'diff_tr_6',
-    type: 'marble_trivia',
-    level: 'difficult',
-    category: 'MRI Artifacts',
-    question: 'In MRI, what causes the Chemical Shift artifact seen at interfaces between visceral water and retroperitoneal fat (e.g., surrounding kidney margins)?',
-    clue: 'Differences in electron shielding cause a 3.5 ppm frequency shift between water and fat protons.',
-    options: ['Difference in Larmor resonance frequencies between fat and water', 'Inadequate patient breath-holding during acquisition', 'Phase-encoding aliasing along the frequency direction', 'Non-linear gradient coil overheating'],
-    correctIndex: 0,
-    explanation: 'Protons in fat are chemically shielded by electron clouds, causing them to precess ~3.5 ppm slower than protons in water, misregistering them by several pixels.',
-    points: 200,
-  },
-  {
-    id: 'diff_mw_7',
-    type: 'missing_word',
-    level: 'difficult',
-    category: 'PET Radiopharmacy',
-    question: 'The most commonly injected glucose analog radiopharmaceutical used in oncologic PET-CT imaging is:',
-    clue: 'Fluorodeoxyglucose labeled with 18F.',
-    targetWord: 'FDG',
-    explanation: '18F-FDG (Fluorodeoxyglucose) is taken up avidly by metabolically active neoplastic cells via GLUT receptors and trapped by hexokinase phosphorylation.',
-    points: 200,
-  },
-  {
-    id: 'diff_tr_8',
-    type: 'marble_trivia',
-    level: 'difficult',
-    category: 'CT Dosimetry',
-    question: 'Which standardized dose metric in CT represents the average absorbed dose in a standardized acrylic phantom across a single axial slice?',
-    clue: 'Computed Tomography Dose Index.',
-    options: ['CTDIvol', 'Dose-Length Product (DLP)', 'Entrance Skin Exposure (ESE)', 'Effective Dose (Sv)'],
-    correctIndex: 0,
-    explanation: 'CTDIvol (Volume CT Dose Index, in mGy) measures average radiation dose inside the scan volume for a standard CT phantom, accounting for helical pitch.',
-    points: 200,
-  },
-  {
-    id: 'diff_mw_9',
-    type: 'missing_word',
+    id: 'fb_d5',
     level: 'difficult',
     category: 'MRI Safety',
-    question: 'The rate at which RF electromagnetic energy is absorbed per unit mass of patient tissue during an MRI scan (measured in W/kg) is:',
-    clue: 'Specific Absorption Rate.',
+    question: 'Metric quantifying RF energy thermal heating rate in watts per kilogram of patient mass is ____.',
+    clue: 'Three-letter safety index monitored on every high-field MR console.',
     targetWord: 'SAR',
-    explanation: 'Specific Absorption Rate (SAR, in Watts/kg) limits RF thermal deposition to avoid dangerous patient heating (restricted to <2 to 4 W/kg).',
+    explanation: 'High flip angles, fast spin echo trains, and 3T fields elevate thermal absorption.',
     points: 200,
   },
   {
-    id: 'diff_tr_10',
-    type: 'marble_trivia',
+    id: 'fb_d6',
     level: 'difficult',
-    category: 'Radiation Biology',
-    question: 'The Law of Bergonie and Tribondeau dictates that biological tissues are most radiosensitive when cells are:',
-    clue: 'Rapidly proliferating, undifferentiated stem cells.',
-    options: ['Rapidly dividing with high metabolic rate and undifferentiated', 'Mature, highly differentiated, and slow-dividing', 'Devascularized and hypoxic', 'In permanent post-mitotic arrest'],
-    correctIndex: 0,
-    explanation: 'Bergonie and Tribondeau established that cell radiosensitivity is highest for cells that divide rapidly, have long mitotic futures, and are least differentiated.',
+    category: 'MRI Contrast Safety',
+    question: 'Rare systemic fibrosing skin/organ disorder linked to unstable gadolinium chelates in severe renal failure is ____.',
+    clue: 'Three-letter complication screened by checking eGFR prior to contrast.',
+    targetWord: 'NSF',
+    explanation: 'Nephrogenic Systemic Fibrosis is virtually eliminated by macrocyclic chelates and renal screening.',
     points: 200,
   },
   {
-    id: 'diff_mw_11',
-    type: 'missing_word',
+    id: 'fb_d7',
     level: 'difficult',
-    category: 'X-ray Interaction',
-    question: 'The sudden braking and deceleration of high-speed cathode electrons as they deflect past heavy tungsten nuclei produces radiation called:',
-    clue: 'German term for "braking radiation".',
-    targetWord: 'BREMSSTRAHLUNG',
-    explanation: 'Bremsstrahlung ("braking radiation") accounts for 85–90% of diagnostic X-rays produced when energetic incident electrons decelerate in the target field.',
+    category: 'CT Artifacts',
+    question: 'Dark streaks between dense bones caused by low-energy photons filtering out first along thick paths is beam ____.',
+    clue: 'Common posterior fossa CT artifact near the petrous bones.',
+    targetWord: 'HARDENING',
+    explanation: 'Polychromatic beams gain average energy as they cross thick bone, skewing attenuation readings.',
     points: 200,
   },
   {
-    id: 'diff_tr_12',
-    type: 'marble_trivia',
-    level: 'difficult',
-    category: 'Angiography',
-    question: 'In Digital Subtraction Angiography (DSA), what is the function of the "mask" image acquired prior to contrast injection?',
-    clue: 'Subtracted from post-contrast frames to remove bone and soft tissue.',
-    options: ['It is subtracted from subsequent contrast frames to isolate opacified vessels', 'It calibrates the monitor display brightness', 'It calculates the renal clearance of the patient', 'It determines catheter tip sterility'],
-    correctIndex: 0,
-    explanation: 'DSA subtracts a pre-contrast mask image from subsequent post-contrast images, leaving only the contrast-filled vascular tree visible with no bony overlap.',
-    points: 200,
-  },
-  {
-    id: 'diff_mw_13',
-    type: 'missing_word',
+    id: 'fb_d8',
     level: 'difficult',
     category: 'MRI Sequences',
-    question: 'The rapid MRI pulse sequence that utilizes an initial 90-degree RF excitation pulse followed by a 180-degree refocusing pulse is a spin:',
-    clue: 'Echo pulse sequence that corrects for magnetic field inhomogeneities.',
-    targetWord: 'ECHO',
-    explanation: 'Spin Echo sequences use a 180° refocusing pulse to reverse dephasing caused by magnetic field inhomogeneities, eliminating T2* decay.',
+    question: 'MR inversion recovery sequence engineered to selectively null bright cerebrospinal fluid signal is ____.',
+    clue: 'Five-letter acronym crucial for spotting periventricular white-matter plaques.',
+    targetWord: 'FLAIR',
+    explanation: 'Fluid-Attenuated Inversion Recovery nulls free water while retaining T2 lesion brightness.',
     points: 200,
   },
   {
-    id: 'diff_tr_14',
-    type: 'marble_trivia',
-    level: 'difficult',
-    category: 'CT Technology',
-    question: 'Modern dual-energy CT (DECT) exploits differences in which phenomenon across two X-ray energies (e.g., 80 kVp vs 140 kVp) to differentiate uric acid gout from calcium?',
-    clue: 'Material-specific attenuation based on photoelectric k-edge differences.',
-    options: ['Energy-dependent Photoelectric absorption and electron density', 'Thermal conduction within soft tissues', 'Proton spin coherence relaxation', 'Piezoelectric mechanical resonance'],
-    correctIndex: 0,
-    explanation: 'Dual-energy CT scans simultaneously at high and low kVp to map the atomic number and photoelectric absorption curve of materials (e.g., uric acid vs calcium).',
-    points: 200,
-  },
-  {
-    id: 'diff_mw_15',
-    type: 'missing_word',
+    id: 'fb_d9',
     level: 'difficult',
     category: 'Nuclear Medicine',
-    question: 'The device used in planar scintigraphy and SPECT to detect gamma ray photons and convert them into digital images is the gamma:',
-    clue: 'Also known as the Anger camera.',
-    targetWord: 'CAMERA',
-    explanation: 'The gamma camera (invented by Hal Anger) uses sodium iodide NaI(Tl) scintillation crystals and photomultiplier tubes to image radioactive tracer distributions.',
+    question: 'Synthetic positron-emitting glucose analog serving as the mainstay PET oncology radiotracer is ____.',
+    clue: 'Three-letter fluorinated sugar concentrated by hypermetabolic tumors.',
+    targetWord: 'FDG',
+    explanation: 'Fluorodeoxyglucose (18F-FDG) undergoes metabolic trapping inside rapidly dividing cells.',
+    points: 200,
+  },
+  {
+    id: 'fb_d10',
+    level: 'difficult',
+    category: 'Tube Physics',
+    question: 'Geometric effect causing photon intensity to drop along the anode side of the X-ray field is the ____ effect.',
+    clue: 'Explains why thicker anatomy goes toward the cathode end.',
+    targetWord: 'HEEL',
+    explanation: 'Internal target self-absorption attenuates photons exiting toward the anode bevel.',
+    points: 200,
+  },
+  {
+    id: 'fb_d11',
+    level: 'difficult',
+    category: 'CT Mechanics',
+    question: 'Conductive brush-and-ring assembly enabling continuous unidirectional CT gantry spinning without tangled cables is a ____.',
+    clue: 'Replaced start-stop cables to make spiral scanning possible.',
+    targetWord: 'SLIPRING',
+    explanation: 'Low-voltage slip rings transfer continuous power and high-speed projection data across rotating frames.',
+    points: 200,
+  },
+  {
+    id: 'fb_d12',
+    level: 'difficult',
+    category: 'Radiography Artifacts',
+    question: 'Wrap-around MRI image artifact occurring when anatomy extends outside the chosen field of view is ____.',
+    clue: 'Avoided by oversampling or expanding the phase-encoding FOV.',
+    targetWord: 'ALIASING',
+    explanation: 'Frequencies exceeding the Nyquist limit fold back onto the opposite side of the reconstructed matrix.',
+    points: 200,
+  },
+  {
+    id: 'fb_d13',
+    level: 'difficult',
+    category: 'Detector Efficiency',
+    question: 'Comprehensive metric measuring how faithfully a digital detector preserves signal-to-noise ratio from input to output is ____.',
+    clue: 'Three-letter gold-standard gauge of flat-panel detector sensitivity.',
+    targetWord: 'DQE',
+    explanation: 'Detective Quantum Efficiency (DQE) combines spatial resolution and dose efficiency.',
+    points: 200,
+  },
+  {
+    id: 'fb_d14',
+    level: 'difficult',
+    category: 'Chest Trauma',
+    question: 'Widened mediastinum and obliterated aortic knob on an upright chest film strongly raise suspicion for aortic ____.',
+    clue: 'Life-threatening high-speed deceleration vascular tear.',
+    targetWord: 'TRANSECTION',
+    explanation: 'Mediastinal hematoma from blunt thoracic trauma demands urgent CT angiography.',
+    points: 200,
+  },
+  {
+    id: 'fb_d15',
+    level: 'difficult',
+    category: 'Radiobiology',
+    question: 'Phase of the mammalian cell cycle exhibiting the highest radiosensitivity to ionizing injury is ____.',
+    clue: 'Final active nuclear division stage just before cytokinesis.',
+    targetWord: 'MITOSIS',
+    explanation: 'Cells in M phase (and late G2) cannot pause to repair double-strand DNA breaks.',
+    points: 200,
+  },
+  {
+    id: 'fb_d16',
+    level: 'difficult',
+    category: 'Ultrasound',
+    question: 'Transverse beam-width artifact where bright echoes fill an anechoic bladder due to nearby side-lobe energy is ____ volume.',
+    clue: 'Occurs when a voxel or beam encompasses two distinct acoustic interfaces.',
+    targetWord: 'PARTIAL',
+    explanation: 'Partial-volume averaging mimics sludge inside fluid-filled structures.',
+    points: 200,
+  },
+  {
+    id: 'fb_d17',
+    level: 'difficult',
+    category: 'Nuclear Medicine',
+    question: 'Short-lived metastable radionuclide (half-life 6 hours, 140 keV gamma) used in over 80% of SPECT scans is ____.',
+    clue: 'Element 43 eluted daily from a molybdenum generator.',
+    targetWord: 'TECHNETIUM',
+    explanation: 'Tc-99m emits monoenergetic 140 keV photons ideal for NaI(Tl) gamma camera crystals.',
+    points: 200,
+  },
+  {
+    id: 'fb_d18',
+    level: 'difficult',
+    category: 'MRI Sequences',
+    question: 'Fat-suppression technique exploiting an initial 180° pulse timed to null lipid longitudinal magnetization is ____.',
+    clue: 'Four-letter orthopedic inversion recovery sequence sensitive to bone marrow edema.',
+    targetWord: 'STIR',
+    explanation: 'Short Tau Inversion Recovery nulls fat reliably even around metal hardware.',
+    points: 200,
+  },
+  {
+    id: 'fb_d19',
+    level: 'difficult',
+    category: 'Ankle Trauma',
+    question: 'External ankle rotation of 15–20° aligns the malleoli parallel to the detector to open the ____ joint space.',
+    clue: 'Critical stability view following ankle inversion injuries.',
+    targetWord: 'MORTISE',
+    explanation: 'A uniform clear space around the talar dome excludes syndesmotic widening.',
+    points: 200,
+  },
+  {
+    id: 'fb_d20',
+    level: 'difficult',
+    category: 'X-Ray Physics',
+    question: 'Sudden spike in photon absorption right when photon energy just exceeds an inner-shell binding threshold is a ____.',
+    clue: 'Explains why iodine and barium absorb diagnostic beams so strongly.',
+    targetWord: 'KEDGE',
+    explanation: 'At the K-absorption edge, inner K-shell electrons become energetically available for ejection.',
+    points: 200,
+  },
+  {
+    id: 'fb_d21',
+    level: 'difficult',
+    category: 'MRI Physics',
+    question: 'Time interval between successive 90° excitation pulses governing T1 weighting is abbreviated ____.',
+    clue: 'Two-letter pulse sequence repetition metric measured in milliseconds.',
+    targetWord: 'TR',
+    explanation: 'Short TR maximizes T1 recovery contrast while long TR minimizes T1 effects.',
+    points: 200,
+  },
+  {
+    id: 'fb_d22',
+    level: 'difficult',
+    category: 'MRI Physics',
+    question: 'Time from excitation pulse to peak spin refocusing signal governing T2 decay weighting is abbreviated ____.',
+    clue: 'Two-letter delay metric lengthened to brighten fluid pathology.',
+    targetWord: 'TE',
+    explanation: 'Long TE paired with long TR produces classic T2-weighted brightness in edema and CSF.',
+    points: 200,
+  },
+  {
+    id: 'fb_d23',
+    level: 'difficult',
+    category: 'Digital Detectors',
+    question: 'Amorphous photoconductor material converting absorbed X-rays directly into electrical charge in direct DR panels is ____.',
+    clue: 'Metalloid coating that skips the intermediate light-flashing step.',
+    targetWord: 'SELENIUM',
+    explanation: 'Amorphous selenium (a-Se) prevents lateral light spread, yielding razor-sharp mammographic detail.',
+    points: 200,
+  },
+  {
+    id: 'fb_d24',
+    level: 'difficult',
+    category: 'Radiobiology',
+    question: 'Average ionizing energy deposited per micrometer along a radiation particle track is abbreviated ____.',
+    clue: 'Three-letter metric separating sparse X-rays from dense alpha tracks.',
+    targetWord: 'LET',
+    explanation: 'Linear Energy Transfer (LET) rises sharply for heavy charged particles, increasing RBE.',
+    points: 200,
+  },
+  {
+    id: 'fb_d25',
+    level: 'difficult',
+    category: 'Spine Imaging',
+    question: 'Cervical lateral projection with one arm raised overhead and the opposite shoulder depressed for C7–T1 visualization is a ____ view.',
+    clue: 'Named after an aquatic athletic stroke position.',
+    targetWord: 'SWIMMERS',
+    explanation: 'Separating the humeral heads prevents shoulder girdle overlap over the cervicothoracic junction.',
     points: 200,
   },
 ];
 
-/**
- * Built-in Web Audio Sound Synthesizer
- * Produces crisp, satisfying audio feedback without any external asset downloads
- */
-class SoundEffects {
-  private ctx: AudioContext | null = null;
+// ============================================================================
+// GAME 2: WORD SCRAMBLE (45 Curated Radiography Terms — 15 per Tier)
+// ============================================================================
+export const WORD_SCRAMBLE_ITEMS: WordScrambleItem[] = [
+  // EASY (15)
+  {
+    id: 'ws_e1',
+    level: 'easy',
+    category: 'Tube Anatomy',
+    word: 'ANODE',
+    clue: 'Positive tungsten electrode inside an X-ray tube.',
+    explanation: 'High-speed electrons strike the rotating anode bevel to emit X-rays.',
+    points: 100,
+  },
+  {
+    id: 'ws_e2',
+    level: 'easy',
+    category: 'Positioning',
+    word: 'LATERAL',
+    clue: 'Side-to-side radiographic view orthogonal to AP or PA.',
+    explanation: 'Always obtain two orthogonal views 90° apart to localize fractures.',
+    points: 100,
+  },
+  {
+    id: 'ws_e3',
+    level: 'easy',
+    category: 'Image Quality',
+    word: 'CONTRAST',
+    clue: 'Tonal brightness difference between adjacent anatomical densities.',
+    explanation: 'Governed primarily by kVp and subject atomic number differences.',
+    points: 100,
+  },
+  {
+    id: 'ws_e4',
+    level: 'easy',
+    category: 'Lower Limb',
+    word: 'FIBULA',
+    clue: 'Slender non-weight-bearing lateral bone of the lower leg.',
+    explanation: 'Terminates distally as the lateral malleolus stabilizing the ankle.',
+    points: 100,
+  },
+  {
+    id: 'ws_e5',
+    level: 'easy',
+    category: 'Upper Limb',
+    word: 'HUMERUS',
+    clue: 'Single long bone extending from shoulder glenoid to elbow.',
+    explanation: 'Includes the greater and lesser tubercles and distal epicondyles.',
+    points: 100,
+  },
+  {
+    id: 'ws_e6',
+    level: 'easy',
+    category: 'Modalities',
+    word: 'GANTRY',
+    clue: 'Circular doughnut-shaped frame housing CT or PET detectors.',
+    explanation: 'Houses the spinning X-ray tube, cooling assembly, and curved detector arc.',
+    points: 100,
+  },
+  {
+    id: 'ws_e7',
+    level: 'easy',
+    category: 'Equipment',
+    word: 'CASSETTE',
+    clue: 'Rigid protective flat holder enclosing imaging plates or film.',
+    explanation: 'Protects CR phosphor plates from light and mechanical bending.',
+    points: 100,
+  },
+  {
+    id: 'ws_e8',
+    level: 'easy',
+    category: 'Positioning',
+    word: 'OBLIQUE',
+    clue: 'Angled body rotation positioned midway between frontal and profile.',
+    explanation: 'Unwraps superimposed structures such as intervertebral foramina or ribs.',
+    points: 100,
+  },
+  {
+    id: 'ws_e9',
+    level: 'easy',
+    category: 'Thorax',
+    word: 'STERNUM',
+    clue: 'Flat anterior chest midline plate supporting clavicles and ribs.',
+    explanation: 'Consists of manubrium, body, and xiphoid process.',
+    points: 100,
+  },
+  {
+    id: 'ws_e10',
+    level: 'easy',
+    category: 'Safety',
+    word: 'APRON',
+    clue: 'Heavy protective wrap worn by staff during fluoroscopy.',
+    explanation: 'Typically provides 0.25–0.5 mm lead-equivalent attenuation.',
+    points: 100,
+  },
+  {
+    id: 'ws_e11',
+    level: 'easy',
+    category: 'Spine',
+    word: 'SACRUM',
+    clue: 'Wedge-shaped fused triangular base of the spinal column.',
+    explanation: 'Articulates laterally with both ilia via the sacroiliac joints.',
+    points: 100,
+  },
+  {
+    id: 'ws_e12',
+    level: 'easy',
+    category: 'Physics',
+    word: 'PHOTON',
+    clue: 'Massless discrete packet of electromagnetic X-ray energy.',
+    explanation: 'Travels at the speed of light and carries energy proportional to frequency.',
+    points: 100,
+  },
+  {
+    id: 'ws_e13',
+    level: 'easy',
+    category: 'Chest Anatomy',
+    word: 'HILUM',
+    clue: 'Root gateway where bronchi and pulmonary vessels enter each lung.',
+    explanation: 'Normally slightly higher on the left side due to the left main bronchus.',
+    points: 100,
+  },
+  {
+    id: 'ws_e14',
+    level: 'easy',
+    category: 'Positioning',
+    word: 'LORDOTIC',
+    clue: 'Chest projection leaning backward to project clavicles above lung apices.',
+    explanation: 'Clears the apical lung zones and assesses right middle lobe collapse.',
+    points: 100,
+  },
+  {
+    id: 'ws_e15',
+    level: 'easy',
+    category: 'Skull',
+    word: 'MAXILLA',
+    clue: 'Paired upper jaw bone housing paranasal sinuses and upper teeth.',
+    explanation: 'Forms the floor of the orbit and major anterior facial buttress.',
+    points: 100,
+  },
 
-  private getContext(): AudioContext | null {
-    if (typeof window === 'undefined') return null;
-    if (!this.ctx) {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx) {
-        this.ctx = new AudioCtx();
-      }
-    }
-    if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume().catch(() => {});
-    }
-    return this.ctx;
-  }
+  // MEDIUM (15)
+  {
+    id: 'ws_m1',
+    level: 'medium',
+    category: 'Chest Anatomy',
+    word: 'CARINA',
+    clue: 'Cartilaginous tracheal bifurcation ridge near T4–T5.',
+    explanation: 'Key landmark on chest radiographs to check endotracheal tube tip placement.',
+    points: 150,
+  },
+  {
+    id: 'ws_m2',
+    level: 'medium',
+    category: 'Ultrasound',
+    word: 'ANECHOIC',
+    clue: 'Completely black appearance of pure simple fluid on sonography.',
+    explanation: 'Pure urine, bile, or simple cysts lack internal reflectors and appear jet black.',
+    points: 150,
+  },
+  {
+    id: 'ws_m3',
+    level: 'medium',
+    category: 'X-Ray Physics',
+    word: 'PENUMBRA',
+    clue: 'Fuzzy geometric unsharpness border created by focal spot width.',
+    explanation: 'Reduced by choosing a smaller focal spot, longer SID, and minimal OID.',
+    points: 150,
+  },
+  {
+    id: 'ws_m4',
+    level: 'medium',
+    category: 'Contrast',
+    word: 'OSMOLALITY',
+    clue: 'Particle concentration metric dictating intravenous contrast tolerability.',
+    explanation: 'Low-osmolar non-ionic agents sharply cut nausea and vascular discomfort.',
+    points: 150,
+  },
+  {
+    id: 'ws_m5',
+    level: 'medium',
+    category: 'Anatomy',
+    word: 'GLENOID',
+    clue: 'Shallow pear-shaped scapular socket articulating with the humeral head.',
+    explanation: 'Evaluated tangentially on Grashey true AP shoulder views.',
+    points: 150,
+  },
+  {
+    id: 'ws_m6',
+    level: 'medium',
+    category: 'Physics',
+    word: 'IONIZATION',
+    clue: 'Removal of an orbital electron turning a neutral atom into a charged pair.',
+    explanation: 'Separates diagnostic X-rays from non-ionizing MRI and ultrasound waves.',
+    points: 150,
+  },
+  {
+    id: 'ws_m7',
+    level: 'medium',
+    category: 'CT Physics',
+    word: 'ARTIFACT',
+    clue: 'False visual feature appearing in an image not present in the patient.',
+    explanation: 'Includes motion streaks, beam hardening, metallic starburst, and rings.',
+    points: 150,
+  },
+  {
+    id: 'ws_m8',
+    level: 'medium',
+    category: 'Spine Anatomy',
+    word: 'PEDICLE',
+    clue: 'Short thick cylindrical bridge linking vertebral body to posterior arch.',
+    explanation: 'Obliteration ("winking owl sign") can point to lytic spinal metastasis.',
+    points: 150,
+  },
+  {
+    id: 'ws_m9',
+    level: 'medium',
+    category: 'Ultrasound',
+    word: 'ECHOGENIC',
+    clue: 'Tissue that reflects abundant acoustic waves, appearing bright white.',
+    explanation: 'Diaphragm, gallstones, and renal sinus fat appear strongly reflective.',
+    points: 150,
+  },
+  {
+    id: 'ws_m10',
+    level: 'medium',
+    category: 'MRI Physics',
+    word: 'GRADIENT',
+    clue: 'Auxiliary coil producing gentle magnetic field slopes for slice localization.',
+    explanation: 'Responsible for spatial encoding and the loud knocking noise inside MRI.',
+    points: 150,
+  },
+  {
+    id: 'ws_m11',
+    level: 'medium',
+    category: 'Anatomy',
+    word: 'MENISCUS',
+    clue: 'Fibrocartilage C-shaped shock absorber inside the tibiofemoral joint.',
+    explanation: 'Best evaluated non-invasively using proton-density fat-sat knee MRI.',
+    points: 150,
+  },
+  {
+    id: 'ws_m12',
+    level: 'medium',
+    category: 'Fluoroscopy',
+    word: 'INTENSIFIER',
+    clue: 'Electronic vacuum tube amplifying dim fluoroscopic light images.',
+    explanation: 'Older cousin to modern flat-panel dynamic digital fluoroscopy detectors.',
+    points: 150,
+  },
+  {
+    id: 'ws_m13',
+    level: 'medium',
+    category: 'Thorax',
+    word: 'PLEURAL',
+    clue: 'Thin double-layered serous space around lungs where fluid or air collects.',
+    explanation: 'Blunting of costophrenic angles signals fluid accumulation in this space.',
+    points: 150,
+  },
+  {
+    id: 'ws_m14',
+    level: 'medium',
+    category: 'Musculoskeletal',
+    word: 'OLECRANON',
+    clue: 'Prominent curved proximal hook of the ulna forming the point of the elbow.',
+    explanation: 'Best profiled cleanly in a true 90° flexed lateral elbow radiograph.',
+    points: 150,
+  },
+  {
+    id: 'ws_m15',
+    level: 'medium',
+    category: 'MRI Contrast',
+    word: 'GADOLINIUM',
+    clue: 'Paramagnetic lanthanide ion shortening T1 relaxation for bright MR enhancement.',
+    explanation: 'Chelated for renal clearance to highlight tumor blood-brain barrier breakdown.',
+    points: 150,
+  },
 
-  // Letter tap / marble click sound
-  public playMarbleTap() {
-    try {
-      const ctx = this.getContext();
-      if (!ctx) return;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(480, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(780, ctx.currentTime + 0.05);
+  // DIFFICULT (15)
+  {
+    id: 'ws_d1',
+    level: 'difficult',
+    category: 'Image Quality',
+    word: 'RADIOLUCENT',
+    clue: 'Low-density anatomical region allowing photons through easily, appearing dark.',
+    explanation: 'Air-filled lungs and bowel gas appear dark due to minimal photon attenuation.',
+    points: 200,
+  },
+  {
+    id: 'ws_d2',
+    level: 'difficult',
+    category: 'Image Quality',
+    word: 'RADIOPAQUE',
+    clue: 'High-density metal or cortical bone blocking photons and appearing white.',
+    explanation: 'Surgical hardware, contrast media, and calcium strongly attenuate the beam.',
+    points: 200,
+  },
+  {
+    id: 'ws_d3',
+    level: 'difficult',
+    category: 'MRI Physics',
+    word: 'PRECESSION',
+    clue: 'Spinning gyroscopic wobble of proton axes around B0.',
+    explanation: 'Rate scales linearly with static field strength via the gyromagnetic constant.',
+    points: 200,
+  },
+  {
+    id: 'ws_d4',
+    level: 'difficult',
+    category: 'CT Physics',
+    word: 'SINOGRAM',
+    clue: 'Raw projection intensity plot collected across gantry angles prior to reconstruction.',
+    explanation: 'Displays sinusoidal tracks of object attenuation over 360° of CT rotation.',
+    points: 200,
+  },
+  {
+    id: 'ws_d5',
+    level: 'difficult',
+    category: 'X-Ray Detectors',
+    word: 'SCINTILLATOR',
+    clue: 'Phosphor crystal layer converting incident X-ray photons into visible light.',
+    explanation: 'Cesium iodide needle crystals guide light directly down onto photodiode pixels.',
+    points: 200,
+  },
+  {
+    id: 'ws_d6',
+    level: 'difficult',
+    category: 'Radiation Safety',
+    word: 'DETERMINISTIC',
+    clue: 'Tissue reaction like erythema or cataracts appearing strictly above a threshold dose.',
+    explanation: 'Severity escalates directly as accumulated radiation crosses cellular repair limits.',
+    points: 200,
+  },
+  {
+    id: 'ws_d7',
+    level: 'difficult',
+    category: 'Ultrasound',
+    word: 'REVERBERATION',
+    clue: 'Multiple equally spaced false echoes bouncing back and forth between strong reflectors.',
+    explanation: 'Creates classic comet-tail and ring-down artifacts along air interfaces.',
+    points: 200,
+  },
+  {
+    id: 'ws_d8',
+    level: 'difficult',
+    category: 'Pathology',
+    word: 'PNEUMOTHORAX',
+    clue: 'Accumulation of free gas collapsing lung parenchyma inside the hemithorax.',
+    explanation: 'Shows a sharp visceral pleural line devoid of peripheral lung markings.',
+    points: 200,
+  },
+  {
+    id: 'ws_d9',
+    level: 'difficult',
+    category: 'Vascular',
+    word: 'SELDINGER',
+    clue: 'Safe catheterization technique trading needle to guidewire to sheath over blood vessels.',
+    explanation: 'Cornerstone percutaneous access method in modern interventional radiology.',
+    points: 200,
+  },
+  {
+    id: 'ws_d10',
+    level: 'difficult',
+    category: 'MRI Physics',
+    word: 'SUSCEPTIBILITY',
+    clue: 'Local magnetic field distortion bloom seen around blood products, air, or metal.',
+    explanation: 'Gradient echo (T2*) sequences accentuate these dark blooming artifacts.',
+    points: 200,
+  },
+  {
+    id: 'ws_d11',
+    level: 'difficult',
+    category: 'CT Reconstruction',
+    word: 'ITERATIVE',
+    clue: 'Modern noise-reducing CT reconstruction loop comparing forward projections to data.',
+    explanation: 'Preserves low-contrast detectability while cutting CT patient dose substantially.',
+    points: 200,
+  },
+  {
+    id: 'ws_d12',
+    level: 'difficult',
+    category: 'X-Ray Physics',
+    word: 'ATTENUATION',
+    clue: 'Combined loss of beam intensity via absorption and scattering along its path.',
+    explanation: 'Follows exponential decay governed by thickness and linear coefficient mu.',
+    points: 200,
+  },
+  {
+    id: 'ws_d13',
+    level: 'difficult',
+    category: 'Nuclear Medicine',
+    word: 'COLLIMATOR',
+    clue: 'Heavy lead septum honeycomb placed on a gamma camera to enforce photon direction.',
+    explanation: 'Without directional lead channels, gamma cameras could form no spatial image.',
+    points: 200,
+  },
+  {
+    id: 'ws_d14',
+    level: 'difficult',
+    category: 'Anatomy',
+    word: 'ACETABULUM',
+    clue: 'Deep cup-like pelvic socket joining ilium, ischium, and pubis at the hip.',
+    explanation: 'Evaluated with Judet 45° oblique views for anterior/posterior column fractures.',
+    points: 200,
+  },
+  {
+    id: 'ws_d15',
+    level: 'difficult',
+    category: 'Radiobiology',
+    word: 'APOPTOSIS',
+    clue: 'Programmed self-destruct pathway triggered in severely irradiated lymphocytes.',
+    explanation: 'Explains why circulating lymphocytes drop rapidly even after modest exposure.',
+    points: 200,
+  },
+];
 
-      gain.gain.setValueAtTime(0.12, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+// ============================================================================
+// GAME 3: MEMORY MATCH DECKS (9 Curated Decks — 3 Easy, 3 Medium, 3 Difficult)
+// Match Terms <-> Anatomical Structures, Modalities, or Definitions
+// ============================================================================
+export const MEMORY_MATCH_DECKS: MemoryMatchDeck[] = [
+  // EASY (6 pairs each)
+  {
+    id: 'mm_e1',
+    level: 'easy',
+    title: 'Anatomical Landmarks & Levels',
+    category: 'Anatomy',
+    points: 180,
+    pairs: [
+      { id: 'p1', left: 'Vertebra Prominens', right: 'C7 Spinous Level' },
+      { id: 'p2', left: 'Jugular Notch', right: 'T2–T3 Level' },
+      { id: 'p3', left: 'Sternal Angle', right: 'T4–T5 / Carina' },
+      { id: 'p4', left: 'Xiphoid Tip', right: 'T9–T10 Level' },
+      { id: 'p5', left: 'Iliac Crest', right: 'L4–L5 Disc Space' },
+      { id: 'p6', left: 'Symphysis Pubis', right: 'Inferior Pelvic Outlet' },
+    ],
+  },
+  {
+    id: 'mm_e2',
+    level: 'easy',
+    title: 'Modalities & Physical Signals',
+    category: 'Imaging Modalities',
+    points: 180,
+    pairs: [
+      { id: 'p1', left: 'Plain Radiography', right: 'Transmitted X-Ray Photons' },
+      { id: 'p2', left: 'MRI', right: 'Protons & Radiofrequency' },
+      { id: 'p3', left: 'Sonography', right: 'High-Frequency Acoustic Echoes' },
+      { id: 'p4', left: 'CT Scanner', right: 'Rotating Fan Beam & Slices' },
+      { id: 'p5', left: 'PET Imaging', right: '511 keV Annihilation Photons' },
+      { id: 'p6', left: 'Fluoroscopy', right: 'Real-Time Dynamic X-Ray' },
+    ],
+  },
+  {
+    id: 'mm_e3',
+    level: 'easy',
+    title: 'Radiation Safety Essentials',
+    category: 'Safety',
+    points: 180,
+    pairs: [
+      { id: 'p1', left: 'ALARA Principle', right: 'Minimal Reasonable Dose' },
+      { id: 'p2', left: 'Inverse Square Law', right: 'Doubling Distance Quarters Intensity' },
+      { id: 'p3', left: '0.5 mm Pb Apron', right: 'Torso Scatter Barrier' },
+      { id: 'p4', left: 'Strict Collimation', right: 'Reduces Scatter & Volume Dose' },
+      { id: 'p5', left: 'OSL Collar Badge', right: 'Tracks Staff Exposure' },
+      { id: 'p6', left: 'Aluminum Filter', right: 'Removes Weak Skin-Dose Photons' },
+    ],
+  },
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.06);
-    } catch {}
-  }
+  // MEDIUM (8 pairs each)
+  {
+    id: 'mm_m1',
+    level: 'medium',
+    title: 'Classic Projections & Targets',
+    category: 'Positioning',
+    points: 240,
+    pairs: [
+      { id: 'p1', left: 'Waters Projection', right: 'Maxillary Sinuses & Orbits' },
+      { id: 'p2', left: 'Towne AP Axial', right: 'Occipital Bone & Magnum' },
+      { id: 'p3', left: 'Open-Mouth AP', right: 'C1–C2 Odontoid Peg' },
+      { id: 'p4', left: 'Ankle Mortise View', right: '15–20° Internal Rotation' },
+      { id: 'p5', left: 'Ulnar Deviation', right: 'Scaphoid Waist Fracture' },
+      { id: 'p6', left: 'Swimmer’s Lateral', right: 'C7–T1 Junction' },
+      { id: 'p7', left: 'Apical Lordotic', right: 'Lung Apices Below Clavicles' },
+      { id: 'p8', left: 'Left Lateral Decubitus', right: 'Free Abdominal Air' },
+    ],
+  },
+  {
+    id: 'mm_m2',
+    level: 'medium',
+    title: 'Contrast Media & Pharmacokinetics',
+    category: 'Contrast & Safety',
+    points: 240,
+    pairs: [
+      { id: 'p1', left: 'Barium Sulfate', right: 'Insoluble Oral/Rectal GI Agent' },
+      { id: 'p2', left: 'Iodinated Non-Ionic', right: 'Water-Soluble Vascular CT Agent' },
+      { id: 'p3', left: 'Gastrografin', right: 'Preferred in Suspected Perforation' },
+      { id: 'p4', left: 'Macrocyclic Gadolinium', right: 'Safe Bound T1 MRI Chelate' },
+      { id: 'p5', left: 'Microbubble Agent', right: 'Intravascular Ultrasound Contrast' },
+      { id: 'p6', left: '18F-FDG Tracer', right: 'Hypermetabolic PET Oncology' },
+      { id: 'p7', left: 'Technetium-99m', right: '140 keV Gamma Bone Scan' },
+      { id: 'p8', left: 'Epinephrine 1:1000', right: 'First-Line Severe Anaphylaxis' },
+    ],
+  },
+  {
+    id: 'mm_m3',
+    level: 'medium',
+    title: 'MRI Weighting & Appearances',
+    category: 'MRI Physics',
+    points: 240,
+    pairs: [
+      { id: 'p1', left: 'T1-Weighted Fat', right: 'Bright White Signal' },
+      { id: 'p2', left: 'T1-Weighted CSF', right: 'Dark Low Signal' },
+      { id: 'p3', left: 'T2-Weighted CSF', right: 'Bright White Signal' },
+      { id: 'p4', left: 'FLAIR Brain Sequence', right: 'Bright Edema, Dark Ventricles' },
+      { id: 'p5', left: 'DWI Acute Stroke', right: 'Bright Restricted Diffusion' },
+      { id: 'p6', left: 'Cortical Bone MRI', right: 'Dark Signal Void' },
+      { id: 'p7', left: 'STIR Sequence', right: 'Suppresses Marrow Fat Uniformly' },
+      { id: 'p8', left: 'T2* Gradient Echo', right: 'Detects Microhemorrhage Bloom' },
+    ],
+  },
 
-  // Correct answer / word solved chime
-  public playSuccessChime() {
-    try {
-      const ctx = this.getContext();
-      if (!ctx) return;
-      const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6 arpeggio
-      notes.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.06);
+  // DIFFICULT (10 pairs each)
+  {
+    id: 'mm_d1',
+    level: 'difficult',
+    title: 'Imaging Artifacts & Root Causes',
+    category: 'Quality & Artifacts',
+    points: 320,
+    pairs: [
+      { id: 'p1', left: 'CT Ring Artifact', right: 'Defective Detector Channel' },
+      { id: 'p2', left: 'Beam Hardening', right: 'Low-Energy Photon Loss in Bone' },
+      { id: 'p3', left: 'MRI Aliasing', right: 'Anatomy Outside Chosen FOV' },
+      { id: 'p4', left: 'Chemical Shift', right: 'Water–Fat Frequency Misregistration' },
+      { id: 'p5', left: 'Moiré Grid Lines', right: 'Grid & Pixel Sampling Clash' },
+      { id: 'p6', left: 'Acoustic Shadowing', right: 'Dense Gallstone or Calculus' },
+      { id: 'p7', left: 'Posterior Enhancement', right: 'Fluid Cyst Low Attenuation' },
+      { id: 'p8', left: 'CR Ghost Image', right: 'Incomplete Erasure Cycle' },
+      { id: 'p9', left: 'Metal Starburst CT', right: 'Complete Photon Starvation' },
+      { id: 'p10', left: 'MRI Zipper Line', right: 'RF Shielding Door Open' },
+    ],
+  },
+  {
+    id: 'mm_d2',
+    level: 'difficult',
+    title: 'CT Hounsfield & Ultrasound Textures',
+    category: 'Cross-Sectional',
+    points: 320,
+    pairs: [
+      { id: 'p1', left: 'Distilled Water CT', right: '0 HU Reference' },
+      { id: 'p2', left: 'Lung Air / Gas CT', right: '−1000 HU' },
+      { id: 'p3', left: 'Adipose Tissue CT', right: '−50 to −100 HU' },
+      { id: 'p4', left: 'Acute Hemorrhage CT', right: '+55 to +80 HU' },
+      { id: 'p5', left: 'Dense Cortical Bone CT', right: '+400 to +1000+ HU' },
+      { id: 'p6', left: 'Simple Cyst Echoes', right: 'Anechoic + Enhancement' },
+      { id: 'p7', left: 'Calcified Stone US', right: 'Echogenic + Clean Shadow' },
+      { id: 'p8', left: 'Bowel Gas US', right: 'Dirty Reverberation Shadow' },
+      { id: 'p9', left: 'PACS Storage Standard', right: 'DICOM Format' },
+      { id: 'p10', left: 'Narrow CT Window Width', right: 'High Soft-Tissue Contrast' },
+    ],
+  },
+  {
+    id: 'mm_d3',
+    level: 'difficult',
+    title: 'Physics Quantities & Units',
+    category: 'Radiological Physics',
+    points: 320,
+    pairs: [
+      { id: 'p1', left: 'Gray (Gy)', right: '1 Joule / kg Absorbed Dose' },
+      { id: 'p2', left: 'Sievert (Sv)', right: 'Weighted Effective Biological Dose' },
+      { id: 'p3', left: 'Becquerel (Bq)', right: '1 Nuclear Decay / Second' },
+      { id: 'p4', left: 'Tesla (T)', right: 'Static Magnetic Flux Density' },
+      { id: 'p5', left: 'Hounsfield Unit (HU)', right: 'Normalized Linear Attenuation' },
+      { id: 'p6', left: 'kVp Increase (+15%)', right: 'Doubles Detector Exposure' },
+      { id: 'p7', left: '42.58 MHz / Tesla', right: 'Hydrogen Gyromagnetic Ratio' },
+      { id: 'p8', left: 'Half-Value Layer', right: '50% Beam Intensity Thickness' },
+      { id: 'p9', left: 'W/kg Metric', right: 'RF Thermal SAR Limit' },
+      { id: 'p10', left: 'Curie (Ci)', right: '3.7 × 10¹⁰ Decays / Sec' },
+    ],
+  },
+];
 
-        gain.gain.setValueAtTime(0.14, ctx.currentTime + idx * 0.06);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.06 + 0.22);
+// ============================================================================
+// GAME 4: TRUE OR FALSE (45 Statements — 15 Easy, 15 Medium, 15 Difficult)
+// ============================================================================
+export const TRUE_FALSE_ITEMS: TrueFalseItem[] = [
+  // EASY (15)
+  {
+    id: 'tf_e1',
+    level: 'easy',
+    category: 'Chest Positioning',
+    statement: 'A PA upright chest projection reduces apparent heart size compared with an AP portable chest projection.',
+    isTrue: true,
+    explanation: 'True. Because the heart sits anteriorly, placing the anterior chest against the detector in a PA view minimizes cardiac magnification.',
+    points: 80,
+  },
+  {
+    id: 'tf_e2',
+    level: 'easy',
+    category: 'Safety Physics',
+    statement: 'Doubling your distance from a scatter radiation source cuts your exposure rate in half.',
+    isTrue: false,
+    explanation: 'False. By the Inverse Square Law, doubling distance reduces intensity to one-quarter (25%), not one-half.',
+    points: 80,
+  },
+  {
+    id: 'tf_e3',
+    level: 'easy',
+    category: 'Imaging Physics',
+    statement: 'MRI scanners use low-dose ionizing X-rays paired with superconducting magnets to form cross-sectional slices.',
+    isTrue: false,
+    explanation: 'False. MRI uses non-ionizing magnetic fields and radiofrequency pulses—never ionizing X-rays.',
+    points: 80,
+  },
+  {
+    id: 'tf_e4',
+    level: 'easy',
+    category: 'X-Ray Equipment',
+    statement: 'Roughly 99% of electron kinetic energy hitting the tungsten anode converts into heat rather than X-ray photons.',
+    isTrue: true,
+    explanation: 'True. Over 99% of electron energy becomes thermal energy, which is why rotating anodes and oil cooling are essential.',
+    points: 80,
+  },
+  {
+    id: 'tf_e5',
+    level: 'easy',
+    category: 'Radiation Safety',
+    statement: 'Lead shielding aprons are designed to block the direct primary X-ray beam at 120 kVp.',
+    isTrue: false,
+    explanation: 'False. Standard 0.25–0.5 mm lead aprons protect staff against lower-intensity scatter radiation, never direct primary beams.',
+    points: 80,
+  },
+  {
+    id: 'tf_e6',
+    level: 'easy',
+    category: 'Image Quality',
+    statement: 'Increasing collimation reduces the amount of Compton scatter reaching the detector.',
+    isTrue: true,
+    explanation: 'True. Tight collimation shrinks the irradiated tissue volume, producing far less scatter fog.',
+    points: 80,
+  },
+  {
+    id: 'tf_e7',
+    level: 'easy',
+    category: 'Chest Positioning',
+    statement: 'Standard chest radiographs are normally exposed at full forced expiration so the lungs look brighter.',
+    isTrue: false,
+    explanation: 'False. Chest films are exposed on full second deep inspiration so at least 9–10 posterior ribs are visible and lung fields stay well aerated.',
+    points: 80,
+  },
+  {
+    id: 'tf_e8',
+    level: 'easy',
+    category: 'Ultrasound',
+    statement: 'Diagnostic ultrasound requires acoustic gel to eliminate tiny air gaps between the transducer face and skin.',
+    isTrue: true,
+    explanation: 'True. Even a microscopic air layer reflects nearly 99.9% of ultrasound waves back, preventing tissue penetration.',
+    points: 80,
+  },
+  {
+    id: 'tf_e9',
+    level: 'easy',
+    category: 'Anatomy',
+    statement: 'The anatomical snuffbox contains the scaphoid bone just distal to the radial styloid process.',
+    isTrue: true,
+    explanation: 'True. Point tenderness in the snuffbox warrants dedicated scaphoid series views even when initial wrist films look normal.',
+    points: 80,
+  },
+  {
+    id: 'tf_e10',
+    level: 'easy',
+    category: 'X-Ray Tube',
+    statement: 'Inside the X-ray tube, electrons accelerate from the positive anode toward the negative cathode.',
+    isTrue: false,
+    explanation: 'False. Negatively charged electrons boil off the heated cathode filament and accelerate toward the positive anode target.',
+    points: 80,
+  },
+  {
+    id: 'tf_e11',
+    level: 'easy',
+    category: 'Pediatrics',
+    statement: 'Using short exposure times and higher mA helps minimize involuntary motion blur in uncooperative pediatric patients.',
+    isTrue: true,
+    explanation: 'True. Keeping the same mAs with shorter milliseconds freezes motion without altering total receptor exposure.',
+    points: 80,
+  },
+  {
+    id: 'tf_e12',
+    level: 'easy',
+    category: 'Contrast Media',
+    statement: 'Oral barium sulfate is the preferred contrast agent when a bowel perforation is clinically suspected.',
+    isTrue: false,
+    explanation: 'False. Leaking barium into the peritoneum triggers severe chemical peritonitis; water-soluble iodinated contrast is required instead.',
+    points: 80,
+  },
+  {
+    id: 'tf_e13',
+    level: 'easy',
+    category: 'Digital Detectors',
+    statement: 'Placing the part closer to the image receptor increases geometric magnification on the final image.',
+    isTrue: false,
+    explanation: 'False. Keeping Object-to-Image Distance (OID) as small as possible minimizes magnification and improves sharpness.',
+    points: 80,
+  },
+  {
+    id: 'tf_e14',
+    level: 'easy',
+    category: 'Abdominal Radiography',
+    statement: 'A left lateral decubitus abdomen view allows free intraperitoneal air to rise above the liver border.',
+    isTrue: true,
+    explanation: 'True. With the left side down for 5–10 minutes, free gas floats above the right lateral liver margin.',
+    points: 80,
+  },
+  {
+    id: 'tf_e15',
+    level: 'easy',
+    category: 'Dosimetry',
+    statement: 'Occupational radiation dosimeters should be stored beside the X-ray control console window at the end of a shift.',
+    isTrue: false,
+    explanation: 'False. Dosimeters belong on a control board outside the X-ray room, away from heat, moisture, and stray scatter.',
+    points: 80,
+  },
 
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + idx * 0.06);
-        osc.stop(ctx.currentTime + idx * 0.06 + 0.22);
-      });
-    } catch {}
-  }
+  // MEDIUM (15)
+  {
+    id: 'tf_m1',
+    level: 'medium',
+    category: 'X-Ray Physics',
+    statement: 'Increasing tube voltage by 15% roughly doubles radiographic exposure at the detector.',
+    isTrue: true,
+    explanation: 'True. According to the 15% Rule, adding 15% kVp produces the same receptor exposure change as doubling mAs.',
+    points: 120,
+  },
+  {
+    id: 'tf_m2',
+    level: 'medium',
+    category: 'Anode Heel Effect',
+    statement: 'When radiographing a femur or thoracic spine, the thicker anatomical end should sit under the anode end of the tube.',
+    isTrue: false,
+    explanation: 'False. The cathode side emits higher photon intensity, so thicker anatomy belongs under the cathode end.',
+    points: 120,
+  },
+  {
+    id: 'tf_m3',
+    level: 'medium',
+    category: 'Grid Physics',
+    statement: 'Switching from a non-grid tabletop exposure to an 8:1 grid requires lowering total mAs to avoid overexposure.',
+    isTrue: false,
+    explanation: 'False. Grids absorb both scatter and some primary photons, so you must multiply mAs by the Bucky factor (~3–4×).',
+    points: 120,
+  },
+  {
+    id: 'tf_m4',
+    level: 'medium',
+    category: 'MRI Safety',
+    statement: 'Ferromagnetic items inside an MRI suite only feel a magnetic pull when an imaging scan sequence is actively running.',
+    isTrue: false,
+    explanation: 'False. Superconducting MRI magnets stay permanently energized 24/7—even when idle or powered down at the console.',
+    points: 120,
+  },
+  {
+    id: 'tf_m5',
+    level: 'medium',
+    category: 'CT Windowing',
+    statement: 'Viewing pulmonary parenchyma on CT requires a wide window width around 1500 HU and a negative window level around −600 HU.',
+    isTrue: true,
+    explanation: 'True. Lung windows balance air-filled alveoli (−800 HU) and fine interstitial vessels simultaneously.',
+    points: 120,
+  },
+  {
+    id: 'tf_m6',
+    level: 'medium',
+    category: 'Ultrasound Artifacts',
+    statement: 'Simple fluid-filled cysts typically show dark anechoic centers accompanied by bright posterior acoustic enhancement.',
+    isTrue: true,
+    explanation: 'True. Fluid attenuates sound far less than adjacent solid parenchyma, making echoes behind the cyst appear brighter.',
+    points: 120,
+  },
+  {
+    id: 'tf_m7',
+    level: 'medium',
+    category: 'Chest Pathology',
+    statement: 'On a chest radiograph, loss of the right cardiac silhouette border localizes airspace consolidation to the right middle lobe.',
+    isTrue: true,
+    explanation: 'True (Silhouette Sign). Because the right middle lobe abuts the right atrium anteriorly, opacity there erases the right heart margin.',
+    points: 120,
+  },
+  {
+    id: 'tf_m8',
+    level: 'medium',
+    category: 'MRI Sequences',
+    statement: 'On a true T1-weighted brain MRI, intraventricular cerebrospinal fluid appears bright white.',
+    isTrue: false,
+    explanation: 'False. CSF has a very long T1 recovery time and therefore appears dark on T1-weighted sequences and bright on T2-weighted ones.',
+    points: 120,
+  },
+  {
+    id: 'tf_m9',
+    level: 'medium',
+    category: 'Contrast Safety',
+    statement: 'Before scheduling intravenous iodinated contrast CT in older patients, checking baseline eGFR and creatinine helps protect renal function.',
+    isTrue: true,
+    explanation: 'True. Evaluating renal clearance flags chronic kidney disease patients who benefit from hydration or alternative exams.',
+    points: 120,
+  },
+  {
+    id: 'tf_m10',
+    level: 'medium',
+    category: 'Radiation Biology',
+    statement: 'Fetal exposure risk from ionizing radiation is highest during major organogenesis (weeks 2 to 8–12 of gestation).',
+    isTrue: true,
+    explanation: 'True. Rapidly dividing embryonic cells during organogenesis are highly vulnerable to congenital radiation injury.',
+    points: 120,
+  },
+  {
+    id: 'tf_m11',
+    level: 'medium',
+    category: 'Digital Detectors',
+    statement: 'In digital radiography, setting overly excessive mAs causes the image to turn pitch black immediately like screen-film.',
+    isTrue: false,
+    explanation: 'False. Automatic rescaling adjusts display brightness masks ("dose creep"), hiding overexposure unless Exposure Index is checked.',
+    points: 120,
+  },
+  {
+    id: 'tf_m12',
+    level: 'medium',
+    category: 'Trauma C-Spine',
+    statement: 'Flexion-extension dynamic cervical radiographs must always be performed before clearing acute neck pain in an unconscious trauma patient.',
+    isTrue: false,
+    explanation: 'False. Active flexion-extension is strictly contraindicated in unconscious or unstable trauma patients; CT is standard.',
+    points: 120,
+  },
+  {
+    id: 'tf_m13',
+    level: 'medium',
+    category: 'CT Physics',
+    statement: 'Lowering helical CT pitch from 1.5 down to 0.75 decreases patient radiation dose.',
+    isTrue: false,
+    explanation: 'False. Decreasing pitch below 1.0 causes beam overlap per table sweep and increases patient radiation dose.',
+    points: 120,
+  },
+  {
+    id: 'tf_m14',
+    level: 'medium',
+    category: 'Mammography',
+    statement: 'Molybdenum and rhodium anode targets are selected in mammography because their characteristic rays excel at soft-tissue contrast.',
+    isTrue: true,
+    explanation: 'True. Low-energy K-characteristic emissions (17.5–22.7 keV) maximize photoelectric contrast in breast tissue.',
+    points: 120,
+  },
+  {
+    id: 'tf_m15',
+    level: 'medium',
+    category: 'Nuclear Medicine',
+    statement: 'Radiopharmaceuticals in nuclear medicine make the patient emit gamma photons rather than using an external X-ray tube.',
+    isTrue: true,
+    explanation: 'True. The radiotracer distributes physiologically inside the patient and emits gamma or annihilation photons detected by the camera.',
+    points: 120,
+  },
 
-  // Wrong / strike sound
-  public playWrong() {
-    try {
-      const ctx = this.getContext();
-      if (!ctx) return;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(220, ctx.currentTime);
-      osc.frequency.linearRampToValueAtTime(160, ctx.currentTime + 0.15);
-
-      gain.gain.setValueAtTime(0.1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.18);
-    } catch {}
-  }
-
-  // Streak combo sound
-  public playStreakFanfare() {
-    try {
-      const ctx = this.getContext();
-      if (!ctx) return;
-      const notes = [440, 554.37, 659.25, 880];
-      notes.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.05);
-
-        gain.gain.setValueAtTime(0.15, ctx.currentTime + idx * 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.05 + 0.3);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + idx * 0.05);
-        osc.stop(ctx.currentTime + idx * 0.05 + 0.3);
-      });
-    } catch {}
-  }
-}
-
-export const soundFx = new SoundEffects();
+  // DIFFICULT (15)
+  {
+    id: 'tf_d1',
+    level: 'difficult',
+    category: 'CT Physics',
+    statement: 'A CT Hounsfield number of +65 HU in acute intracranial imaging strongly favors fresh hemorrhage over CSF.',
+    isTrue: true,
+    explanation: 'True. Acute clotted blood concentrates hemoglobin protein (+55 to +80 HU), looking distinctly hyperdense compared with CSF (0–15 HU).',
+    points: 160,
+  },
+  {
+    id: 'tf_d2',
+    level: 'difficult',
+    category: 'MRI Physics',
+    statement: 'In MRI k-space, removing the outermost high-spatial-frequency lines mainly destroys overall image brightness contrast.',
+    isTrue: false,
+    explanation: 'False. Outer k-space governs fine edge spatial resolution; the center of k-space carries overall contrast and signal strength.',
+    points: 160,
+  },
+  {
+    id: 'tf_d3',
+    level: 'difficult',
+    category: 'Digital Imaging',
+    statement: 'Direct-conversion amorphous selenium detectors emit fewer blurring light scatter events than indirect CsI scintillators.',
+    isTrue: true,
+    explanation: 'True. Amorphous selenium converts X-ray photons straight into electrical charge pairs with zero intermediate visible-light diffusion.',
+    points: 160,
+  },
+  {
+    id: 'tf_d4',
+    level: 'difficult',
+    category: 'X-Ray Physics',
+    statement: 'Characteristic X-ray emissions from a tungsten target can be produced even when the tube operates at 50 kVp.',
+    isTrue: false,
+    explanation: 'False. Tungsten’s K-shell binding energy is 69.5 keV, so tube potential must exceed 69.5 kVp to generate tungsten K-characteristic lines.',
+    points: 160,
+  },
+  {
+    id: 'tf_d5',
+    level: 'difficult',
+    category: 'Ultrasound',
+    statement: 'Using a higher-frequency linear transducer boosts spatial resolution while decreasing maximum penetration depth.',
+    isTrue: true,
+    explanation: 'True. Shorter wavelengths resolve finer superficial anatomy but attenuate much faster in deep tissue.',
+    points: 160,
+  },
+  {
+    id: 'tf_d6',
+    level: 'difficult',
+    category: 'MRI Artifacts',
+    statement: 'Chemical shift artifact appears strictly along the phase-encoding direction in spin-echo MRI.',
+    isTrue: false,
+    explanation: 'False. Classic chemical shift spatial misregistration occurs along the frequency-encoding (readout) axis because frequency encodes position.',
+    points: 160,
+  },
+  {
+    id: 'tf_d7',
+    level: 'difficult',
+    category: 'Radiobiology',
+    statement: 'According to the Law of Bergonie and Tribondeau, mature non-dividing neurons are more radiosensitive than intestinal crypt stem cells.',
+    isTrue: false,
+    explanation: 'False. Rapidly mitotic, undifferentiated cells (stem cells, spermatogonia, crypt cells) exhibit the highest radiosensitivity.',
+    points: 160,
+  },
+  {
+    id: 'tf_d8',
+    level: 'difficult',
+    category: 'Safety Limits',
+    statement: 'The annual effective occupational dose limit recommended by ICRP for adult radiation workers is 50 mSv averaged over 5 years without cap.',
+    isTrue: false,
+    explanation: 'False. ICRP sets 20 mSv/year averaged over 5 consecutive years, never exceeding 50 mSv in any single year.',
+    points: 160,
+  },
+  {
+    id: 'tf_d9',
+    level: 'difficult',
+    category: 'Fluoroscopy',
+    statement: 'Pulsed fluoroscopy paired with Last Image Hold substantially lowers cumulative skin dose during long interventional cases.',
+    isTrue: true,
+    explanation: 'True. Short beam-on pulses plus reviewing frozen last-frame stills avoid continuous unnecessary radiation.',
+    points: 160,
+  },
+  {
+    id: 'tf_d10',
+    level: 'difficult',
+    category: 'CT Artifacts',
+    statement: 'A single miscalibrated detector element rotating through 360° produces a sharp circular ring artifact on axial CT images.',
+    isTrue: true,
+    explanation: 'True. Each faulty detector channel sweeps out a fixed radial circle around the isocenter across every projection.',
+    points: 160,
+  },
+  {
+    id: 'tf_d11',
+    level: 'difficult',
+    category: 'MRI Safety',
+    statement: 'Closed-loop conductive skin-to-skin contact (such as crossed ankles or clasped fingers) can create RF thermal burns inside an MRI bore.',
+    isTrue: true,
+    explanation: 'True. Induced eddy currents concentrate heat at skin-touch bottlenecks and ECG cable loops.',
+    points: 160,
+  },
+  {
+    id: 'tf_d12',
+    level: 'difficult',
+    category: 'Nuclear Medicine',
+    statement: 'In PET imaging, two 511 keV annihilation photons travel in nearly identical parallel directions toward one detector.',
+    isTrue: false,
+    explanation: 'False. Positron-electron annihilation produces two 511 keV photons traveling 180° opposite each other for coincidence detection.',
+    points: 160,
+  },
+  {
+    id: 'tf_d13',
+    level: 'difficult',
+    category: 'Stroke Imaging',
+    statement: 'Non-contrast CT head is performed before thrombolysis mainly to rule out acute intracranial hemorrhage.',
+    isTrue: true,
+    explanation: 'True. Early ischemic infarcts may look subtle on CT, whereas hyperdense acute blood immediately contraindicates tPA.',
+    points: 160,
+  },
+  {
+    id: 'tf_d14',
+    level: 'difficult',
+    category: 'CT Physics',
+    statement: 'Bowtie filtration in CT shapes the beam to equalize photon flux across thin peripheral anatomy and thick central torso paths.',
+    isTrue: true,
+    explanation: 'True. Bowtie filters spare patient periphery skin dose and match detector dynamic range cleanly.',
+    points: 160,
+  },
+  {
+    id: 'tf_d15',
+    level: 'difficult',
+    category: 'Radiation Biology',
+    statement: 'Deterministic tissue reactions such as epilation and radiation skin erythema display no threshold dose.',
+    isTrue: false,
+    explanation: 'False. Deterministic effects ALWAYS require crossing a minimum threshold dose (~2 Gy for transient skin erythema).',
+    points: 160,
+  },
+];

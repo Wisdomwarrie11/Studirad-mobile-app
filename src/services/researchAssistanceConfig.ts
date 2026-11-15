@@ -1,3 +1,5 @@
+import { AppCurrency } from '../utils/currency';
+
 export type AcademicLevel = 'BSc' | 'PGD' | 'MSc' | 'PhD';
 
 export type ResearchServiceCategory =
@@ -74,6 +76,7 @@ export interface ResearchCategoryDefinition {
   guideText: string;
   priceLabel?: string;
   prices?: Record<AcademicLevel, string>;
+  pricesUSD?: Record<AcademicLevel, string>;
   hasFixedPricing: boolean;
   reassuranceNote: string;
 }
@@ -100,6 +103,12 @@ export const RESEARCH_CATEGORIES: ResearchCategoryDefinition[] = [
       MSc: '₦3,000',
       PhD: '₦5,000',
     },
+    pricesUSD: {
+      BSc: '$1.50',
+      PGD: '$2.00',
+      MSc: '$2.00',
+      PhD: '$3.50',
+    },
     hasFixedPricing: true,
     reassuranceNote: REASSURANCE_NOTE,
   },
@@ -123,6 +132,12 @@ export const RESEARCH_CATEGORIES: ResearchCategoryDefinition[] = [
       MSc: '₦5,000–₦15,000',
       PhD: '₦10,000–₦15,000',
     },
+    pricesUSD: {
+      BSc: '$3.50–$6.50',
+      PGD: '$3.50–$9.50',
+      MSc: '$3.50–$9.50',
+      PhD: '$6.50–$9.50',
+    },
     hasFixedPricing: true,
     reassuranceNote: REASSURANCE_NOTE,
   },
@@ -142,6 +157,12 @@ export const RESEARCH_CATEGORIES: ResearchCategoryDefinition[] = [
       PGD: '₦45,000–₦60,000',
       MSc: '₦45,000–₦60,000',
       PhD: '₦50,000–₦100,000',
+    },
+    pricesUSD: {
+      BSc: '$22–$32',
+      PGD: '$28–$38',
+      MSc: '$28–$38',
+      PhD: '$32–$63',
     },
     hasFixedPricing: true,
     reassuranceNote: REASSURANCE_NOTE,
@@ -184,10 +205,14 @@ export function getCategoryDefinition(category: ResearchServiceCategory): Resear
 
 export function getPriceForSelection(
   category: ResearchServiceCategory,
-  level: AcademicLevel
+  level: AcademicLevel,
+  currency: AppCurrency = 'NGN'
 ): string | undefined {
   const def = getCategoryDefinition(category);
   if (!def.hasFixedPricing || !def.prices) return undefined;
+  if (currency === 'USD' && def.pricesUSD) {
+    return def.pricesUSD[level];
+  }
   return def.prices[level];
 }
 

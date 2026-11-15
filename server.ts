@@ -110,6 +110,81 @@ app.post('/api/upload', async (req, res) => {
   }
 });
 
+// Safe proxy for reading study materials (PDF, text, markdown) when third-party hosts restrict CORS/framing
+app.get('/api/material-proxy', async (req, res) => {
+  try {
+    const rawUrl = typeof req.query.url === 'string' ? req.query.url.trim() : '';
+    if (!rawUrl) {
+      return res.status(400).json({ error: 'url query parameter is required' });
+    }
+
+    let parsed: URL;
+    try {
+      parsed = new URL(rawUrl);
+    } catch {
+      return res.status(400).json({ error: 'Invalid URL' });
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return res.status(400).json({ error: 'Unsupported protocol' });
+    }
+
+    const host = parsed.hostname.toLowerCase();
+    const isPrivateOrLocal =
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host === '0.0.0.0' ||
+      host === '::1' ||
+      host.endsWith('.local') ||
+      host.endsWith('.internal') ||
+      /^10\./.test(host) ||
+      /^192\.168\./.test(host) ||
+      /^169\.254\./.test(host) ||
+      /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+
+    if (isPrivateOrLocal) {
+      return res.status(403).json({ error: 'Host not permitted' });
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+
+    const upstream = await fetch(parsed.toString(), {
+      method: 'GET',
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'StudiRad-Reader/1.0',
+        Accept: 'application/pdf,text/plain,text/markdown,text/*,application/octet-stream,*/*',
+      },
+    }).finally(() => clearTimeout(timeout));
+
+    if (!upstream.ok) {
+      return res.status(upstream.status).json({ error: `Upstream returned ${upstream.status}` });
+    }
+
+    const arrayBuf = await upstream.arrayBuffer();
+    if (arrayBuf.byteLength > 35 * 1024 * 1024) {
+      return res.status(413).json({ error: 'Material exceeds 35MB reader limit' });
+    }
+
+    const buf = Buffer.from(arrayBuf);
+    let contentType = upstream.headers.get('content-type') || 'application/octet-stream';
+    // Infer PDF from magic header if upstream served generic octet-stream
+    if (buf.length >= 4 && buf.subarray(0, 4).toString('ascii') === '%PDF') {
+      contentType = 'application/pdf';
+    }
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    return res.send(buf);
+  } catch (err: any) {
+    console.warn('Material proxy error:', err?.message || err);
+    return res.status(502).json({ error: 'Could not load remote material stream' });
+  }
+});
+
 // API route for AI Tutor providing real radiography answers via Gemini
 app.post('/api/ai-tutor', async (req, res) => {
   try {

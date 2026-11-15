@@ -42,6 +42,16 @@ export interface UserProfile {
   avatarUrl?: string;
   createdAt: string;
   cpdCredits?: number;
+  gameScore?: number;
+  bestStreak?: number;
+  gamesSolved?: number;
+  gameStats?: {
+    fill_blank: { score: number; solved: number };
+    word_scramble: { score: number; solved: number };
+    memory_match: { score: number; solved: number };
+    true_false: { score: number; solved: number };
+    lastPlayedAt?: string;
+  };
   enrolledCourseIds?: string[];
   courses?: EnrolledCourseRecord[];
   savedOpportunityIds?: (number | string)[];
@@ -84,6 +94,7 @@ export interface TutorialRequest {
   courseTitle: string;
   instructorId?: string;
   instructorName: string;
+  instructorPhone?: string;
   studentId: string;
   studentName: string;
   studentEmail: string;
@@ -97,6 +108,79 @@ export interface TutorialRequest {
   createdAt: string | number;
   adminFeedback?: string;
   meetingLink?: string;
+  sharedWithInstructor?: boolean;
+  notifiedInstructorAt?: string;
+}
+
+export type PrivateClassCategory =
+  | 'X-Ray & Plain Film'
+  | 'CT Imaging'
+  | 'MRI Physics & Protocols'
+  | 'Ultrasound & Sonography'
+  | 'Radiographic Anatomy'
+  | 'Radiation Physics'
+  | 'Exam & Board Prep';
+
+export interface PrivateClass {
+  id: string;
+  title: string;
+  category: PrivateClassCategory;
+  level: string;
+  image?: string;
+  daysAvailable: string[]; // Max 3 days per week enforced
+  timeSlots: string[];
+  durationMinutes: number; // Max 120 minutes (2 hours) enforced
+  overview: string;
+  introVideoUrl: string; // Instructor promise video shown before final request/payment
+  instructorId?: string;
+  instructorName: string;
+  instructorRole: string;
+  instructorBio: string; // Details about instructor in relation to this class/title
+  academicExperience: string;
+  rating: number;
+  instructorPhone?: string; // WhatsApp contact for admin dual notification
+  chargePerHourNGN: number;
+  chargePerHourUSD: number;
+  monthlyChargeNGN: number;
+  monthlyChargeUSD: number;
+  creatorId?: string;
+  creatorRole?: 'admin' | 'instructor';
+  status: 'published' | 'pending_approval';
+  createdAt?: string | number;
+  updatedAt?: string | number;
+}
+
+export interface PrivateClassBookingRequest {
+  id: string;
+  referenceCode: string;
+  classId: string;
+  classTitle: string;
+  classCategory: string;
+  classLevel: string;
+  instructorId?: string;
+  instructorName: string;
+  instructorPhone?: string;
+  studentId?: string;
+  studentName: string;
+  studentEmail: string;
+  studentRole?: string;
+  planType: 'per_day' | 'monthly';
+  selectedDays: string[];
+  selectedTimeSlot: string;
+  startDate: string; // ISO YYYY-MM-DD, enforced >= today + 2 days
+  durationMinutes: number;
+  amountNGN: number;
+  amountUSD: number;
+  displayCurrency: 'NGN' | 'USD';
+  notes?: string;
+  videoWatched: boolean;
+  status: 'New Request' | 'Under Review' | 'Instructor Notified' | 'Scheduled' | 'In Progress' | 'Completed' | 'Declined';
+  sharedWithInstructor: boolean;
+  notifiedInstructorAt?: string;
+  adminFeedback?: string;
+  meetingLink?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface AppNotification {

@@ -73,6 +73,9 @@
         "role": { "type": "string", "maxLength": 100 },
         "selectedTopics": { "type": "array" },
         "cpdCredits": { "type": "number" },
+        "gameScore": { "type": "number" },
+        "bestStreak": { "type": "number" },
+        "gamesSolved": { "type": "number" },
         "avatarUrl": { "type": "string", "maxLength": 1000 },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
@@ -167,6 +170,81 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "message"]
+    },
+    "privateClass": {
+      "title": "PrivateClass",
+      "description": "Category-based private 1-on-1 class offered by an instructor or admin",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 100 },
+        "level": { "type": "string", "maxLength": 100 },
+        "image": { "type": "string", "maxLength": 1000 },
+        "daysAvailable": { "type": "array" },
+        "timeSlots": { "type": "array" },
+        "durationMinutes": { "type": "number" },
+        "overview": { "type": "string", "maxLength": 3000 },
+        "introVideoUrl": { "type": "string", "maxLength": 500 },
+        "instructorId": { "type": "string", "maxLength": 128 },
+        "instructorName": { "type": "string", "maxLength": 200 },
+        "instructorRole": { "type": "string", "maxLength": 150 },
+        "instructorBio": { "type": "string", "maxLength": 1500 },
+        "academicExperience": { "type": "string", "maxLength": 200 },
+        "rating": { "type": "number" },
+        "instructorPhone": { "type": "string", "maxLength": 50 },
+        "chargePerHourNGN": { "type": "number" },
+        "chargePerHourUSD": { "type": "number" },
+        "monthlyChargeNGN": { "type": "number" },
+        "monthlyChargeUSD": { "type": "number" },
+        "status": { "type": "string", "enum": ["published", "pending_approval"] }
+      },
+      "required": ["title", "category", "level", "instructorName", "durationMinutes", "status"]
+    },
+    "privateClassRequest": {
+      "title": "PrivateClassRequest",
+      "description": "Admin-first student booking request for a Private Class",
+      "type": "object",
+      "properties": {
+        "referenceCode": { "type": "string", "maxLength": 50 },
+        "classId": { "type": "string", "maxLength": 128 },
+        "classTitle": { "type": "string", "maxLength": 200 },
+        "instructorId": { "type": "string", "maxLength": 128 },
+        "instructorName": { "type": "string", "maxLength": 200 },
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 200 },
+        "studentEmail": { "type": "string", "maxLength": 200 },
+        "planType": { "type": "string", "enum": ["per_day", "monthly"] },
+        "selectedDays": { "type": "array" },
+        "selectedTimeSlot": { "type": "string", "maxLength": 100 },
+        "startDate": { "type": "string", "maxLength": 30 },
+        "durationMinutes": { "type": "number" },
+        "amountNGN": { "type": "number" },
+        "amountUSD": { "type": "number" },
+        "videoWatched": { "type": "boolean" },
+        "sharedWithInstructor": { "type": "boolean" },
+        "status": { "type": "string", "maxLength": 50 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["referenceCode", "classId", "studentName", "studentEmail", "planType", "startDate", "status"]
+    },
+    "gameScoreRecord": {
+      "title": "GameScoreRecord",
+      "description": "Public player scoreboard entry synced from Radiography Games",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "playerName": { "type": "string", "maxLength": 150 },
+        "role": { "type": "string", "maxLength": 100 },
+        "totalScore": { "type": "number" },
+        "bestStreak": { "type": "number" },
+        "currentStreak": { "type": "number" },
+        "solvedCount": { "type": "number" },
+        "gamesPlayed": { "type": "number" },
+        "correctAnswers": { "type": "number" },
+        "attemptsCount": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "playerName", "totalScore"]
     }
   },
   "firestore": {
@@ -205,6 +283,18 @@
     "/notifications/{notificationId}": {
       "schema": "notification",
       "description": "Direct student and instructor notifications"
+    },
+    "/private_classes/{classId}": {
+      "schema": "privateClass",
+      "description": "Category-based private tutoring classes"
+    },
+    "/private_class_requests/{requestId}": {
+      "schema": "privateClassRequest",
+      "description": "Admin-first student private class booking requests"
+    },
+    "/game_scores/{playerId}": {
+      "schema": "gameScoreRecord",
+      "description": "Real-time player arcade scoreboard records"
     }
   }
 }

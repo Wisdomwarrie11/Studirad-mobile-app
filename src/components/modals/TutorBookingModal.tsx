@@ -29,17 +29,17 @@ export const TutorBookingModal: React.FC<TutorBookingModalProps> = ({
   onConfirmBooking,
 }) => {
   const [selectedDate, setSelectedDate] = useState('Tomorrow');
-  const [selectedSlot, setSelectedSlot] = useState('17:00 - 17:45 BST');
+  const [selectedSlot, setSelectedSlot] = useState('5:00 PM - 5:45 PM BST');
   const [topic, setTopic] = useState('Trauma Radiography & C-Spine Case Review');
   const [confirmed, setConfirmed] = useState(false);
 
   if (!tutor) return null;
 
   const availableSlots = [
-    '16:00 - 16:45 BST',
-    '17:00 - 17:45 BST',
-    '18:30 - 19:15 BST',
-    '20:00 - 20:45 BST',
+    '4:00 PM - 4:45 PM BST',
+    '5:00 PM - 5:45 PM BST',
+    '6:30 PM - 7:15 PM BST',
+    '8:00 PM - 8:45 PM BST',
   ];
 
   const handleBook = () => {

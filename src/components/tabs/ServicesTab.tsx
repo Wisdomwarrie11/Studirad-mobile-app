@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests, UserRequest } from '../../context/RequestContext';
+import { useCurrency } from '../../context/CurrencyContext';
+import { formatPriceString, formatMoney } from '../../utils/currency';
+import { formatDateTime12h, formatTime12h } from '../../utils/timeFormat';
 import { ResearchAssistanceWizard } from '../services/ResearchAssistanceWizard';
+import { PrivateClassesView } from '../services/PrivateClassesView';
 import {
   GraduationCap,
   BookOpen,
@@ -21,6 +25,7 @@ interface ServicesTabProps {
 export const ServicesTab: React.FC<ServicesTabProps> = () => {
   const { currentUser, requireAuth } = useAuth();
   const { requests, cancelRequest } = useRequests();
+  const { currency } = useCurrency();
 
   const [activeFormTab, setActiveFormTab] = useState<'private_class' | 'research' | 'my_requests'>('research');
   const [selectedDetailRequest, setSelectedDetailRequest] = useState<UserRequest | null>(null);
@@ -106,50 +111,11 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
         />
       )}
 
-      {/* 2. PRIVATE CLASSES (COMING SOON) */}
+      {/* 2. LIVE PRIVATE CLASSES CATALOG & BOOKING */}
       {activeFormTab === 'private_class' && (
-        <div className="bg-[var(--bg-surface)] rounded-3xl p-8 sm:p-12 border border-[var(--border-subtle)] text-center space-y-6 shadow-sm">
-          <div className="w-20 h-20 rounded-3xl bg-[#FF7F32]/10 border border-[#FF7F32]/20 flex items-center justify-center mx-auto text-[#FF7F32]">
-            <GraduationCap className="w-10 h-10" />
-          </div>
-
-          <div className="max-w-xl mx-auto space-y-2">
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FF7F32]/15 text-[#FF7F32]">
-              Coming Soon
-            </span>
-            <h2 className="heading-section text-[var(--text-primary)]">
-              1-on-1 &amp; Small Group Private Classes
-            </h2>
-            <p className="body-standard text-[var(--text-secondary)]">
-              We are finalizing our cohort of accredited senior radiography educators for specialized 1-on-1 tutoring and board exam preparations.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto pt-2 text-left">
-            <div className="p-4 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
-              <span className="text-sm font-bold text-[var(--text-primary)] block">Personalized Tutoring</span>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">Focus on difficult modalities: MRI physics, CT pathology, or ultrasound.</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
-              <span className="text-sm font-bold text-[var(--text-primary)] block">Exam Preparation</span>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">Targeted coaching for university vivas and professional licensing exams.</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
-              <span className="text-sm font-bold text-[var(--text-primary)] block">PACS Image Critique</span>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">Hands-on case reviews with clinical specialists.</p>
-            </div>
-          </div>
-
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => setActiveFormTab('research')}
-              className="w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl bg-[var(--bg-canvas)] hover:bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] font-medium text-sm transition-all cursor-pointer"
-            >
-              Explore Research Assistance →
-            </button>
-          </div>
-        </div>
+        <PrivateClassesView
+          onViewMyRequests={() => setActiveFormTab('my_requests')}
+        />
       )}
 
       {/* 3. MY SUBMITTED REQUESTS (REVIEW & TRACKING DASHBOARD) */}
@@ -223,7 +189,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                         {req.status}
                       </span>
                       <span className="text-xs text-[var(--text-muted)] font-mono">
-                        {new Date(req.submittedAt).toLocaleString()}
+                        {formatDateTime12h(req.submittedAt)}
                       </span>
                     </div>
                   </div>
@@ -249,7 +215,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-[var(--text-secondary)]">
                         {req.priceDisplay && (
                           <span>
-                            Price: <strong className="font-mono text-[#FF7F32]">{req.priceDisplay}</strong>
+                            Price: <strong className="font-mono text-[#FF7F32]">{formatPriceString(req.priceDisplay, currency)}</strong>
                           </span>
                         )}
                         {req.assignedRepPhone && (
@@ -260,6 +226,24 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                         {req.deadline && (
                           <span>
                             Deadline: <strong className="font-mono text-[var(--text-primary)]">{req.deadline}</strong>
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {req.category === 'private_class' && typeof (req as any).amountNGN === 'number' && (
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-[var(--text-secondary)]">
+                        <span>
+                          Fee: <strong className="font-mono text-[#FF7F32]">{formatMoney((req as any).amountNGN, currency, (req as any).amountUSD)}</strong>
+                        </span>
+                        {(req as any).startDate && (
+                          <span>
+                            Starts: <strong className="font-mono text-[var(--text-primary)]">{(req as any).startDate}</strong>
+                          </span>
+                        )}
+                        {(req as any).selectedTimeSlot && (
+                          <span>
+                            Time: <strong className="font-mono text-[var(--text-primary)]">{formatTime12h((req as any).selectedTimeSlot)}</strong>
                           </span>
                         )}
                       </div>
@@ -340,7 +324,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                 <div>
                   <span className="text-xs font-bold text-[var(--text-muted)] block">Submitted</span>
                   <span className="font-mono text-xs text-[var(--text-primary)]">
-                    {new Date(selectedDetailRequest.submittedAt).toLocaleString()}
+                    {formatDateTime12h(selectedDetailRequest.submittedAt)}
                   </span>
                 </div>
               </div>
@@ -370,7 +354,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                     {selectedDetailRequest.priceDisplay && (
                       <div>
                         <span className="text-xs font-bold text-[var(--text-muted)] block">Displayed Price</span>
-                        <span className="font-mono font-bold text-[#FF7F32]">{selectedDetailRequest.priceDisplay}</span>
+                        <span className="font-mono font-bold text-[#FF7F32]">{formatPriceString(selectedDetailRequest.priceDisplay, currency)}</span>
                       </div>
                     )}
                   </div>

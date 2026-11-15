@@ -118,12 +118,37 @@ export function extractGoogleDriveId(url?: string | null): string | null {
 }
 
 /**
+ * Detects specific Google Workspace URL kind
+ */
+export function getGoogleWorkspaceKind(url?: string | null): 'document' | 'presentation' | 'spreadsheets' | 'videos' | 'file' | null {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (trimmed.includes('docs.google.com/document/')) return 'document';
+  if (trimmed.includes('docs.google.com/presentation/')) return 'presentation';
+  if (trimmed.includes('docs.google.com/spreadsheets/')) return 'spreadsheets';
+  if (trimmed.includes('docs.google.com/videos/')) return 'videos';
+  if (trimmed.includes('drive.google.com/') || trimmed.includes('docs.google.com/file/')) return 'file';
+  return null;
+}
+
+/**
+ * Returns the exact in-app embed preview URL for Google Docs, Slides, Sheets, Videos, or Drive files
+ */
+export function getGoogleWorkspaceEmbedUrl(url?: string | null): string | null {
+  const fileId = extractGoogleDriveId(url);
+  if (!fileId) return null;
+  const kind = getGoogleWorkspaceKind(url);
+  if (kind === 'document') return `https://docs.google.com/document/d/${fileId}/preview`;
+  if (kind === 'presentation') return `https://docs.google.com/presentation/d/${fileId}/preview`;
+  if (kind === 'spreadsheets') return `https://docs.google.com/spreadsheets/d/${fileId}/preview`;
+  return `https://drive.google.com/file/d/${fileId}/preview`;
+}
+
+/**
  * Returns the Google Drive in-app embedded video preview URL
  */
 export function getGoogleDriveEmbedUrl(url?: string | null): string | null {
-  const fileId = extractGoogleDriveId(url);
-  if (!fileId) return null;
-  return `https://drive.google.com/file/d/${fileId}/preview`;
+  return getGoogleWorkspaceEmbedUrl(url);
 }
 
 /**
@@ -139,7 +164,7 @@ export function getVideoEmbedUrl(url?: string | null, autoplay = false): string 
     trimmed.includes('docs.google.com') ||
     Boolean(extractGoogleDriveId(trimmed))
   ) {
-    const driveEmbed = getGoogleDriveEmbedUrl(trimmed);
+    const driveEmbed = getGoogleWorkspaceEmbedUrl(trimmed);
     if (driveEmbed) return driveEmbed;
   }
 
@@ -147,10 +172,12 @@ export function getVideoEmbedUrl(url?: string | null, autoplay = false): string 
 }
 
 /**
- * Checks if a URL is a playable video (YouTube or Google Drive / Google Docs)
+ * Checks if a URL is a playable video (YouTube or Google Drive / Google Docs video)
  */
 export function isPlayableVideoUrl(url?: string | null): boolean {
   if (!url) return false;
+  const kind = getGoogleWorkspaceKind(url);
+  if (kind === 'document' || kind === 'presentation' || kind === 'spreadsheets') return false;
   return Boolean(extractYouTubeId(url) || extractGoogleDriveId(url));
 }
 

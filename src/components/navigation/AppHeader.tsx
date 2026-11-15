@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useCurrency } from '../../context/CurrencyContext';
 import { Wordmark } from '../brand/Wordmark';
 import { Bell, Search, ShieldCheck } from 'lucide-react';
 import { NavTab } from '../../types';
@@ -16,6 +17,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 }) => {
   const { currentUser, unreadNotificationCount, activeTab, setActiveTab, setScreen } = useAuth();
   const { theme } = useTheme();
+  const { currency, toggleCurrency } = useCurrency();
 
   const userInitial = currentUser?.fullName
     ? currentUser.fullName.charAt(0).toUpperCase()
@@ -71,6 +73,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         {/* Right Actions: Compact Icon Buttons (Search icon, Theme toggle, Notifications, Profile) */}
         {/* Fits cleanly on all mobile screens with zero overflow */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          {/* 0. Currency Switcher (NGN <-> USD) */}
+      
+
           {/* 1. Search Icon Button (No wide input field) */}
           <button
             onClick={() => setActiveTab('search')}

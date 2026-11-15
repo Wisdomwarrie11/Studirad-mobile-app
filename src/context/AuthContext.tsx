@@ -9,9 +9,10 @@ import {
   User as FirebaseUser 
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
-import { auth, adminAuth, googleProvider, db, handleFirestoreError, OperationType } from '../firebase';
+import { auth, adminAuth, googleProvider, db, appletDb, handleFirestoreError, OperationType } from '../firebase';
 import { UserProfile, AppScreen, ProfessionalRole, NavTab, AppNotification, AuthMode } from '../types';
 import { seedFirestoreIfEmpty, subscribeUserNotifications } from '../services/firebaseDataService';
+import { formatClockTime12h } from '../utils/timeFormat';
 
 interface AuthContextType {
   currentUser: UserProfile | null;
@@ -182,6 +183,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               avatarUrl: data.avatarUrl || fbUser.photoURL || undefined,
               createdAt: data.createdAt || new Date().toISOString(),
               cpdCredits: typeof data.cpdCredits === 'number' ? data.cpdCredits : 18.5,
+              gameScore: typeof data.gameScore === 'number' ? data.gameScore : 0,
+              bestStreak: typeof data.bestStreak === 'number' ? data.bestStreak : 0,
+              gamesSolved: typeof data.gamesSolved === 'number' ? data.gamesSolved : 0,
+              gameStats: data.gameStats || undefined,
             };
             setCurrentUser(profile);
           } else {
@@ -275,9 +280,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: n.id,
           title: n.title || 'Notification',
           message: n.message || '',
-          timestamp: n.createdAt
-            ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            : 'Just now',
+          timestamp: n.createdAt ? formatClockTime12h(n.createdAt) || 'Just now' : 'Just now',
           type: n.type || 'system',
           read: Boolean(n.read),
         }));
@@ -285,41 +288,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    // 2. Listen for role changes / tutor approvals on user profile in Firestore
-    const userDocRef = doc(db, 'users', currentUser.id);
-    const unsubUser = onSnapshot(
-      userDocRef,
-      (snap) => {
-        if (snap.exists()) {
-          const uData = snap.data();
-          setCurrentUser((prev) => {
-            if (!prev) return prev;
-            if (
-              prev.role !== uData.role ||
-              prev.isInstructor !== uData.isInstructor ||
-              prev.instructorStatus !== uData.instructorStatus
-            ) {
-              const updated = {
-                ...prev,
-                role: uData.role || prev.role,
-                isInstructor: Boolean(uData.isInstructor),
-                instructorStatus: uData.instructorStatus || prev.instructorStatus,
-              };
-              try {
-                localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(updated));
-              } catch {}
-              return updated;
-            }
-            return prev;
-          });
-        }
-      },
-      () => {}
-    );
+    // 2. Listen for role changes, tutor approvals & live game score pushes on user profile in Firestore (appletDb + db)
+    const handleProfileSnap = (snap: any) => {
+      if (snap.exists()) {
+        const uData = snap.data();
+        setCurrentUser((prev) => {
+          if (!prev) return prev;
+          const incomingScore = typeof uData.gameScore === 'number' ? uData.gameScore : prev.gameScore;
+          const incomingBestStreak = typeof uData.bestStreak === 'number' ? uData.bestStreak : prev.bestStreak;
+          const incomingGamesSolved = typeof uData.gamesSolved === 'number' ? uData.gamesSolved : prev.gamesSolved;
+          const nextStatsStr = JSON.stringify(uData.gameStats || prev.gameStats || null);
+          const prevStatsStr = JSON.stringify(prev.gameStats || null);
+          if (
+            prev.role !== uData.role ||
+            prev.isInstructor !== uData.isInstructor ||
+            prev.instructorStatus !== uData.instructorStatus ||
+            prev.gameScore !== incomingScore ||
+            prev.bestStreak !== incomingBestStreak ||
+            prev.gamesSolved !== incomingGamesSolved ||
+            prevStatsStr !== nextStatsStr
+          ) {
+            const updated = {
+              ...prev,
+              role: uData.role || prev.role,
+              isInstructor: Boolean(uData.isInstructor),
+              instructorStatus: uData.instructorStatus || prev.instructorStatus,
+              gameScore: incomingScore,
+              bestStreak: incomingBestStreak,
+              gamesSolved: incomingGamesSolved,
+              gameStats: uData.gameStats || prev.gameStats,
+            };
+            try {
+              localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(updated));
+            } catch {}
+            return updated;
+          }
+          return prev;
+        });
+      }
+    };
+
+    const unsubUser = onSnapshot(doc(db, 'users', currentUser.id), handleProfileSnap, () => {});
+    const unsubAppletUser = appletDb
+      ? onSnapshot(doc(appletDb, 'users', currentUser.id), handleProfileSnap, () => {})
+      : () => {};
 
     return () => {
       unsubNotifs?.();
       unsubUser?.();
+      unsubAppletUser?.();
     };
   }, [currentUser?.id]);
 
@@ -327,12 +344,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    if (appletDb) {
+      setDoc(doc(appletDb, 'notifications', id), { read: true }, { merge: true }).catch(() => {});
+    }
     setDoc(doc(db, 'notifications', id), { read: true }, { merge: true }).catch(() => {});
   };
 
   const markAllNotificationsAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     notifications.forEach((n) => {
+      if (appletDb) {
+        setDoc(doc(appletDb, 'notifications', n.id), { read: true }, { merge: true }).catch(() => {});
+      }
       setDoc(doc(db, 'notifications', n.id), { read: true }, { merge: true }).catch(() => {});
     });
   };
@@ -372,6 +395,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatarUrl: data.avatarUrl || fbUser.photoURL || undefined,
           createdAt: data.createdAt || new Date().toISOString(),
           cpdCredits: typeof data.cpdCredits === 'number' ? data.cpdCredits : 0,
+          gameScore: typeof data.gameScore === 'number' ? data.gameScore : 0,
+          bestStreak: typeof data.bestStreak === 'number' ? data.bestStreak : 0,
+          gamesSolved: typeof data.gamesSolved === 'number' ? data.gamesSolved : 0,
+          gameStats: data.gameStats || undefined,
         };
       } else {
         user = {
@@ -528,19 +555,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cpdCredits: 0,
       };
 
-      try {
-        await setDoc(doc(db, 'users', fbUser.uid), {
-          fullName: newUser.fullName,
-          role: newUser.role,
-          selectedTopics: newUser.selectedTopics,
-          cpdCredits: 0,
-          email: newUser.email,
-          createdAt: newUser.createdAt,
-          updatedAt: new Date().toISOString(),
-        });
-      } catch (e) {
-        console.warn('Could not write user profile to firestore:', e);
-      }
+      const profilePayload = {
+        fullName: newUser.fullName,
+        role: newUser.role,
+        selectedTopics: newUser.selectedTopics,
+        cpdCredits: 0,
+        email: newUser.email,
+        createdAt: newUser.createdAt,
+        updatedAt: new Date().toISOString(),
+      };
+      await Promise.allSettled([
+        appletDb ? setDoc(doc(appletDb, 'users', fbUser.uid), profilePayload, { merge: true }) : Promise.resolve(),
+        setDoc(doc(db, 'users', fbUser.uid), profilePayload, { merge: true }),
+      ]);
 
       setCurrentUser(newUser);
       setScreen('app');
@@ -575,6 +602,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatarUrl: fbUser.photoURL || undefined,
           createdAt: d.createdAt || new Date().toISOString(),
           cpdCredits: typeof d.cpdCredits === 'number' ? d.cpdCredits : 0,
+          gameScore: typeof d.gameScore === 'number' ? d.gameScore : 0,
+          bestStreak: typeof d.bestStreak === 'number' ? d.bestStreak : 0,
+          gamesSolved: typeof d.gamesSolved === 'number' ? d.gamesSolved : 0,
+          gameStats: d.gameStats || undefined,
         };
       } else {
         profile = {
@@ -588,7 +619,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           createdAt: new Date().toISOString(),
           cpdCredits: 0,
         };
-        await setDoc(userDocRef, {
+        const gPayload = {
           fullName: profile.fullName,
           role: profile.role,
           selectedTopics: profile.selectedTopics,
@@ -597,7 +628,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: profile.email,
           createdAt: profile.createdAt,
           updatedAt: new Date().toISOString(),
-        });
+        };
+        await Promise.allSettled([
+          appletDb ? setDoc(doc(appletDb, 'users', fbUser.uid), gPayload, { merge: true }) : Promise.resolve(),
+          setDoc(userDocRef, gPayload, { merge: true }),
+        ]);
       }
 
       setCurrentUser(profile);
@@ -652,12 +687,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentUser(updated);
 
       if (!currentUser.isGuest && currentUser.id) {
-        try {
-          const userDocRef = doc(db, 'users', currentUser.id);
-          await setDoc(userDocRef, { selectedTopics: topics, updatedAt: new Date().toISOString() }, { merge: true });
-        } catch (e) {
-          console.warn('Could not sync topics to Firestore:', e);
-        }
+        const topicPatch = { selectedTopics: topics, updatedAt: new Date().toISOString() };
+        await Promise.allSettled([
+          appletDb ? setDoc(doc(appletDb, 'users', currentUser.id), topicPatch, { merge: true }) : Promise.resolve(),
+          setDoc(doc(db, 'users', currentUser.id), topicPatch, { merge: true }),
+        ]);
       }
     }
     if (navigateToApp) {

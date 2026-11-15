@@ -14,6 +14,7 @@ import {
 } from '../../services/researchAssistanceConfig';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../context/RequestContext';
+import { useCurrency } from '../../context/CurrencyContext';
 import {
   AlertCircle,
   ArrowLeft,
@@ -62,6 +63,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
 }) => {
   const { currentUser } = useAuth();
   const { submitResearchRequest } = useRequests();
+  const { currency, setCurrency } = useCurrency();
 
   const [step, setStep] = useState<WizardStep>(1);
   const [academicLevel, setAcademicLevel] = useState<AcademicLevel | null>(null);
@@ -120,8 +122,13 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
 
   const activePriceDisplay = useMemo(() => {
     if (!selectedCategory || !academicLevel) return undefined;
-    return getPriceForSelection(selectedCategory, academicLevel);
-  }, [selectedCategory, academicLevel]);
+    return getPriceForSelection(selectedCategory, academicLevel, currency);
+  }, [selectedCategory, academicLevel, currency]);
+
+  const alternatePriceDisplay = useMemo(() => {
+    if (!selectedCategory || !academicLevel) return undefined;
+    return getPriceForSelection(selectedCategory, academicLevel, currency === 'NGN' ? 'USD' : 'NGN');
+  }, [selectedCategory, academicLevel, currency]);
 
   const resolvedStageText = useMemo(() => {
     if (!currentStage) return '';
@@ -562,22 +569,41 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
               </h2>
             </div>
 
-            {/* Live Academic Level Switcher so prices recalculate immediately */}
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] self-start">
-              {ACADEMIC_LEVEL_OPTIONS.map((opt) => (
-                <button
-                  key={opt.level}
-                  type="button"
-                  onClick={() => setAcademicLevel(opt.level)}
-                  className={`min-h-[36px] px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    academicLevel === opt.level
-                      ? 'bg-[#002147] dark:bg-[#1B447A] text-white shadow-xs'
-                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                  }`}
-                >
-                  {opt.level}
-                </button>
-              ))}
+            {/* Live Academic Level & Currency Switchers */}
+            <div className="flex flex-wrap items-center gap-2 self-start">
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
+                {(['NGN', 'USD'] as const).map((curr) => (
+                  <button
+                    key={curr}
+                    type="button"
+                    onClick={() => setCurrency(curr)}
+                    className={`min-h-[36px] px-2.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                      currency === curr
+                        ? 'bg-[#FF7F32] text-white shadow-xs'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    {curr === 'NGN' ? '₦ NGN' : '$ USD'}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
+                {ACADEMIC_LEVEL_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.level}
+                    type="button"
+                    onClick={() => setAcademicLevel(opt.level)}
+                    className={`min-h-[36px] px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      academicLevel === opt.level
+                        ? 'bg-[#002147] dark:bg-[#1B447A] text-white shadow-xs'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    {opt.level}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -658,8 +684,15 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                   Final scope is confirmed directly with your assigned Research Representative.
                 </p>
               </div>
-              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-white shrink-0">
-                {activePriceDisplay}
+              <div className="text-right shrink-0">
+                <div className="text-2xl sm:text-3xl font-extrabold font-mono text-white">
+                  {activePriceDisplay}
+                </div>
+                {alternatePriceDisplay && (
+                  <span className="text-xs font-mono text-slate-300 block mt-0.5">
+                    ≈ {alternatePriceDisplay}
+                  </span>
+                )}
               </div>
             </div>
           )}

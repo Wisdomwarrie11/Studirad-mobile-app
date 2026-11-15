@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useCurrency } from '../../context/CurrencyContext';
+import { formatMoney } from '../../utils/currency';
 import { 
   Search, 
   UserPlus, 
@@ -41,6 +43,7 @@ interface LocumFinderViewProps {
 
 export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }) => {
   const { currentUser, requireAuth } = useAuth();
+  const { currency } = useCurrency();
   const [activeTab, setActiveTab] = useState<'find' | 'status' | 'register'>('find');
 
   // Search State
@@ -474,7 +477,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Rate</span>
                       <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">
-                        ₦{locum.minCharge ? locum.minCharge.toLocaleString() : 'Negotiable'}
+                        {locum.minCharge ? formatMoney(locum.minCharge, currency) : 'Negotiable'}
                       </span>
                     </div>
 
@@ -634,7 +637,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Min Charge</span>
                     <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
-                      ₦{myProfile.minCharge?.toLocaleString()}
+                      {myProfile.minCharge ? formatMoney(myProfile.minCharge, currency) : 'Negotiable'}
                     </span>
                   </div>
 

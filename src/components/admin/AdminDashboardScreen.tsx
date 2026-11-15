@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useCurrency } from '../../context/CurrencyContext';
 import { 
   Course, 
   LiveClass, 
@@ -12,9 +13,14 @@ import {
   CourseModule,
   Lesson,
   TutorApplication,
-  TutorialRequest 
+  TutorialRequest,
+  PrivateClass,
+  PrivateClassCategory,
+  PrivateClassBookingRequest
 } from '../../types';
 import { getYouTubeEmbedUrl, extractYouTubeId, getYouTubeThumbnail, getVideoEmbedUrl, isPlayableVideoUrl } from '../../utils/youtube';
+import { formatMoney, formatPriceString, formatAmountInCurrency } from '../../utils/currency';
+import { formatTime12h, formatDateTime12h } from '../../utils/timeFormat';
 import { 
   subscribeCourses, 
   subscribeClasses, 
@@ -36,9 +42,17 @@ import {
   reviewTutorApplication,
   subscribeTutorialRequests,
   updateTutorialRequestStatus,
+  notifyInstructorOfTutorialRequest,
   approveCourseByAdmin,
   subscribeAllRequests,
-  updateResearchRequestStatus
+  updateResearchRequestStatus,
+  subscribePrivateClasses,
+  pushPrivateClassToFirestore,
+  approvePrivateClassByAdmin,
+  deletePrivateClassFromFirestore,
+  subscribePrivateClassBookings,
+  notifyInstructorOfPrivateBooking,
+  updatePrivateClassBookingStatus
 } from '../../services/firebaseDataService';
 import { uploadFileToCloudinary } from '../../services/cloudinaryService';
 import { Wordmark } from '../brand/Wordmark';
@@ -83,13 +97,28 @@ import {
   Bell,
   GraduationCap,
   UserCheck,
-  ClipboardList
+  ClipboardList,
+  MessageCircle,
+  Star,
+  Phone
 } from 'lucide-react';
 import classesImg from '../../assets/images/onboarding_classes_1792606674536.jpg';
 import radiographyImg from '../../assets/images/onboarding_radiography_1792606674447.jpg';
 import careersImg from '../../assets/images/onboarding_careers_1792606674049.jpg';
 
-type AdminTab = 'courses' | 'classes' | 'opportunities' | 'materials' | 'tutors' | 'tutorials' | 'research';
+type AdminTab = 'courses' | 'classes' | 'opportunities' | 'materials' | 'tutors' | 'tutorials' | 'research' | 'private_classes';
+
+const PRIVATE_CLASS_CATEGORIES: PrivateClassCategory[] = [
+  'X-Ray & Plain Film',
+  'CT Imaging',
+  'MRI Physics & Protocols',
+  'Ultrasound & Sonography',
+  'Radiographic Anatomy',
+  'Radiation Physics',
+  'Exam & Board Prep',
+];
+
+const PC_DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 const COURSE_CATEGORIES = [
   'Anatomy',
@@ -118,6 +147,7 @@ const REQUIREMENTS_OPTIONS = [
 export const AdminDashboardScreen: React.FC = () => {
   const { setScreen, signOut, adminSignOut, currentUser } = useAuth();
   const { theme } = useTheme();
+  const { currency: appCurrency, toggleCurrency } = useCurrency();
 
   const [activeTab, setActiveTab] = useState<AdminTab>('courses');
   const [searchQuery, setSearchQuery] = useState('');
@@ -132,8 +162,66 @@ export const AdminDashboardScreen: React.FC = () => {
   const [tutorApplications, setTutorApplications] = useState<TutorApplication[]>([]);
   const [tutorialRequests, setTutorialRequests] = useState<TutorialRequest[]>([]);
   const [researchRequests, setResearchRequests] = useState<any[]>([]);
+  const [privateClasses, setPrivateClasses] = useState<PrivateClass[]>([]);
+  const [privateClassBookings, setPrivateClassBookings] = useState<PrivateClassBookingRequest[]>([]);
   const [adminNotifications, setAdminNotifications] = useState<any[]>([]);
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+
+  // Private Classes Admin View & Modals
+  const [privateClassSubTab, setPrivateClassSubTab] = useState<'bookings' | 'catalog'>('bookings');
+  const [isPrivateClassModalOpen, setIsPrivateClassModalOpen] = useState(false);
+  const [pcSlotDraft, setPcSlotDraft] = useState('');
+  const [isSavingPcAdmin, setIsSavingPcAdmin] = useState(false);
+  const [selectedPcBookingForStatus, setSelectedPcBookingForStatus] = useState<PrivateClassBookingRequest | null>(null);
+  const [pcBookingStatusInput, setPcBookingStatusInput] = useState<PrivateClassBookingRequest['status']>('Scheduled');
+  const [pcBookingMeetingInput, setPcBookingMeetingInput] = useState('');
+  const [pcBookingFeedbackInput, setPcBookingFeedbackInput] = useState('');
+  const [privateClassForm, setPrivateClassForm] = useState<{
+    id: string;
+    title: string;
+    category: PrivateClassCategory;
+    level: string;
+    image: string;
+    daysAvailable: string[];
+    timeSlots: string[];
+    durationMinutes: number;
+    overview: string;
+    introVideoUrl: string;
+    instructorName: string;
+    instructorRole: string;
+    academicExperience: string;
+    instructorBio: string;
+    rating: number;
+    instructorPhone: string;
+    chargePerHourNGN: number;
+    chargePerHourUSD: number;
+    monthlyChargeNGN: number;
+    monthlyChargeUSD: number;
+    status: 'published' | 'pending_approval';
+  }>({
+    id: '',
+    title: '',
+    category: 'CT Imaging',
+    level: 'Undergraduate / BSc',
+    image: '',
+    daysAvailable: ['Monday', 'Wednesday', 'Friday'],
+    timeSlots: ['5:00 PM - 7:00 PM WAT', '7:30 PM - 9:00 PM WAT'],
+    durationMinutes: 60,
+    overview: '',
+    introVideoUrl: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
+    instructorName: currentUser?.fullName || 'Dr. Chidi Okafor',
+    instructorRole: 'Senior Clinical Educator',
+    academicExperience: '8 Years Clinical & University Lecturing',
+    instructorBio: '',
+    rating: 4.9,
+    instructorPhone: '2349029729621',
+    chargePerHourNGN: 8000,
+    chargePerHourUSD: 5,
+    monthlyChargeNGN: 45000,
+    monthlyChargeUSD: 28,
+    status: 'published',
+  });
+  const [isUploadingPcImg, setIsUploadingPcImg] = useState(false);
 
   // Meeting Link & Feedback Modals state
   const [selectedTutorialForMeeting, setSelectedTutorialForMeeting] = useState<TutorialRequest | null>(null);
@@ -166,6 +254,12 @@ export const AdminDashboardScreen: React.FC = () => {
     const unsubResearch = subscribeAllRequests((list) => {
       setResearchRequests(list.filter((r) => !r.category || r.category === 'research'));
     });
+    const unsubPrivateClasses = subscribePrivateClasses((list) => {
+      setPrivateClasses(list);
+    });
+    const unsubPrivateBookings = subscribePrivateClassBookings((list) => {
+      setPrivateClassBookings(list);
+    });
     const unsubNotifs = subscribeAdminNotifications((list) => {
       setAdminNotifications(list);
     });
@@ -178,6 +272,8 @@ export const AdminDashboardScreen: React.FC = () => {
       unsubApps();
       unsubRequests();
       unsubResearch();
+      unsubPrivateClasses();
+      unsubPrivateBookings();
       unsubNotifs();
     };
   }, []);
@@ -187,6 +283,16 @@ export const AdminDashboardScreen: React.FC = () => {
     setTimeout(() => {
       setSuccessBanner(null);
     }, 4500);
+  };
+
+  const buildInstructorWhatsappHref = (phone: string | undefined, message: string) => {
+    let digits = (phone || '').replace(/[^\d]/g, '');
+    if (digits.startsWith('0') && digits.length === 11) {
+      digits = `234${digits.slice(1)}`;
+    }
+    return digits
+      ? `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
+      : `https://wa.me/?text=${encodeURIComponent(message)}`;
   };
 
   // Modals state
@@ -249,7 +355,7 @@ export const AdminDashboardScreen: React.FC = () => {
     quiz: [],
     availableToTutor: true,
     tutoringDays: ['Monday', 'Wednesday', 'Friday'],
-    tutoringTimeSlots: ['10:00 - 12:00 BST', '14:00 - 16:00 BST', '18:00 - 20:00 BST'],
+    tutoringTimeSlots: ['10:00 AM - 12:00 PM BST', '2:00 PM - 4:00 PM BST', '6:00 PM - 8:00 PM BST'],
     ratePer30Min: 25,
     currency: '£',
     status: 'published',
@@ -306,7 +412,7 @@ export const AdminDashboardScreen: React.FC = () => {
     instructorRole: 'Consultant Clinical Educator',
     modality: 'xray' as ClinicalModality,
     date: 'Thursday, Nov 12',
-    time: '18:00 BST',
+    time: '6:00 PM BST',
     duration: '50 minutes',
     meetingLink: 'https://meet.studirad.org/room/masterclass',
     cpdCredits: '1.5 CPD Hours',
@@ -622,6 +728,11 @@ export const AdminDashboardScreen: React.FC = () => {
       setMaterials((prev) => prev.filter((m) => String(m.id) !== matId));
       await deleteMaterialFromFirestore(matId);
       triggerSuccess('Material removed from live database.');
+    } else if (itemToDelete.type === 'private_classes') {
+      const pcId = String(itemToDelete.id);
+      setPrivateClasses((prev) => prev.filter((p) => p.id !== pcId));
+      await deletePrivateClassFromFirestore(pcId);
+      triggerSuccess('Private class removed from live catalog.');
     }
 
     setIsDeleting(false);
@@ -682,6 +793,17 @@ export const AdminDashboardScreen: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Currency Toggle */}
+          <button
+            type="button"
+            onClick={toggleCurrency}
+            className="h-9 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-extrabold text-slate-100 flex items-center gap-1 cursor-pointer"
+            title={`Switch currency (currently ${appCurrency})`}
+          >
+            <span className="text-[#FF7F32] font-mono">{appCurrency === 'NGN' ? '₦' : '$'}</span>
+            <span>{appCurrency}</span>
+          </button>
+
           {/* Notification Bell */}
           <div className="relative">
             <button
@@ -726,7 +848,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         onClick={async () => {
                           await markNotificationAsRead(n.id);
                           setShowNotificationsDropdown(false);
-                          if (n.linkTab && ['courses', 'classes', 'opportunities', 'materials', 'tutors', 'tutorials', 'research'].includes(n.linkTab)) {
+                          if (n.linkTab && ['courses', 'classes', 'opportunities', 'materials', 'tutors', 'tutorials', 'research', 'private_classes'].includes(n.linkTab)) {
                             setActiveTab(n.linkTab as AdminTab);
                           } else if (n.type === 'research_request') {
                             setActiveTab('research');
@@ -750,7 +872,7 @@ export const AdminDashboardScreen: React.FC = () => {
                           {n.message}
                         </p>
                         <span className="text-[9px] text-slate-500 block mt-1">
-                          {n.createdAt ? new Date(n.createdAt).toLocaleString() : 'Recently'}
+                          {n.createdAt ? formatDateTime12h(n.createdAt) : 'Recently'}
                         </span>
                       </div>
                     ))
@@ -800,7 +922,7 @@ export const AdminDashboardScreen: React.FC = () => {
       {/* Main Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Metric Cards Banner */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
           <div 
             onClick={() => setActiveTab('courses')}
             className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
@@ -940,6 +1062,29 @@ export const AdminDashboardScreen: React.FC = () => {
             </div>
             <span className="text-[9px] text-slate-400 mt-1 block truncate">Research Desk</span>
           </div>
+
+          <div
+            onClick={() => setActiveTab('private_classes')}
+            className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
+              activeTab === 'private_classes'
+                ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10'
+                : 'bg-[#121824] border-slate-800 hover:border-slate-700'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-semibold text-slate-400">Private Classes</span>
+              <GraduationCap className="w-3.5 h-3.5 text-[#FF7F32]" />
+            </div>
+            <div className="text-xl font-bold font-mono text-white flex items-center justify-between">
+              <span>{privateClasses.length}</span>
+              {(privateClassBookings.filter((b) => b.status === 'New Request').length + privateClasses.filter((p) => p.status === 'pending_approval').length) > 0 && (
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#FF7F32]/20 text-[#FF7F32] border border-[#FF7F32]/30">
+                  {privateClassBookings.filter((b) => b.status === 'New Request').length + privateClasses.filter((p) => p.status === 'pending_approval').length} act
+                </span>
+              )}
+            </div>
+            <span className="text-[9px] text-slate-400 mt-1 block truncate">{privateClassBookings.length} Bookings</span>
+          </div>
         </div>
 
         {/* Action Header & Tabs */}
@@ -1020,6 +1165,19 @@ export const AdminDashboardScreen: React.FC = () => {
                 </span>
               )}
             </button>
+            <button
+              onClick={() => setActiveTab('private_classes')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'private_classes' ? 'bg-[#FF7F32] text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>Private Classes</span>
+              {(privateClassBookings.filter((b) => b.status === 'New Request').length + privateClasses.filter((p) => p.status === 'pending_approval').length) > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[9px] font-bold">
+                  {privateClassBookings.filter((b) => b.status === 'New Request').length + privateClasses.filter((p) => p.status === 'pending_approval').length}
+                </span>
+              )}
+            </button>
           </div>
 
           {/* Action Trigger Button */}
@@ -1058,7 +1216,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     quiz: [],
                     availableToTutor: true,
                     tutoringDays: ['Monday', 'Wednesday', 'Friday'],
-                    tutoringTimeSlots: ['10:00 - 12:00 BST', '14:00 - 16:00 BST', '18:00 - 20:00 BST'],
+                    tutoringTimeSlots: ['10:00 AM - 12:00 PM BST', '2:00 PM - 4:00 PM BST', '6:00 PM - 8:00 PM BST'],
                     ratePer30Min: 25,
                     currency: '£',
                     status: 'published',
@@ -1100,7 +1258,7 @@ export const AdminDashboardScreen: React.FC = () => {
                       instructorRole: 'Consultant Clinical Educator',
                       modality: 'xray',
                       date: 'Thursday, Nov 12',
-                      time: '18:00 BST',
+                      time: '6:00 PM BST',
                       duration: '50 minutes',
                       meetingLink: 'https://meet.studirad.org/room/masterclass',
                       cpdCredits: '1.5 CPD Hours',
@@ -1171,6 +1329,42 @@ export const AdminDashboardScreen: React.FC = () => {
                 <span>Publish Content</span>
               </button>
             )}
+
+            {activeTab === 'private_classes' && (
+              <button
+                onClick={() => {
+                  setPrivateClassForm({
+                    id: '',
+                    title: '',
+                    category: 'CT Imaging',
+                    level: 'Undergraduate / BSc',
+                    image: '',
+                    daysAvailable: ['Monday', 'Wednesday', 'Friday'],
+                    timeSlots: ['5:00 PM - 7:00 PM WAT', '7:30 PM - 9:00 PM WAT'],
+                    durationMinutes: 60,
+                    overview: '',
+                    introVideoUrl: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
+                    instructorName: currentUser?.fullName || 'Dr. Chidi Okafor',
+                    instructorRole: 'Senior Clinical Educator',
+                    academicExperience: '8 Years Clinical & University Lecturing',
+                    instructorBio: '',
+                    rating: 4.9,
+                    instructorPhone: '2349029729621',
+                    chargePerHourNGN: 8000,
+                    chargePerHourUSD: 5,
+                    monthlyChargeNGN: 45000,
+                    monthlyChargeUSD: 28,
+                    status: 'published',
+                  });
+                  setPcSlotDraft('');
+                  setIsPrivateClassModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white text-xs font-bold shadow-md shadow-[#FF7F32]/20 transition-all cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Private Class</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -1216,7 +1410,7 @@ export const AdminDashboardScreen: React.FC = () => {
                           )}
                           <div className="absolute top-2 right-2">
                             <span className="px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-xs text-[10px] font-bold text-emerald-400">
-                              {c.price || 'Free'}
+                              {c.isFree ? 'Free' : formatPriceString(c.price, appCurrency) || 'Free'}
                             </span>
                           </div>
                         </div>
@@ -1250,7 +1444,9 @@ export const AdminDashboardScreen: React.FC = () => {
                         {c.tutorAvailability?.enabled && (
                           <span className="px-2 py-0.5 rounded bg-orange-500/15 text-[#FF7F32] border border-orange-500/30 text-[10px] font-semibold flex items-center gap-1">
                             <UserCheck className="w-3 h-3" />
-                            <span>Tutor: {c.tutorAvailability.currency || '£'}{c.tutorAvailability.ratePer30Min}/30m</span>
+                            <span>
+                              Tutor: {formatAmountInCurrency(c.tutorAvailability.ratePer30Min || 25, c.tutorAvailability.currency || '£', appCurrency)}/30m
+                            </span>
                           </span>
                         )}
 
@@ -1311,7 +1507,7 @@ export const AdminDashboardScreen: React.FC = () => {
                               quiz: c.quiz || [],
                               availableToTutor: c.tutorAvailability?.enabled ?? true,
                               tutoringDays: c.tutorAvailability?.days || ['Monday', 'Wednesday', 'Friday'],
-                              tutoringTimeSlots: c.tutorAvailability?.timeSlots || ['10:00 - 12:00 BST', '14:00 - 16:00 BST', '18:00 - 20:00 BST'],
+                              tutoringTimeSlots: (c.tutorAvailability?.timeSlots || ['10:00 AM - 12:00 PM BST', '2:00 PM - 4:00 PM BST', '6:00 PM - 8:00 PM BST']).map((s) => formatTime12h(s)),
                               ratePer30Min: c.tutorAvailability?.ratePer30Min || 25,
                               currency: c.tutorAvailability?.currency || '£',
                               status: c.status || 'published',
@@ -1373,7 +1569,7 @@ export const AdminDashboardScreen: React.FC = () => {
                       </p>
                       <div className="flex items-center gap-1.5 text-xs text-[#FF7F32] font-semibold mb-2">
                         <Calendar className="w-3.5 h-3.5" />
-                        <span>{cls.date} at {cls.time}</span>
+                        <span>{cls.date} at {formatTime12h(cls.time)}</span>
                       </div>
                       <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-3">
                         {cls.description}
@@ -1392,7 +1588,7 @@ export const AdminDashboardScreen: React.FC = () => {
                               instructorRole: cls.instructorRole || '',
                               modality: (cls.modality as ClinicalModality) || 'xray',
                               date: cls.date || '',
-                              time: cls.time || '',
+                              time: formatTime12h(cls.time || ''),
                               duration: cls.duration || 'Session',
                               meetingLink: cls.meetingLink || '',
                               cpdCredits: cls.cpdCredits || '1.0 CPD Hour',
@@ -1840,7 +2036,7 @@ export const AdminDashboardScreen: React.FC = () => {
                           <div className="flex items-center justify-between text-xs font-bold text-white">
                             <span className="truncate pr-2">{req.courseTitle}</span>
                             <span className="text-[#FF7F32] font-mono shrink-0">
-                              {req.currency}{req.calculatedRate}
+                              {formatAmountInCurrency(req.calculatedRate, req.currency, appCurrency)}
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-400">
@@ -1856,7 +2052,7 @@ export const AdminDashboardScreen: React.FC = () => {
                           </div>
                           <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
                             <span className="text-[10px] text-slate-500 block">Time Slot</span>
-                            <span className="font-bold text-slate-200 text-[11px]">{req.selectedTimeSlot}</span>
+                            <span className="font-bold text-slate-200 text-[11px]">{formatTime12h(req.selectedTimeSlot)}</span>
                           </div>
                           <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
                             <span className="text-[10px] text-slate-500 block">Duration</span>
@@ -1890,6 +2086,52 @@ export const AdminDashboardScreen: React.FC = () => {
                             </a>
                           </div>
                         )}
+                      </div>
+
+                      {/* Admin -> Instructor Notification Bar (Profile + WhatsApp) */}
+                      <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Notify Instructor ({req.instructorName})
+                          </span>
+                          {req.sharedWithInstructor && (
+                            <span className="text-[10px] font-bold text-emerald-400">
+                              Sent to Profile
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const res = await notifyInstructorOfTutorialRequest(req);
+                              if (res.success) {
+                                triggerSuccess(`Forwarded tutorial inquiry to ${req.instructorName}'s profile & notifications.`);
+                              }
+                            }}
+                            className={`h-9 px-2.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                              req.sharedWithInstructor
+                                ? 'bg-emerald-950/60 border border-emerald-700/50 text-emerald-300'
+                                : 'bg-[#002147] hover:bg-[#0b3161] border border-blue-800/40 text-white'
+                            }`}
+                          >
+                            <Bell className="w-3.5 h-3.5" />
+                            <span>{req.sharedWithInstructor ? 'Resend Profile Alert' : 'Send to Profile'}</span>
+                          </button>
+
+                          <a
+                            href={buildInstructorWhatsappHref(
+                              req.instructorPhone,
+                              `Hello ${req.instructorName}, StudiRad Admin here. Student ${req.studentName} (${req.studentEmail}) requested a ${req.durationMinutes}m tutorial for "${req.courseTitle}" on ${req.selectedDay} (${formatTime12h(req.selectedTimeSlot)}). Focus: ${req.specificFocusTopic || 'General review'}. Please review in your Instructor Studio.`
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="h-9 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            <span>WhatsApp Instructor</span>
+                          </a>
+                        </div>
                       </div>
 
                       {/* Footer Actions */}
@@ -2103,7 +2345,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         {/* Footer: Submission timestamp & Admin Status Action */}
                         <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                           <div className="text-[10px] text-slate-400">
-                            <div>Submitted: {req.submittedAt ? new Date(req.submittedAt).toLocaleString() : 'Recently'}</div>
+                            <div>Submitted: {req.submittedAt ? formatDateTime12h(req.submittedAt) : 'Recently'}</div>
                             <div>Routed to: {repDisplay}</div>
                           </div>
 
@@ -2141,6 +2383,384 @@ export const AdminDashboardScreen: React.FC = () => {
                       </div>
                     );
                   })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ---------------------------------------------------- */}
+        {/* TAB 8: PRIVATE CLASSES & ADMIN-FIRST BOOKING REQUESTS */}
+        {/* ---------------------------------------------------- */}
+        {activeTab === 'private_classes' && (
+          <div className="space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-extrabold text-white">
+                  Private Classes & Instructor Dispatch
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Manage live private classes (max 3 days/week, max 2 hrs/session) and dispatch student booking requests to instructors via Profile + WhatsApp.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#121824] border border-slate-800 self-start">
+                <button
+                  type="button"
+                  onClick={() => setPrivateClassSubTab('bookings')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    privateClassSubTab === 'bookings' ? 'bg-[#FF7F32] text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Student Bookings ({privateClassBookings.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrivateClassSubTab('catalog')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    privateClassSubTab === 'catalog' ? 'bg-[#FF7F32] text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Classes Catalog ({privateClasses.length})
+                </button>
+              </div>
+            </div>
+
+            {privateClassSubTab === 'bookings' ? (
+              privateClassBookings.length === 0 ? (
+                <div className="p-12 text-center bg-[#121824] rounded-2xl border border-slate-800 text-slate-400 text-xs space-y-2">
+                  <GraduationCap className="w-10 h-10 text-slate-600 mx-auto" />
+                  <p className="font-semibold text-slate-300">No private class bookings submitted yet</p>
+                  <p className="text-[11px] text-slate-500">
+                    All private class bookings submitted by students arrive here first before being forwarded to instructors.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {privateClassBookings
+                    .filter(
+                      (bk) =>
+                        !searchQuery.trim() ||
+                        bk.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        bk.studentEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        bk.classTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        bk.instructorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        bk.referenceCode.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map((bk) => {
+                      const matchedClass = privateClasses.find((c) => c.id === bk.classId);
+                      const resolvedPhone = bk.instructorPhone || matchedClass?.instructorPhone;
+
+                      return (
+                        <div
+                          key={bk.id}
+                          className="p-5 rounded-2xl bg-[#121824] border border-slate-800 flex flex-col justify-between space-y-4 text-left"
+                        >
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-[11px] font-bold text-[#FF7F32]">
+                                    {bk.referenceCode}
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] font-semibold text-slate-300">
+                                    {bk.planType === 'monthly' ? 'Monthly Subscription' : `${bk.selectedDays.length} Day(s)/Wk`}
+                                  </span>
+                                </div>
+                                <h4 className="text-sm font-extrabold text-white mt-1">
+                                  {bk.studentName}
+                                </h4>
+                                <p className="text-[11px] text-slate-400">
+                                  {bk.studentEmail} {bk.studentRole ? `· ${bk.studentRole}` : ''}
+                                </p>
+                              </div>
+
+                              <span
+                                className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase shrink-0 ${
+                                  bk.status === 'Scheduled'
+                                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                                    : bk.status === 'Instructor Notified'
+                                    ? 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
+                                    : bk.status === 'Completed'
+                                    ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30'
+                                    : bk.status === 'Declined'
+                                    ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+                                    : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                }`}
+                              >
+                                {bk.status}
+                              </span>
+                            </div>
+
+                            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1">
+                              <div className="flex items-center justify-between gap-2 text-xs font-bold text-white">
+                                <span className="truncate">{bk.classTitle}</span>
+                                <span className="text-[#FF7F32] font-mono shrink-0">
+                                  {formatMoney(bk.amountNGN, appCurrency, bk.amountUSD)}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-400">
+                                Instructor: <span className="text-slate-200 font-semibold">{bk.instructorName}</span>
+                                {resolvedPhone ? ` · ${resolvedPhone}` : ''}
+                              </p>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                              <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
+                                <span className="text-[10px] text-slate-500 block">Selected Days</span>
+                                <span className="font-semibold text-slate-200 text-[11px]">
+                                  {bk.selectedDays.join(', ')}
+                                </span>
+                              </div>
+                              <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
+                                <span className="text-[10px] text-slate-500 block">Time Window</span>
+                                <span className="font-semibold text-slate-200 text-[11px]">
+                                  {formatTime12h(bk.selectedTimeSlot)}
+                                </span>
+                              </div>
+                              <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
+                                <span className="text-[10px] text-slate-500 block">Start Date</span>
+                                <span className="font-mono font-bold text-[#FF7F32] text-[11px]">
+                                  {bk.startDate}
+                                </span>
+                              </div>
+                            </div>
+
+                            {bk.notes && (
+                              <div className="p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/60 text-xs text-slate-300">
+                                <strong className="text-[10px] text-slate-500 uppercase block mb-0.5">
+                                  Student Notes & Goals
+                                </strong>
+                                <p className="line-clamp-3">{bk.notes}</p>
+                              </div>
+                            )}
+
+                            {/* Dual Instructor Notification Panel */}
+                            <div className="p-3 rounded-xl bg-slate-900/75 border border-slate-800 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                  Notify Instructor ({bk.instructorName})
+                                </span>
+                                {bk.sharedWithInstructor && (
+                                  <span className="text-[10px] font-bold text-emerald-400">
+                                    In-App Notified
+                                  </span>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const res = await notifyInstructorOfPrivateBooking(bk);
+                                    if (res.success) {
+                                      if (bk.status === 'New Request') {
+                                        await updatePrivateClassBookingStatus(
+                                          bk.id,
+                                          'Instructor Notified',
+                                          undefined,
+                                          undefined,
+                                          bk.studentId,
+                                          bk.classTitle,
+                                          bk.referenceCode
+                                        );
+                                      }
+                                      triggerSuccess(`Sent private class request ${bk.referenceCode} to ${bk.instructorName}'s profile!`);
+                                    }
+                                  }}
+                                  className={`h-9 px-2.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
+                                    bk.sharedWithInstructor
+                                      ? 'bg-emerald-950/60 border border-emerald-700/50 text-emerald-300'
+                                      : 'bg-[#002147] hover:bg-[#0b3161] border border-blue-800/40 text-white'
+                                  }`}
+                                >
+                                  <Bell className="w-3.5 h-3.5" />
+                                  <span>{bk.sharedWithInstructor ? 'Resend Profile Alert' : 'Send to Profile'}</span>
+                                </button>
+
+                                <a
+                                  href={buildInstructorWhatsappHref(
+                                    resolvedPhone,
+                                    `Hello ${bk.instructorName}, StudiRad Admin here. New Private Class booking (${bk.referenceCode}): Student ${bk.studentName} (${bk.studentEmail}) booked "${bk.classTitle}" (${bk.planType === 'monthly' ? 'Monthly Subscription' : 'Custom Days'}: ${bk.selectedDays.join(', ')} at ${formatTime12h(bk.selectedTimeSlot)}, starting ${bk.startDate}). Please confirm availability in your Instructor Studio.`
+                                  )}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="h-9 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
+                                >
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                  <span>WhatsApp Instructor</span>
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                            <span className="text-[10px] text-slate-500">
+                              {bk.createdAt ? formatDateTime12h(bk.createdAt) : 'Recently'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedPcBookingForStatus(bk);
+                                setPcBookingStatusInput(bk.status);
+                                setPcBookingMeetingInput(
+                                  bk.meetingLink || `https://meet.studirad.org/room/${bk.referenceCode.toLowerCase()}`
+                                );
+                                setPcBookingFeedbackInput(bk.adminFeedback || '');
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold cursor-pointer"
+                            >
+                              Update Status & Link
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {privateClasses
+                  .filter(
+                    (pc) =>
+                      !searchQuery.trim() ||
+                      pc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      pc.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      pc.instructorName.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map((pc) => (
+                    <div
+                      key={pc.id}
+                      className="p-4 rounded-2xl bg-[#121824] border border-slate-800 flex flex-col justify-between space-y-3 hover:border-slate-700 transition-all text-left"
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] font-bold text-[#FF7F32]">
+                            {pc.category}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              pc.status === 'published'
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                            }`}
+                          >
+                            {pc.status === 'published' ? 'Live' : 'Pending Approval'}
+                          </span>
+                        </div>
+
+                        <h4 className="text-sm font-extrabold text-white line-clamp-2">{pc.title}</h4>
+                        <div className="flex items-center justify-between text-xs text-slate-400">
+                          <span>{pc.instructorName}</span>
+                          <span className="inline-flex items-center gap-1 text-amber-400 font-bold">
+                            <Star className="w-3 h-3 fill-amber-400" />
+                            <span>{pc.rating.toFixed(1)}</span>
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 line-clamp-2">{pc.overview}</p>
+
+                        <div className="flex flex-wrap gap-1">
+                          {pc.daysAvailable.map((d) => (
+                            <span
+                              key={d}
+                              className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-300"
+                            >
+                              {d}
+                            </span>
+                          ))}
+                          <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-[#FF7F32] font-bold">
+                            {pc.durationMinutes} min
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs">
+                          <span>
+                            <strong className="text-[#FF7F32] font-mono">
+                              {formatMoney(pc.chargePerHourNGN, appCurrency, pc.chargePerHourUSD)}
+                            </strong>
+                            <span className="text-[10px] text-slate-500"> /hr</span>
+                          </span>
+                          <span>
+                            <strong className="text-emerald-400 font-mono">
+                              {formatMoney(pc.monthlyChargeNGN, appCurrency, pc.monthlyChargeUSD)}
+                            </strong>
+                            <span className="text-[10px] text-slate-500"> /mo</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+                        {pc.status === 'pending_approval' ? (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const res = await approvePrivateClassByAdmin(pc.id, pc.creatorId, pc.title);
+                              if (res.success) {
+                                triggerSuccess(`Private class "${pc.title}" approved and published!`);
+                              }
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Approve</span>
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-slate-500 truncate max-w-[120px]">
+                            {pc.academicExperience}
+                          </span>
+                        )}
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPrivateClassForm({
+                                id: pc.id,
+                                title: pc.title,
+                                category: pc.category,
+                                level: pc.level,
+                                image: pc.image || '',
+                                daysAvailable: pc.daysAvailable.slice(0, 3),
+                                timeSlots: (pc.timeSlots || ['5:00 PM - 7:00 PM WAT']).map((s) => formatTime12h(s)),
+                                durationMinutes: Math.min(120, Math.max(30, pc.durationMinutes || 60)),
+                                overview: pc.overview,
+                                introVideoUrl: pc.introVideoUrl || '',
+                                instructorName: pc.instructorName,
+                                instructorRole: pc.instructorRole || 'Clinical Educator',
+                                academicExperience: pc.academicExperience,
+                                instructorBio: pc.instructorBio,
+                                rating: pc.rating || 4.9,
+                                instructorPhone: pc.instructorPhone || '',
+                                chargePerHourNGN: pc.chargePerHourNGN,
+                                chargePerHourUSD: pc.chargePerHourUSD,
+                                monthlyChargeNGN: pc.monthlyChargeNGN,
+                                monthlyChargeUSD: pc.monthlyChargeUSD,
+                                status: pc.status === 'pending_approval' ? 'pending_approval' : 'published',
+                              });
+                              setPcSlotDraft('');
+                              setIsPrivateClassModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
+                            title="Edit Private Class"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setItemToDelete({
+                                type: 'private_classes',
+                                id: pc.id,
+                                title: pc.title,
+                              })
+                            }
+                            className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-400 cursor-pointer"
+                            title="Delete Private Class"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
               </div>
             )}
           </div>
@@ -3204,7 +3824,7 @@ export const AdminDashboardScreen: React.FC = () => {
                               key={slot}
                               className="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-200 flex items-center gap-1.5"
                             >
-                              <span>{slot}</span>
+                              <span>{formatTime12h(slot)}</span>
                               <button
                                 type="button"
                                 onClick={() => {
@@ -3224,12 +3844,12 @@ export const AdminDashboardScreen: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <input
                             type="text"
-                            placeholder="e.g. 18:00 - 20:00 BST (Press Enter to Add)"
+                            placeholder="e.g. 6:00 PM - 8:00 PM BST (Press Enter to Add)"
                             className="flex-1 h-9 px-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 e.preventDefault();
-                                const val = (e.target as HTMLInputElement).value.trim();
+                                const val = formatTime12h((e.target as HTMLInputElement).value.trim());
                                 if (val && !courseForm.tutoringTimeSlots.includes(val)) {
                                   setCourseForm({
                                     ...courseForm,
@@ -3416,7 +4036,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     required
                     value={classForm.time}
                     onChange={(e) => setClassForm({ ...classForm, time: e.target.value })}
-                    placeholder="18:30 BST"
+                    placeholder="6:30 PM BST"
                     className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
                   />
                 </div>
@@ -3997,10 +4617,10 @@ export const AdminDashboardScreen: React.FC = () => {
                 Course: <strong className="text-white">{selectedTutorialForMeeting.courseTitle}</strong>
               </p>
               <p>
-                Schedule: <strong className="text-[#FF7F32]">{selectedTutorialForMeeting.selectedDay} · {selectedTutorialForMeeting.selectedTimeSlot}</strong> ({selectedTutorialForMeeting.durationMinutes} min)
+                Schedule: <strong className="text-[#FF7F32]">{selectedTutorialForMeeting.selectedDay} · {formatTime12h(selectedTutorialForMeeting.selectedTimeSlot)}</strong> ({selectedTutorialForMeeting.durationMinutes} min)
               </p>
               <p>
-                Fee: <strong>{selectedTutorialForMeeting.currency}{selectedTutorialForMeeting.calculatedRate}</strong>
+                Fee: <strong>{formatAmountInCurrency(selectedTutorialForMeeting.calculatedRate, selectedTutorialForMeeting.currency, appCurrency)}</strong>
               </p>
             </div>
 
@@ -4106,6 +4726,494 @@ export const AdminDashboardScreen: React.FC = () => {
                 className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-xs cursor-pointer"
               >
                 Confirm Decline
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* CREATE / EDIT PRIVATE CLASS MODAL */}
+      {/* ---------------------------------------------------- */}
+      {isPrivateClassModalOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-2xl bg-[#121824] border border-slate-800 rounded-3xl shadow-2xl text-left my-auto animate-scaleIn max-h-[92vh] flex flex-col overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between shrink-0">
+              <div>
+                <h3 className="text-sm sm:text-base font-extrabold text-white">
+                  {privateClassForm.id ? 'Edit Private Class & Schedule' : 'Publish New Private Class'}
+                </h3>
+                <p className="text-[11px] text-slate-400">
+                  Max 3 available days/week · Max 2 hours (120 mins) per session
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPrivateClassModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!privateClassForm.title.trim() || privateClassForm.daysAvailable.length === 0) return;
+                setIsSavingPcAdmin(true);
+                const res = await pushPrivateClassToFirestore({
+                  ...privateClassForm,
+                  id: privateClassForm.id || undefined,
+                  daysAvailable: privateClassForm.daysAvailable.slice(0, 3),
+                  durationMinutes: Math.min(120, Math.max(30, Number(privateClassForm.durationMinutes) || 60)),
+                  creatorRole: 'admin',
+                  status: 'published',
+                });
+                setIsSavingPcAdmin(false);
+                if (res.success) {
+                  setIsPrivateClassModalOpen(false);
+                  triggerSuccess(`Private class "${privateClassForm.title}" saved & live!`);
+                }
+              }}
+              className="p-6 overflow-y-auto space-y-4 text-xs"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="font-bold text-slate-300 block">Private Class Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={privateClassForm.title}
+                    onChange={(e) => setPrivateClassForm({ ...privateClassForm, title: e.target.value })}
+                    placeholder="e.g. CT Head Stroke & Trauma Protocol Coaching"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
+                  />
+                </div>
+
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="font-bold text-slate-300 flex items-center justify-between">
+                    <span>Class Cover Image (Optional URL or Upload)</span>
+                    {isUploadingPcImg && <span className="text-[10px] text-[#FF7F32]">Uploading...</span>}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={privateClassForm.image}
+                      onChange={(e) => setPrivateClassForm({ ...privateClassForm, image: e.target.value })}
+                      placeholder="Paste cover image URL or upload file"
+                      className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
+                    />
+                    <label className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center gap-1 cursor-pointer shrink-0 border border-slate-700">
+                      <Upload className="w-3.5 h-3.5 text-[#FF7F32]" />
+                      <span>Upload</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setIsUploadingPcImg(true);
+                          try {
+                            const url = await uploadFileToCloudinary(file, 'private_classes');
+                            if (url) {
+                              setPrivateClassForm((prev) => ({ ...prev, image: url }));
+                              triggerSuccess('Private class image uploaded!');
+                            }
+                          } finally {
+                            setIsUploadingPcImg(false);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300 block">Category</label>
+                  <select
+                    value={privateClassForm.category}
+                    onChange={(e) =>
+                      setPrivateClassForm({ ...privateClassForm, category: e.target.value as PrivateClassCategory })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
+                  >
+                    {PRIVATE_CLASS_CATEGORIES.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300 block">Level</label>
+                  <input
+                    type="text"
+                    value={privateClassForm.level}
+                    onChange={(e) => setPrivateClassForm({ ...privateClassForm, level: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300 block">Duration per Session (Max 2 hrs)</label>
+                  <select
+                    value={privateClassForm.durationMinutes}
+                    onChange={(e) =>
+                      setPrivateClassForm({
+                        ...privateClassForm,
+                        durationMinutes: Math.min(120, Number(e.target.value)),
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold"
+                  >
+                    <option value={30}>30 minutes</option>
+                    <option value={45}>45 minutes</option>
+                    <option value={60}>60 minutes (1 Hour)</option>
+                    <option value={90}>90 minutes (1.5 Hours)</option>
+                    <option value={120}>120 minutes (2 Hours Max)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300 block">Instructor WhatsApp Number</label>
+                  <input
+                    type="tel"
+                    value={privateClassForm.instructorPhone}
+                    onChange={(e) => setPrivateClassForm({ ...privateClassForm, instructorPhone: e.target.value })}
+                    placeholder="2349029729621"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
+                  />
+                </div>
+              </div>
+
+              {/* Max 3 Days/Week Selector */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300 flex items-center justify-between">
+                  <span>Available Days (Max 3 days/week)</span>
+                  <span className="text-[#FF7F32]">{privateClassForm.daysAvailable.length}/3 selected</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {PC_DAYS_OF_WEEK.map((day) => {
+                    const isSel = privateClassForm.daysAvailable.includes(day);
+                    const locked = !isSel && privateClassForm.daysAvailable.length >= 3;
+                    return (
+                      <button
+                        type="button"
+                        key={day}
+                        disabled={locked}
+                        onClick={() => {
+                          setPrivateClassForm((prev) => ({
+                            ...prev,
+                            daysAvailable: isSel
+                              ? prev.daysAvailable.filter((d) => d !== day)
+                              : prev.daysAvailable.length >= 3
+                              ? prev.daysAvailable
+                              : [...prev.daysAvailable, day],
+                          }));
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                          isSel
+                            ? 'bg-[#FF7F32] border-[#FF7F32] text-white cursor-pointer'
+                            : locked
+                            ? 'bg-slate-900 border-slate-800 text-slate-600 opacity-50 cursor-not-allowed'
+                            : 'bg-slate-900 border-slate-700 text-slate-300 cursor-pointer'
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Adjustable Time Slots */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300 block">Available Time Slots (Adjustable)</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {privateClassForm.timeSlots.map((slot) => (
+                    <span
+                      key={slot}
+                      className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs flex items-center gap-1.5"
+                    >
+                      <span>{formatTime12h(slot)}</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPrivateClassForm((prev) => ({
+                            ...prev,
+                            timeSlots: prev.timeSlots.filter((s) => s !== slot),
+                          }))
+                        }
+                        className="text-slate-400 hover:text-red-400 cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={pcSlotDraft}
+                    onChange={(e) => setPcSlotDraft(e.target.value)}
+                    placeholder="e.g. 8:00 PM - 9:30 PM WAT"
+                    className="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const trimmed = formatTime12h(pcSlotDraft.trim());
+                      if (trimmed && !privateClassForm.timeSlots.includes(trimmed)) {
+                        setPrivateClassForm((prev) => ({
+                          ...prev,
+                          timeSlots: [...prev.timeSlots, trimmed],
+                        }));
+                        setPcSlotDraft('');
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold cursor-pointer"
+                  >
+                    + Add Slot
+                  </button>
+                </div>
+              </div>
+
+              {/* Dual Currency Rates */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-300 block mb-1">Hourly (₦ NGN)</label>
+                  <input
+                    type="number"
+                    min={500}
+                    value={privateClassForm.chargePerHourNGN}
+                    onChange={(e) => setPrivateClassForm({ ...privateClassForm, chargePerHourNGN: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-300 block mb-1">Hourly ($ USD)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    step="0.5"
+                    value={privateClassForm.chargePerHourUSD}
+                    onChange={(e) => setPrivateClassForm({ ...privateClassForm, chargePerHourUSD: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-300 block mb-1">Monthly (₦ NGN)</label>
+                  <input
+                    type="number"
+                    min={1000}
+                    value={privateClassForm.monthlyChargeNGN}
+                    onChange={(e) => setPrivateClassForm({ ...privateClassForm, monthlyChargeNGN: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-300 block mb-1">Monthly ($ USD)</label>
+                  <input
+                    type="number"
+                    min={5}
+                    step="1"
+                    value={privateClassForm.monthlyChargeUSD}
+                    onChange={(e) => setPrivateClassForm({ ...privateClassForm, monthlyChargeUSD: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold"
+                  />
+                </div>
+              </div>
+
+              {/* Instructor Info & Promise Video */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="font-bold text-slate-300 block mb-1">Instructor Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={privateClassForm.instructorName}
+                    onChange={(e) => setPrivateClassForm({ ...privateClassForm, instructorName: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-300 block mb-1">Academic Experience</label>
+                  <input
+                    type="text"
+                    value={privateClassForm.academicExperience}
+                    onChange={(e) => setPrivateClassForm({ ...privateClassForm, academicExperience: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-300 block mb-1">Rating (1.0–5.0)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={5}
+                    step={0.1}
+                    value={privateClassForm.rating}
+                    onChange={(e) => setPrivateClassForm({ ...privateClassForm, rating: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-300 block mb-1">
+                  Instructor Promise Video URL (Shown to student before payment)
+                </label>
+                <input
+                  type="url"
+                  value={privateClassForm.introVideoUrl}
+                  onChange={(e) => setPrivateClassForm({ ...privateClassForm, introVideoUrl: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=... or Google Drive"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-300 block mb-1">
+                  Instructor Details (In relation to this course)
+                </label>
+                <input
+                  type="text"
+                  value={privateClassForm.instructorBio}
+                  onChange={(e) => setPrivateClassForm({ ...privateClassForm, instructorBio: e.target.value })}
+                  placeholder="Brief credentials and track record for this class..."
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-300 block mb-1">Class Overview</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={privateClassForm.overview}
+                  onChange={(e) => setPrivateClassForm({ ...privateClassForm, overview: e.target.value })}
+                  placeholder="Describe the syllabus, clinical outcomes, and mentorship structure..."
+                  className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white resize-none"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsPrivateClassModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingPcAdmin}
+                  className="px-5 py-2.5 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingPcAdmin ? 'Saving...' : 'Save & Publish Private Class'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* UPDATE PRIVATE CLASS BOOKING STATUS & LINK MODAL */}
+      {/* ---------------------------------------------------- */}
+      {selectedPcBookingForStatus && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs">
+          <div className="bg-[#121824] border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 text-left shadow-2xl animate-scaleIn">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <h4 className="text-sm font-bold text-white">
+                Update Booking ({selectedPcBookingForStatus.referenceCode})
+              </h4>
+              <button
+                type="button"
+                onClick={() => setSelectedPcBookingForStatus(null)}
+                className="text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-300 space-y-1">
+              <p>Student: <strong className="text-white">{selectedPcBookingForStatus.studentName}</strong></p>
+              <p>Class: <strong className="text-white">{selectedPcBookingForStatus.classTitle}</strong></p>
+              <p>
+                Total: <strong className="text-[#FF7F32]">{formatMoney(selectedPcBookingForStatus.amountNGN, appCurrency, selectedPcBookingForStatus.amountUSD)}</strong>
+              </p>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-slate-300 block mb-1">Booking Status</label>
+                <select
+                  value={pcBookingStatusInput}
+                  onChange={(e) => setPcBookingStatusInput(e.target.value as PrivateClassBookingRequest['status'])}
+                  className="w-full h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white font-semibold"
+                >
+                  <option value="New Request">New Request</option>
+                  <option value="Under Review">Under Review</option>
+                  <option value="Instructor Notified">Instructor Notified</option>
+                  <option value="Scheduled">Scheduled</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Declined">Declined</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-300 block mb-1">Classroom / Video Meeting Link</label>
+                <input
+                  type="url"
+                  value={pcBookingMeetingInput}
+                  onChange={(e) => setPcBookingMeetingInput(e.target.value)}
+                  placeholder="https://meet.studirad.org/room/..."
+                  className="w-full h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-300 block mb-1">Coordinator / Instructor Note</label>
+                <textarea
+                  rows={2}
+                  value={pcBookingFeedbackInput}
+                  onChange={(e) => setPcBookingFeedbackInput(e.target.value)}
+                  placeholder="Optional payment or schedule instructions for the student..."
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedPcBookingForStatus(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const res = await updatePrivateClassBookingStatus(
+                    selectedPcBookingForStatus.id,
+                    pcBookingStatusInput,
+                    pcBookingFeedbackInput.trim(),
+                    pcBookingMeetingInput.trim(),
+                    selectedPcBookingForStatus.studentId,
+                    selectedPcBookingForStatus.classTitle,
+                    selectedPcBookingForStatus.referenceCode
+                  );
+                  if (res.success) {
+                    triggerSuccess(`Booking ${selectedPcBookingForStatus.referenceCode} updated & student notified.`);
+                    setSelectedPcBookingForStatus(null);
+                  }
+                }}
+                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer"
+              >
+                Save & Notify Student
               </button>
             </div>
           </div>

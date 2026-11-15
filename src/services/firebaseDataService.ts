@@ -22,13 +22,83 @@ import {
   TutorApplication,
   TutorialRequest,
   TutorAvailability,
-  AppNotification
+  AppNotification,
+  PrivateClass,
+  PrivateClassBookingRequest
 } from '../types';
 import { MOCK_OPPORTUNITIES, MOCK_LIVE_CLASSES, MOCK_WEBINARS, MOCK_COURSES, MOCK_RESOURCES } from '../data/mockData';
 import { getYouTubeThumbnail } from '../utils/youtube';
+import { formatTime12h } from '../utils/timeFormat';
 import { RESEARCH_REPRESENTATIVES, RepresentativeInfo } from './researchAssistanceConfig';
 
 export type { EnrolledCourseRecord };
+
+/**
+ * Recursively removes undefined values from objects/arrays so Firestore setDoc never throws
+ * "Unsupported field value: undefined". Preserves Date objects and Firestore Timestamps.
+ */
+export function sanitizeForFirestore<T>(value: T): T {
+  if (value === null || value === undefined) return value;
+  if (typeof value !== 'object') return value;
+  if (value instanceof Date) return value;
+  if (typeof (value as any).toDate === 'function') return value;
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => sanitizeForFirestore(item))
+      .filter((item) => item !== undefined) as unknown as T;
+  }
+
+  const cleanObj: Record<string, any> = {};
+  for (const [k, v] of Object.entries(value as Record<string, any>)) {
+    if (v === undefined) continue;
+    const sanitizedVal = sanitizeForFirestore(v);
+    if (sanitizedVal !== undefined) {
+      cleanObj[k] = sanitizedVal;
+    }
+  }
+  return cleanObj as T;
+}
+
+/**
+ * Writes a document reliably across appletDb (authoritative AI Studio DB), db, and adminDb.
+ * Succeeds if at least one DB write succeeds (primarily appletDb), preventing external project rules
+ * from blocking legitimate submissions.
+ */
+async function writeDocToAllDbs(
+  collectionName: string,
+  docId: string,
+  rawData: Record<string, any>,
+  includeAdminDb: boolean = false
+): Promise<void> {
+  const cleanData = sanitizeForFirestore(rawData);
+  const targets: Promise<void>[] = [];
+
+  if (appletDb) {
+    targets.push(setDoc(doc(appletDb, collectionName, docId), cleanData, { merge: true }));
+  }
+  if (db) {
+    targets.push(setDoc(doc(db, collectionName, docId), cleanData, { merge: true }));
+  }
+  if (includeAdminDb && adminDb && adminDb !== db) {
+    targets.push(setDoc(doc(adminDb, collectionName, docId), cleanData, { merge: true }));
+  }
+
+  const results = await Promise.allSettled(targets);
+  const anySucceeded = results.some((r) => r.status === 'fulfilled');
+  if (!anySucceeded) {
+    const firstRejected = results.find((r) => r.status === 'rejected') as PromiseRejectedResult | undefined;
+    throw firstRejected?.reason || new Error(`Failed to write to ${collectionName}/${docId}`);
+  }
+}
+
+async function deleteDocFromAllDbs(collectionName: string, docId: string): Promise<void> {
+  const targets: Promise<void>[] = [];
+  if (appletDb) targets.push(deleteDoc(doc(appletDb, collectionName, docId)));
+  if (db) targets.push(deleteDoc(doc(db, collectionName, docId)));
+  if (adminDb && adminDb !== db) targets.push(deleteDoc(doc(adminDb, collectionName, docId)));
+  await Promise.allSettled(targets);
+}
 
 export interface UserCompletedRecord {
   classId: string;
@@ -846,62 +916,90 @@ export function subscribeMaterials(
   };
 
   const unsubs: (() => void)[] = [];
+  const dbs = [
+    { name: 'applet', instance: appletDb },
+    { name: 'client', instance: db },
+    { name: 'admin', instance: adminDb },
+  ].filter((d) => Boolean(d.instance));
 
-  // 1. Materials from db (studirad-platform-new)
-  try {
-    const matsRef = collection(db, 'materials');
-    const u1 = onSnapshot(matsRef, (snapshot) => {
-      snapshot.docs.forEach((docSnap) => {
-        const data = docSnap.data();
-        matsMap.set(`mat_${docSnap.id}`, {
-          id: docSnap.id,
-          title: data.title || 'Clinical Material',
-          category: data.course || data.category || 'General Radiography',
-          format: data.type === 'file' 
-            ? (data.link?.toLowerCase().includes('.pdf') ? 'PDF' : 'Checklist')
-            : (data.format || 'Guideline'),
-          size: data.size || '1.8 MB',
-          description: data.description || `Clinical material for ${data.course || 'radiography'} uploaded by ${data.uploader || 'StudiRad Faculty'}.`,
-          downloadUrl: data.link || data.downloadUrl || '',
-          modality: mapCourseToModality(data.course || data.modality),
-          course: data.course,
-          uploader: data.uploader,
-          link: data.link,
-        });
-      });
-      emit();
-    }, (err) => console.warn('Materials subscription notice:', err));
-    unsubs.push(u1);
-  } catch (e) {
-    console.warn('Materials listener error:', e);
-  }
+  const inferFormat = (data: any, resolvedLink: string): string => {
+    if (data.format) return data.format;
+    const lower = resolvedLink.toLowerCase();
+    if (lower.includes('.pdf')) return 'PDF';
+    if (lower.includes('.ppt') || lower.includes('docs.google.com/presentation')) return 'Slide Deck';
+    if (lower.includes('.doc') || lower.includes('docs.google.com/document')) return 'Document';
+    if (lower.includes('.txt') || lower.includes('.md')) return 'Notes';
+    return data.type === 'file' || data.type === 'pdf' ? 'PDF' : 'Guideline';
+  };
 
-  // 2. Videos from db (studirad-platform-new)
-  try {
-    const vidsRef = collection(db, 'videos');
-    const u2 = onSnapshot(vidsRef, (snapshot) => {
-      snapshot.docs.forEach((docSnap) => {
-        const data = docSnap.data();
-        matsMap.set(`vid_${docSnap.id}`, {
-          id: docSnap.id,
-          title: data.title || 'Recorded Clinical Video',
-          category: data.course || 'Educational Video',
-          format: 'Slide Deck',
-          size: 'Stream',
-          description: `Recorded clinical session on ${data.course || 'radiography'} by ${data.uploader || 'StudiRad'}.`,
-          downloadUrl: data.link || '',
-          modality: mapCourseToModality(data.course),
-          course: data.course,
-          uploader: data.uploader,
-          link: data.link,
+  // 1. Materials across synced dbs
+  dbs.forEach(({ instance }) => {
+    try {
+      const matsRef = collection(instance, 'materials');
+      const u1 = onSnapshot(matsRef, (snapshot) => {
+        snapshot.docs.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (data?._deleted) {
+            matsMap.delete(`mat_${docSnap.id}`);
+            return;
+          }
+          const resolvedLink = (data.link || data.downloadUrl || data.url || '').trim();
+          matsMap.set(`mat_${docSnap.id}`, {
+            id: docSnap.id,
+            title: data.title || 'Clinical Material',
+            category: data.course || data.category || 'General Radiography',
+            format: inferFormat(data, resolvedLink),
+            size: data.size || data.fileSize || '1.8 MB',
+            description: data.description || `Clinical material for ${data.course || 'radiography'} uploaded by ${data.uploader || 'StudiRad Faculty'}.`,
+            downloadUrl: resolvedLink,
+            modality: mapCourseToModality(data.course || data.modality),
+            course: data.course,
+            uploader: data.uploader,
+            link: resolvedLink,
+          });
         });
+        emit();
+      }, (err) => {
+        console.warn('Materials subscription notice:', err);
+        onError?.(err);
       });
-      emit();
-    }, (err) => console.warn('Videos as materials notice:', err));
-    unsubs.push(u2);
-  } catch (e) {
-    console.warn('Videos as materials listener error:', e);
-  }
+      unsubs.push(u1);
+    } catch (e) {
+      console.warn('Materials listener error:', e);
+    }
+
+    // 2. Videos across synced dbs
+    try {
+      const vidsRef = collection(instance, 'videos');
+      const u2 = onSnapshot(vidsRef, (snapshot) => {
+        snapshot.docs.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (data?._deleted) {
+            matsMap.delete(`vid_${docSnap.id}`);
+            return;
+          }
+          const resolvedLink = (data.link || data.downloadUrl || data.url || '').trim();
+          matsMap.set(`vid_${docSnap.id}`, {
+            id: docSnap.id,
+            title: data.title || 'Recorded Clinical Video',
+            category: data.course || 'Educational Video',
+            format: 'Video',
+            size: 'Stream',
+            description: data.description || `Recorded clinical session on ${data.course || 'radiography'} by ${data.uploader || 'StudiRad'}.`,
+            downloadUrl: resolvedLink,
+            modality: mapCourseToModality(data.course),
+            course: data.course,
+            uploader: data.uploader,
+            link: resolvedLink,
+          });
+        });
+        emit();
+      }, (err) => console.warn('Videos as materials notice:', err));
+      unsubs.push(u2);
+    } catch (e) {
+      console.warn('Videos as materials listener error:', e);
+    }
+  });
 
   return () => {
     unsubs.forEach((u) => u());
@@ -910,7 +1008,7 @@ export function subscribeMaterials(
 
 /**
  * Real-time listener for study materials (Reading Materials & Video Lectures)
- * Directly synchronized with 'materials' and 'videos' collections in studirad-platform-new
+ * Directly synchronized with 'materials' and 'videos' collections across synced Firestore DBs
  */
 export function subscribeStudyMaterials(
   onUpdate: (materials: StudyMaterial[]) => void,
@@ -924,57 +1022,91 @@ export function subscribeStudyMaterials(
   };
 
   const unsubs: (() => void)[] = [];
+  const dbs = [
+    { name: 'applet', instance: appletDb },
+    { name: 'client', instance: db },
+    { name: 'admin', instance: adminDb },
+  ].filter((d) => Boolean(d.instance));
 
-  // 1. Subscribe to 'materials' in db (from web app MaterialsPage & admin)
-  try {
-    const matsRef = collection(db, 'materials');
-    const u1 = onSnapshot(matsRef, (snapshot) => {
-      snapshot.docs.forEach((docSnap) => {
-        const data = docSnap.data();
-        const isVid = data.type === 'video' || data.link?.includes('youtube.com') || data.link?.includes('youtu.be') || data.link?.includes('drive.google.com');
-        matsMap.set(`mat_${docSnap.id}`, {
-          id: docSnap.id,
-          title: data.title || 'Study Material',
-          course: data.course || 'Others',
-          uploader: data.uploader || 'StudiRad Faculty',
-          link: data.link || '',
-          type: isVid ? 'video' : (data.type || 'pdf'),
-          thumbnailUrl: data.thumbnailUrl,
-          createdAt: data.createdAt,
-          description: data.description,
-        });
-      });
-      emit();
-    }, (err) => console.warn('Study materials subscription notice:', err));
-    unsubs.push(u1);
-  } catch (e) {
-    console.warn('Materials listener error:', e);
-  }
+  const inferStudyType = (data: any, resolvedLink: string): StudyMaterial['type'] => {
+    const lower = resolvedLink.toLowerCase();
+    const isDirectVid =
+      data.type === 'video' ||
+      lower.includes('youtube.com') ||
+      lower.includes('youtu.be') ||
+      lower.includes('docs.google.com/videos/') ||
+      /\.(mp4|webm|ogg|mov)($|\?)/i.test(lower) ||
+      lower.includes('/video/upload/');
+    if (isDirectVid) return 'video';
+    if (data.type === 'pdf' || lower.includes('.pdf')) return 'pdf';
+    if (data.type === 'document' || data.type === 'file') return 'document';
+    if (data.type === 'link') return 'link';
+    return 'pdf';
+  };
 
-  // 2. Subscribe to 'videos' in db
-  try {
-    const vidsRef = collection(db, 'videos');
-    const u2 = onSnapshot(vidsRef, (snapshot) => {
-      snapshot.docs.forEach((docSnap) => {
-        const data = docSnap.data();
-        matsMap.set(`vid_${docSnap.id}`, {
-          id: docSnap.id,
-          title: data.title || 'Clinical Video Lecture',
-          course: data.course || 'Others',
-          uploader: data.uploader || 'StudiRad Faculty',
-          link: data.link || '',
-          type: 'video',
-          thumbnailUrl: data.thumbnailUrl,
-          createdAt: data.createdAt,
-          description: data.description || 'Recorded clinical session',
+  dbs.forEach(({ instance }) => {
+    try {
+      const matsRef = collection(instance, 'materials');
+      const u1 = onSnapshot(matsRef, (snapshot) => {
+        snapshot.docs.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (data?._deleted) {
+            matsMap.delete(`mat_${docSnap.id}`);
+            return;
+          }
+          const resolvedLink = (data.link || data.downloadUrl || data.url || '').trim();
+          matsMap.set(`mat_${docSnap.id}`, {
+            id: docSnap.id,
+            title: data.title || 'Study Material',
+            course: data.course || data.category || 'Others',
+            uploader: data.uploader || 'StudiRad Faculty',
+            link: resolvedLink,
+            type: inferStudyType(data, resolvedLink),
+            fileSize: data.size || data.fileSize,
+            thumbnailUrl: data.thumbnailUrl,
+            createdAt: data.createdAt,
+            description: data.description,
+          });
         });
+        emit();
+      }, (err) => {
+        console.warn('Study materials subscription notice:', err);
+        onError?.(err);
       });
-      emit();
-    }, (err) => console.warn('Videos as materials notice:', err));
-    unsubs.push(u2);
-  } catch (e) {
-    console.warn('Videos listener error:', e);
-  }
+      unsubs.push(u1);
+    } catch (e) {
+      console.warn('Materials listener error:', e);
+    }
+
+    try {
+      const vidsRef = collection(instance, 'videos');
+      const u2 = onSnapshot(vidsRef, (snapshot) => {
+        snapshot.docs.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (data?._deleted) {
+            matsMap.delete(`vid_${docSnap.id}`);
+            return;
+          }
+          const resolvedLink = (data.link || data.downloadUrl || data.url || '').trim();
+          matsMap.set(`vid_${docSnap.id}`, {
+            id: docSnap.id,
+            title: data.title || 'Clinical Video Lecture',
+            course: data.course || data.category || 'Others',
+            uploader: data.uploader || 'StudiRad Faculty',
+            link: resolvedLink,
+            type: 'video',
+            thumbnailUrl: data.thumbnailUrl,
+            createdAt: data.createdAt,
+            description: data.description || 'Recorded clinical session',
+          });
+        });
+        emit();
+      }, (err) => console.warn('Videos as materials notice:', err));
+      unsubs.push(u2);
+    } catch (e) {
+      console.warn('Videos listener error:', e);
+    }
+  });
 
   return () => {
     unsubs.forEach((u) => u());
@@ -993,7 +1125,7 @@ export async function pushCourseToFirestore(
     const ytThumb = courseData.videoUrl ? getYouTubeThumbnail(courseData.videoUrl) : null;
     const resolvedImage = ytThumb || courseData.image || '';
 
-    const payload = {
+    const payload = sanitizeForFirestore({
       ...courseData,
       id: courseId,
       image: resolvedImage,
@@ -1004,25 +1136,9 @@ export async function pushCourseToFirestore(
       quiz: Array.isArray(courseData.quiz) ? courseData.quiz : [],
       updatedAt: new Date().toISOString(),
       createdAt: courseData.createdAt || new Date().toISOString(),
-    };
+    });
 
-    // 1. Primary write to appletDb (ai-studio-studiradmobileap-6f5d2912-b23e-4c44-828e-081071b478b2)
-    try {
-      if (appletDb) {
-        await setDoc(doc(appletDb, 'courses', courseId), payload, { merge: true });
-      }
-    } catch (_) {}
-
-    // 2. Write to db (studirad-platform-new)
-    const docRef = doc(db, 'courses', courseId);
-    await setDoc(docRef, payload, { merge: true }).catch(() => {});
-
-    // 3. Write to adminDb (studirad-admin-portal)
-    try {
-      if (adminDb && adminDb !== db) {
-        await setDoc(doc(adminDb, 'courses', courseId), payload, { merge: true });
-      }
-    } catch (_) {}
+    await writeDocToAllDbs('courses', courseId, payload, true);
 
     return { success: true, id: courseId };
   } catch (error: any) {
@@ -1039,20 +1155,7 @@ export async function deleteCourseFromFirestore(
   courseId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    try {
-      if (appletDb) {
-        await deleteDoc(doc(appletDb, 'courses', courseId));
-      }
-    } catch (_) {}
-
-    try {
-      await deleteDoc(doc(db, 'courses', courseId));
-    } catch (_) {}
-
-    try {
-      await deleteDoc(doc(adminDb, 'courses', courseId));
-    } catch (_) {}
-
+    await deleteDocFromAllDbs('courses', courseId);
     try {
       await deleteDoc(doc(db, 'videos', courseId));
     } catch (_) {}
@@ -1065,35 +1168,27 @@ export async function deleteCourseFromFirestore(
 }
 
 /**
- * Admin: Push or update a live class in Firestore across both synced projects
+ * Admin: Push or update a live class in Firestore across synced projects
  */
 export async function pushClassToFirestore(
   classData: Partial<LiveClass>
 ): Promise<{ success: boolean; id: string; error?: string }> {
   const classId = classData.id || `live_${Date.now()}`;
-  const path = `classes/${classId}`;
-  const payload = {
+  const payload = sanitizeForFirestore({
     ...classData,
+    ...(classData.time ? { time: formatTime12h(classData.time) } : {}),
     id: classId,
     updatedAt: new Date().toISOString(),
     createdAt: classData.createdAt || new Date().toISOString(),
-  };
+  });
 
   try {
-    const docRef = doc(db, 'classes', classId);
-    await setDoc(docRef, payload, { merge: true });
+    await writeDocToAllDbs('classes', classId, payload, true);
+    return { success: true, id: classId };
   } catch (error: any) {
-    console.warn('Error pushing class to db:', error);
+    console.warn('Error pushing class:', error);
+    return { success: false, id: classId, error: error?.message || 'Failed to save class' };
   }
-
-  try {
-    const adminDocRef = doc(adminDb, 'classes', classId);
-    await setDoc(adminDocRef, payload, { merge: true });
-  } catch (error: any) {
-    console.warn('Error pushing class to adminDb:', error);
-  }
-
-  return { success: true, id: classId };
 }
 
 /**
@@ -1102,10 +1197,8 @@ export async function pushClassToFirestore(
 export async function deleteClassFromFirestore(
   classId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const path = `classes/${classId}`;
   try {
-    const docRef = doc(db, 'classes', classId);
-    await deleteDoc(docRef);
+    await deleteDocFromAllDbs('classes', classId);
     return { success: true };
   } catch (error: any) {
     console.error('Error deleting class:', error);
@@ -1123,21 +1216,29 @@ export async function pushMaterialToFirestore(
   const materialId = materialData.id || `mat_${Date.now()}`;
   const path = `materials/${materialId}`;
   
-  const payload = {
+  const linkUrl = materialData.downloadUrl || materialData.link || '';
+  const inferredType =
+    materialData.format === 'PDF' || linkUrl.toLowerCase().includes('.pdf')
+      ? 'pdf'
+      : materialData.format === 'Checklist' || materialData.format === 'Slide Deck'
+      ? 'document'
+      : 'link';
+
+  const payload = sanitizeForFirestore({
     course: materialData.course || materialData.category || 'General Radiography',
     title: materialData.title || '',
     uploader: materialData.uploader || 'StudiRad Faculty',
-    link: materialData.downloadUrl || materialData.link || '',
-    type: materialData.format === 'PDF' || materialData.format === 'Checklist' ? 'file' : 'link',
+    link: linkUrl,
+    format: materialData.format || (inferredType === 'pdf' ? 'PDF' : 'Guideline'),
+    type: inferredType,
     size: materialData.size || '1.8 MB',
     modality: materialData.modality || 'xray',
     description: materialData.description || '',
     createdAt: new Date(),
-  };
+  });
 
   try {
-    const docRef = doc(db, 'materials', materialId);
-    await setDoc(docRef, payload, { merge: true });
+    await writeDocToAllDbs('materials', materialId, payload, false);
     return { success: true, id: materialId };
   } catch (error: any) {
     console.error('Error pushing material to Firestore:', error);
@@ -1147,8 +1248,7 @@ export async function pushMaterialToFirestore(
 }
 
 /**
- * Admin: Push or update a video resource in Firestore (studirad-platform-new)
- * Matching the exact fields of the web app AdminMaterialsPage (videos tab)
+ * Admin: Push or update a video resource in Firestore
  */
 export async function pushVideoToFirestore(videoData: {
   course: string;
@@ -1158,17 +1258,17 @@ export async function pushVideoToFirestore(videoData: {
   thumbnailUrl?: string;
 }): Promise<{ success: boolean; id: string; error?: string }> {
   const videoId = `vid_${Date.now()}`;
-  const payload = {
+  const payload = sanitizeForFirestore({
     course: videoData.course || 'General Radiography',
     title: videoData.title || '',
     uploader: videoData.uploader || 'StudiRad Faculty',
     link: videoData.link || '',
     thumbnailUrl: videoData.thumbnailUrl || '',
     createdAt: new Date(),
-  };
+  });
 
   try {
-    await setDoc(doc(db, 'videos', videoId), payload, { merge: true });
+    await writeDocToAllDbs('videos', videoId, payload, false);
     return { success: true, id: videoId };
   } catch (error: any) {
     console.error('Error pushing video to Firestore:', error);
@@ -1183,8 +1283,8 @@ export async function deleteMaterialFromFirestore(
   materialId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    await deleteDoc(doc(db, 'materials', materialId)).catch(() => {});
-    await deleteDoc(doc(db, 'videos', materialId)).catch(() => {});
+    await deleteDocFromAllDbs('materials', materialId);
+    await deleteDocFromAllDbs('videos', materialId);
     return { success: true };
   } catch (error: any) {
     console.error('Error deleting material:', error);
@@ -1298,19 +1398,22 @@ export async function seedFirestoreIfEmpty(): Promise<void> {
 
 /**
  * Real-time listener for user requests (research assistance, tutoring, etc.)
+ * Merges snapshots from appletDb and db so requests always appear reliably.
  */
 export function subscribeUserRequests(
   userEmailOrId: string,
   onUpdate: (requests: any[]) => void
 ): () => void {
-  const reqCollRef = collection(db, 'requests');
-  const tutCollRef = collection(db, 'tutorial_requests');
-
-  let currentReqs: any[] = [];
-  let currentTutorials: any[] = [];
+  const reqMap = new Map<string, any>();
+  const tutMap = new Map<string, any>();
+  const privMap = new Map<string, any>();
 
   const emitCombined = () => {
-    const combined = [...currentReqs, ...currentTutorials];
+    const combined = [
+      ...Array.from(reqMap.values()),
+      ...Array.from(tutMap.values()),
+      ...Array.from(privMap.values()),
+    ];
     combined.sort(
       (a, b) =>
         new Date(b.submittedAt || b.createdAt || 0).getTime() -
@@ -1319,72 +1422,123 @@ export function subscribeUserRequests(
     onUpdate(combined);
   };
 
-  const unsubReqs = onSnapshot(
-    reqCollRef,
-    (snapshot) => {
-      const list: any[] = [];
-      snapshot.forEach((docSnap) => {
-        if (docSnap.id === '_rep_routing') return;
-        const data = docSnap.data();
-        if (
-          !userEmailOrId ||
-          data.userId === userEmailOrId ||
-          data.userEmail?.toLowerCase() === userEmailOrId.toLowerCase()
-        ) {
-          list.push({
-            id: docSnap.id,
-            ...data,
-          });
-        }
-      });
-      currentReqs = list;
-      emitCombined();
-    },
-    (err) => {
-      console.warn('Requests subscription notice:', err);
-    }
-  );
+  const unsubs: (() => void)[] = [];
+  const databases = [appletDb, db].filter(Boolean);
 
-  const unsubTutorials = onSnapshot(
-    tutCollRef,
-    (snapshot) => {
-      const list: any[] = [];
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        if (
-          !userEmailOrId ||
-          data.studentId === userEmailOrId ||
-          data.studentEmail?.toLowerCase() === userEmailOrId.toLowerCase() ||
-          data.userId === userEmailOrId
-        ) {
-          list.push({
-            id: docSnap.id,
-            referenceCode: data.referenceCode || `SR-TUT-${docSnap.id.slice(-5)}`,
-            category: 'private_class',
-            userId: data.studentId || data.userId,
-            userEmail: data.studentEmail || data.userEmail,
-            userName: data.studentName || data.userName,
-            status: data.status === 'confirmed' ? 'Scheduled' : data.status === 'completed' ? 'Completed' : 'Under Review',
-            statusNotes: data.adminFeedback || (data.status === 'confirmed' ? `Confirmed with ${data.instructorName}. Room: ${data.meetingLink || 'Ready'}` : 'Under clinical coordinator review.'),
-            submittedAt: data.createdAt || new Date().toISOString(),
-            subjectTopic: `${data.courseTitle || 'Private Tutorial'} (${data.durationMinutes || 30} mins)`,
-            learningObjectives: `Scheduled session with ${data.instructorName} on ${data.selectedDay} at ${data.selectedTimeSlot}. Rate: ${data.currency} ${data.calculatedRate}.`,
-            preferredTimes: `${data.selectedDay} - ${data.selectedTimeSlot}`,
-            ...data,
+  for (const targetDb of databases) {
+    try {
+      const u1 = onSnapshot(
+        collection(targetDb, 'requests'),
+        (snapshot) => {
+          snapshot.forEach((docSnap) => {
+            if (docSnap.id === '_rep_routing') return;
+            const data = docSnap.data();
+            if (
+              !userEmailOrId ||
+              data.userId === userEmailOrId ||
+              data.userEmail?.toLowerCase() === userEmailOrId.toLowerCase()
+            ) {
+              reqMap.set(docSnap.id, {
+                id: docSnap.id,
+                ...data,
+              });
+            }
           });
-        }
-      });
-      currentTutorials = list;
-      emitCombined();
-    },
-    (err) => {
-      console.warn('Tutorial requests subscription notice:', err);
-    }
-  );
+          emitCombined();
+        },
+        () => {}
+      );
+      unsubs.push(u1);
+    } catch {}
+
+    try {
+      const u2 = onSnapshot(
+        collection(targetDb, 'tutorial_requests'),
+        (snapshot) => {
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (
+              !userEmailOrId ||
+              data.studentId === userEmailOrId ||
+              data.studentEmail?.toLowerCase() === userEmailOrId.toLowerCase() ||
+              data.userId === userEmailOrId
+            ) {
+              const formattedSlot = formatTime12h(data.selectedTimeSlot);
+              tutMap.set(docSnap.id, {
+                id: docSnap.id,
+                referenceCode: data.referenceCode || `SR-TUT-${docSnap.id.slice(-5)}`,
+                category: 'private_class',
+                userId: data.studentId || data.userId,
+                userEmail: data.studentEmail || data.userEmail,
+                userName: data.studentName || data.userName,
+                status: data.status === 'confirmed' ? 'Scheduled' : data.status === 'completed' ? 'Completed' : 'Under Review',
+                statusNotes:
+                  data.adminFeedback ||
+                  (data.status === 'confirmed'
+                    ? `Confirmed with ${data.instructorName}. Room: ${data.meetingLink || 'Ready'}`
+                    : 'Pending admin coordination. We will get back to you within 24–48 hours.'),
+                submittedAt: data.createdAt || new Date().toISOString(),
+                subjectTopic: `${data.courseTitle || 'Private Tutorial'} (${data.durationMinutes || 30} mins)`,
+                learningObjectives: `Scheduled session with ${data.instructorName} on ${data.selectedDay} at ${formattedSlot}. Rate: ${data.currency} ${data.calculatedRate}.`,
+                preferredTimes: `${data.selectedDay} - ${formattedSlot}`,
+                ...data,
+                selectedTimeSlot: formattedSlot,
+              });
+            }
+          });
+          emitCombined();
+        },
+        () => {}
+      );
+      unsubs.push(u2);
+    } catch {}
+
+    try {
+      const u3 = onSnapshot(
+        collection(targetDb, 'private_class_requests'),
+        (snapshot) => {
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (
+              !userEmailOrId ||
+              data.studentId === userEmailOrId ||
+              data.studentEmail?.toLowerCase() === userEmailOrId.toLowerCase()
+            ) {
+              const formattedSlot = formatTime12h(data.selectedTimeSlot);
+              privMap.set(docSnap.id, {
+                id: docSnap.id,
+                referenceCode: data.referenceCode || `SR-CLS-${docSnap.id.slice(-5)}`,
+                category: 'private_class',
+                userId: data.studentId,
+                userEmail: data.studentEmail,
+                userName: data.studentName,
+                status: data.status || 'New Request',
+                statusNotes:
+                  data.adminFeedback ||
+                  (data.meetingLink
+                    ? `Confirmed with ${data.instructorName}. Room: ${data.meetingLink}`
+                    : 'Request received. Our admin team will notify your instructor and get back to you within 24–48 hours.'),
+                submittedAt: data.createdAt || new Date().toISOString(),
+                subjectTopic: `${data.classTitle} (${data.planType === 'monthly' ? 'Monthly Subscription' : `${data.selectedDays?.length || 1} Day(s)/Week`})`,
+                currentKnowledgeLevel: data.classLevel || 'All Levels',
+                learningObjectives: `Instructor: ${data.instructorName} · Schedule: ${(data.selectedDays || []).join(', ')} (${formattedSlot}) · Starts ${data.startDate}. ${data.notes ? `Notes: ${data.notes}` : ''}`.trim(),
+                preferredFormat: 'Online 1-on-1',
+                preferredSchedule: `${(data.selectedDays || []).join(', ')} · ${formattedSlot}`,
+                ...data,
+                selectedTimeSlot: formattedSlot,
+              });
+            }
+          });
+          emitCombined();
+        },
+        () => {}
+      );
+      unsubs.push(u3);
+    } catch {}
+  }
 
   return () => {
-    unsubReqs();
-    unsubTutorials();
+    unsubs.forEach((u) => u());
   };
 }
 
@@ -1394,22 +1548,32 @@ export function subscribeUserRequests(
 export function subscribeAllRequests(
   onUpdate: (requests: any[]) => void
 ): () => void {
-  const collRef = collection(db, 'requests');
-  return onSnapshot(
-    collRef,
-    (snapshot) => {
-      const all: any[] = [];
-      snapshot.forEach((docSnap) => {
-        if (docSnap.id === '_rep_routing') return;
-        all.push({ id: docSnap.id, ...docSnap.data() });
-      });
-      all.sort((a, b) => new Date(b.submittedAt || b.createdAt || 0).getTime() - new Date(a.submittedAt || a.createdAt || 0).getTime());
-      onUpdate(all);
-    },
-    (err) => {
-      handleFirestoreError(err, OperationType.LIST, 'requests');
-    }
-  );
+  const allMap = new Map<string, any>();
+  const emit = () => {
+    const all = Array.from(allMap.values());
+    all.sort((a, b) => new Date(b.submittedAt || b.createdAt || 0).getTime() - new Date(a.submittedAt || a.createdAt || 0).getTime());
+    onUpdate(all);
+  };
+
+  const unsubs: (() => void)[] = [];
+  for (const targetDb of [appletDb, db, adminDb].filter(Boolean)) {
+    try {
+      const u = onSnapshot(
+        collection(targetDb, 'requests'),
+        (snapshot) => {
+          snapshot.forEach((docSnap) => {
+            if (docSnap.id === '_rep_routing') return;
+            allMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
+          });
+          emit();
+        },
+        () => {}
+      );
+      unsubs.push(u);
+    } catch {}
+  }
+
+  return () => unsubs.forEach((u) => u());
 }
 
 /**
@@ -1433,17 +1597,33 @@ export async function selectRepresentativeByTraffic(): Promise<RepresentativeInf
   };
 
   try {
-    const snap = await getDocs(collection(db, 'requests'));
+    const snaps = await Promise.allSettled([
+      appletDb ? getDocs(collection(appletDb, 'requests')) : Promise.reject('no appletDb'),
+      db ? getDocs(collection(db, 'requests')) : Promise.reject('no db'),
+    ]);
+
+    const mergedDocs = new Map<string, any>();
+    for (const res of snaps) {
+      if (res.status === 'fulfilled') {
+        res.value.forEach((docSnap) => {
+          mergedDocs.set(docSnap.id, docSnap.data());
+        });
+      }
+    }
+
+    if (mergedDocs.size === 0) {
+      return getLocalTieBreak();
+    }
+
     let rep1Count = 0;
     let rep2Count = 0;
     let lastAssignedId: string | undefined;
 
-    snap.forEach((docSnap) => {
-      if (docSnap.id === '_rep_routing') {
-        lastAssignedId = docSnap.data()?.lastAssignedId;
+    mergedDocs.forEach((data, docId) => {
+      if (docId === '_rep_routing') {
+        lastAssignedId = data?.lastAssignedId;
         return;
       }
-      const data = docSnap.data();
       if (data?.category !== 'research') return;
 
       const phone = data.assignedRepPhone || data.assignedRepresentative?.displayPhone || '';
@@ -1457,12 +1637,12 @@ export async function selectRepresentativeByTraffic(): Promise<RepresentativeInf
     } else if (rep2Count < rep1Count) {
       chosen = rep2;
     } else {
-      // Exact traffic tie: alternate strictly against the last assigned representative
       chosen = lastAssignedId === rep1.id ? rep2 : rep1;
     }
 
-    await setDoc(
-      doc(db, 'requests', '_rep_routing'),
+    writeDocToAllDbs(
+      'requests',
+      '_rep_routing',
       {
         lastAssignedId: chosen.id,
         lastAssignedPhone: chosen.displayPhone,
@@ -1470,7 +1650,7 @@ export async function selectRepresentativeByTraffic(): Promise<RepresentativeInf
         rep2Count: rep2Count + (chosen.id === rep2.id ? 1 : 0),
         updatedAt: new Date().toISOString(),
       },
-      { merge: true }
+      true
     ).catch(() => {});
 
     return chosen;
@@ -1517,7 +1697,7 @@ export async function pushResearchRequestToFirestore(requestData: {
     const reqId = `req_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const submittedAt = new Date().toISOString();
 
-    const payload = {
+    const payload = sanitizeForFirestore({
       ...requestData,
       id: reqId,
       referenceCode,
@@ -1530,13 +1710,9 @@ export async function pushResearchRequestToFirestore(requestData: {
       assignedRepWhatsapp: chosenRep.whatsappNumber,
       submittedAt,
       createdAt: submittedAt,
-    };
+    });
 
-    await setDoc(doc(db, 'requests', reqId), payload, { merge: true });
-    await setDoc(doc(adminDb, 'requests', reqId), payload, { merge: true }).catch(() => {});
-    if (appletDb) {
-      await setDoc(doc(appletDb, 'requests', reqId), payload, { merge: true }).catch(() => {});
-    }
+    await writeDocToAllDbs('requests', reqId, payload, true);
 
     // Save notification for admin side
     const notifId = `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
@@ -1560,8 +1736,7 @@ export async function pushResearchRequestToFirestore(requestData: {
       createdAt: submittedAt,
       read: false,
     };
-    await setDoc(doc(db, 'admin_notifications', notifId), notifPayload, { merge: true }).catch(() => {});
-    await setDoc(doc(adminDb, 'admin_notifications', notifId), notifPayload, { merge: true }).catch(() => {});
+    writeDocToAllDbs('admin_notifications', notifId, notifPayload, true).catch(() => {});
 
     // Notify logged-in user in their notifications feed
     if (requestData.userId) {
@@ -1577,7 +1752,7 @@ export async function pushResearchRequestToFirestore(requestData: {
         read: false,
         createdAt: submittedAt,
       };
-      await setDoc(doc(db, 'notifications', userNotifId), userNotif, { merge: true }).catch(() => {});
+      writeDocToAllDbs('notifications', userNotifId, userNotif, false).catch(() => {});
     }
 
     return {
@@ -1609,21 +1784,18 @@ export async function updateResearchRequestStatus(
   referenceCode?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const updatePayload = {
+    const updatePayload = sanitizeForFirestore({
       status,
       ...(statusNotes !== undefined ? { statusNotes } : {}),
       updatedAt: new Date().toISOString(),
-    };
-    await setDoc(doc(db, 'requests', requestId), updatePayload, { merge: true });
-    await setDoc(doc(adminDb, 'requests', requestId), updatePayload, { merge: true }).catch(() => {});
-    if (appletDb) {
-      await setDoc(doc(appletDb, 'requests', requestId), updatePayload, { merge: true }).catch(() => {});
-    }
+    });
+    await writeDocToAllDbs('requests', requestId, updatePayload, true);
 
     if (userId) {
       const notifId = `notif_user_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-      await setDoc(
-        doc(db, 'notifications', notifId),
+      writeDocToAllDbs(
+        'notifications',
+        notifId,
         {
           id: notifId,
           title: `Research Request Update (${referenceCode || requestId})`,
@@ -1635,7 +1807,7 @@ export async function updateResearchRequestStatus(
           read: false,
           createdAt: new Date().toISOString(),
         },
-        { merge: true }
+        false
       ).catch(() => {});
     }
 
@@ -1652,17 +1824,29 @@ export async function updateResearchRequestStatus(
 export function subscribeAdminNotifications(
   onUpdate: (notifications: any[]) => void
 ): () => void {
-  const collRef = collection(db, 'admin_notifications');
-  return onSnapshot(
-    collRef,
-    (snapshot) => {
-      const list: any[] = [];
-      snapshot.forEach((d) => list.push({ id: d.id, ...d.data() }));
-      list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-      onUpdate(list);
-    },
-    (err) => console.warn('Admin notifications subscription notice:', err)
-  );
+  const notifMap = new Map<string, any>();
+  const emit = () => {
+    const list = Array.from(notifMap.values());
+    list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    onUpdate(list);
+  };
+
+  const unsubs: (() => void)[] = [];
+  for (const targetDb of [appletDb, db, adminDb].filter(Boolean)) {
+    try {
+      const u = onSnapshot(
+        collection(targetDb, 'admin_notifications'),
+        (snapshot) => {
+          snapshot.forEach((d) => notifMap.set(d.id, { id: d.id, ...d.data() }));
+          emit();
+        },
+        () => {}
+      );
+      unsubs.push(u);
+    } catch {}
+  }
+
+  return () => unsubs.forEach((u) => u());
 }
 
 /**
@@ -1670,7 +1854,7 @@ export function subscribeAdminNotifications(
  */
 export async function markNotificationAsRead(notifId: string): Promise<void> {
   try {
-    await setDoc(doc(db, 'admin_notifications', notifId), { read: true }, { merge: true });
+    await writeDocToAllDbs('admin_notifications', notifId, { read: true }, true);
   } catch (e) {
     console.warn('Error marking notification as read:', e);
   }
@@ -1684,32 +1868,30 @@ export async function submitTutorApplication(
 ): Promise<{ success: boolean; id: string; error?: string }> {
   const appId = `tutor_app_${Date.now()}`;
   try {
-    const payload: TutorApplication = {
+    const payload = sanitizeForFirestore<TutorApplication>({
       ...applicationData,
       id: appId,
       status: 'pending',
       appliedAt: new Date().toISOString(),
-    };
+    });
 
-    // Save to tutor_applications
-    await setDoc(doc(db, 'tutor_applications', appId), payload, { merge: true });
-    if (appletDb) {
-      await setDoc(doc(appletDb, 'tutor_applications', appId), payload, { merge: true }).catch(() => {});
-    }
+    await writeDocToAllDbs('tutor_applications', appId, payload, true);
 
-    // Also update user's profile with instructorStatus = 'pending'
     if (applicationData.userId) {
-      const userRef = doc(db, 'users', applicationData.userId);
-      await setDoc(userRef, {
-        instructorStatus: 'pending',
-        instructorBio: applicationData.bio,
-        instructorAcademicBackground: applicationData.academicBackground,
-        instructorExpertise: applicationData.areaOfExpertise,
-        instructorExperience: applicationData.experienceYears,
-      }, { merge: true }).catch(() => {});
+      writeDocToAllDbs(
+        'users',
+        applicationData.userId,
+        {
+          instructorStatus: 'pending',
+          instructorBio: applicationData.bio,
+          instructorAcademicBackground: applicationData.academicBackground,
+          instructorExpertise: applicationData.areaOfExpertise,
+          instructorExperience: applicationData.experienceYears,
+        },
+        false
+      ).catch(() => {});
     }
 
-    // Create Admin notification for the new application
     const notifId = `notif_${Date.now()}`;
     const notifPayload = {
       id: notifId,
@@ -1722,7 +1904,7 @@ export async function submitTutorApplication(
       createdAt: new Date().toISOString(),
       linkTab: 'tutors',
     };
-    await setDoc(doc(db, 'admin_notifications', notifId), notifPayload, { merge: true }).catch(() => {});
+    writeDocToAllDbs('admin_notifications', notifId, notifPayload, true).catch(() => {});
 
     return { success: true, id: appId };
   } catch (error: any) {
@@ -1741,17 +1923,29 @@ export async function submitTutorApplication(
 export function subscribeTutorApplications(
   onUpdate: (apps: TutorApplication[]) => void
 ): () => void {
-  const collRef = collection(db, 'tutor_applications');
-  return onSnapshot(
-    collRef,
-    (snapshot) => {
-      const list: TutorApplication[] = [];
-      snapshot.forEach((d) => list.push({ id: d.id, ...d.data() } as TutorApplication));
-      list.sort((a, b) => new Date(b.appliedAt || 0).getTime() - new Date(a.appliedAt || 0).getTime());
-      onUpdate(list);
-    },
-    (err) => console.warn('Tutor applications subscription notice:', err)
-  );
+  const appsMap = new Map<string, TutorApplication>();
+  const emit = () => {
+    const list = Array.from(appsMap.values());
+    list.sort((a, b) => new Date(b.appliedAt || 0).getTime() - new Date(a.appliedAt || 0).getTime());
+    onUpdate(list);
+  };
+
+  const unsubs: (() => void)[] = [];
+  for (const targetDb of [appletDb, db, adminDb].filter(Boolean)) {
+    try {
+      const u = onSnapshot(
+        collection(targetDb, 'tutor_applications'),
+        (snapshot) => {
+          snapshot.forEach((d) => appsMap.set(d.id, { id: d.id, ...d.data() } as TutorApplication));
+          emit();
+        },
+        () => {}
+      );
+      unsubs.push(u);
+    } catch {}
+  }
+
+  return () => unsubs.forEach((u) => u());
 }
 
 /**
@@ -1765,35 +1959,36 @@ export async function reviewTutorApplication(
   reviewedBy?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const updatePayload = {
+    const updatePayload = sanitizeForFirestore({
       status,
       feedbackNotes: feedbackNotes || '',
       reviewedAt: new Date().toISOString(),
       reviewedBy: reviewedBy || 'StudiRad Admin Team',
-    };
+    });
 
-    await setDoc(doc(db, 'tutor_applications', applicationId), updatePayload, { merge: true });
-    if (appletDb) {
-      await setDoc(doc(appletDb, 'tutor_applications', applicationId), updatePayload, { merge: true }).catch(() => {});
-    }
+    await writeDocToAllDbs('tutor_applications', applicationId, updatePayload, true);
 
-    // If approved, update user's role and instructor status
     if (userId) {
-      await setDoc(doc(db, 'users', userId), {
-        role: status === 'approved' ? 'Clinical Instructor / Tutor' : 'Qualified Radiographer',
-        isInstructor: status === 'approved',
-        instructorStatus: status,
-      }, { merge: true });
+      await writeDocToAllDbs(
+        'users',
+        userId,
+        {
+          role: status === 'approved' ? 'Clinical Instructor / Tutor' : 'Qualified Radiographer',
+          isInstructor: status === 'approved',
+          instructorStatus: status,
+        },
+        false
+      ).catch(() => {});
     }
 
-    // Notify user
     const notifId = `notif_user_${Date.now()}`;
     const userNotif = {
       id: notifId,
-      title: status === 'approved' ? 'Tutor Application Approved! 🎉' : 'Update on Tutor Application',
-      message: status === 'approved' 
-        ? 'Congratulations! You are now an approved StudiRad Instructor. You can now build courses and offer private 1-on-1 tutorials.' 
-        : `Thank you for applying. Feedback from team: ${feedbackNotes || 'Please contact support for guidance.'}`,
+      title: status === 'approved' ? 'Tutor Application Approved!' : 'Update on Tutor Application',
+      message:
+        status === 'approved'
+          ? 'Congratulations! You are now an approved StudiRad Instructor. You can now build courses and offer private 1-on-1 tutorials.'
+          : `Thank you for applying. Feedback from team: ${feedbackNotes || 'Please contact support for guidance.'}`,
       type: 'tutor_application',
       targetRole: 'user',
       targetUserId: userId,
@@ -1801,7 +1996,7 @@ export async function reviewTutorApplication(
       read: false,
       createdAt: new Date().toISOString(),
     };
-    await setDoc(doc(db, 'notifications', notifId), userNotif, { merge: true }).catch(() => {});
+    writeDocToAllDbs('notifications', notifId, userNotif, false).catch(() => {});
 
     return { success: true };
   } catch (err: any) {
@@ -1818,24 +2013,23 @@ export async function submitTutorialRequest(
 ): Promise<{ success: boolean; id: string; error?: string }> {
   const reqId = `tut_req_${Date.now()}`;
   try {
-    const payload: TutorialRequest = {
+    const formattedSlot = formatTime12h(requestData.selectedTimeSlot);
+    const payload = sanitizeForFirestore<TutorialRequest>({
       ...requestData,
+      selectedTimeSlot: formattedSlot,
       id: reqId,
       status: 'pending',
+      sharedWithInstructor: false,
       createdAt: new Date().toISOString(),
-    };
+    });
 
-    await setDoc(doc(db, 'tutorial_requests', reqId), payload, { merge: true });
-    if (appletDb) {
-      await setDoc(doc(appletDb, 'tutorial_requests', reqId), payload, { merge: true }).catch(() => {});
-    }
+    await writeDocToAllDbs('tutorial_requests', reqId, payload, true);
 
-    // Notify Admin
     const adminNotifId = `notif_admin_${Date.now()}`;
     const adminNotif = {
       id: adminNotifId,
       title: `Private Tutorial Request: ${requestData.courseTitle}`,
-      message: `${requestData.studentName} requested ${requestData.durationMinutes}min session with ${requestData.instructorName} on ${requestData.selectedDay} (${requestData.selectedTimeSlot}). Rate: ${requestData.currency} ${requestData.calculatedRate}.`,
+      message: `${requestData.studentName} requested ${requestData.durationMinutes}min session with ${requestData.instructorName} on ${requestData.selectedDay} (${formattedSlot}). Rate: ${requestData.currency} ${requestData.calculatedRate}.`,
       type: 'tutorial_request',
       targetRole: 'admin',
       relatedId: reqId,
@@ -1843,24 +2037,7 @@ export async function submitTutorialRequest(
       createdAt: new Date().toISOString(),
       linkTab: 'tutorials',
     };
-    await setDoc(doc(db, 'admin_notifications', adminNotifId), adminNotif, { merge: true }).catch(() => {});
-
-    // Notify Instructor if instructorId is set
-    if (requestData.instructorId) {
-      const instNotifId = `notif_inst_${Date.now()}`;
-      const instNotif = {
-        id: instNotifId,
-        title: `New Tutorial Request: ${requestData.courseTitle}`,
-        message: `${requestData.studentName} requested a private session on ${requestData.selectedDay} (${requestData.selectedTimeSlot}). Rate: ${requestData.currency} ${requestData.calculatedRate}.`,
-        type: 'tutorial_request',
-        targetRole: 'instructor',
-        targetUserId: requestData.instructorId,
-        relatedId: reqId,
-        read: false,
-        createdAt: new Date().toISOString(),
-      };
-      await setDoc(doc(db, 'notifications', instNotifId), instNotif, { merge: true }).catch(() => {});
-    }
+    writeDocToAllDbs('admin_notifications', adminNotifId, adminNotif, true).catch(() => {});
 
     return { success: true, id: reqId };
   } catch (error: any) {
@@ -1874,22 +2051,75 @@ export async function submitTutorialRequest(
 }
 
 /**
+ * Admin: Forward/Notify Instructor of a Course Tutorial Request in their Profile
+ */
+export async function notifyInstructorOfTutorialRequest(
+  req: TutorialRequest
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const nowIso = new Date().toISOString();
+    await writeDocToAllDbs(
+      'tutorial_requests',
+      req.id,
+      { sharedWithInstructor: true, notifiedInstructorAt: nowIso },
+      true
+    );
+
+    if (req.instructorId) {
+      const instNotifId = `notif_inst_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      writeDocToAllDbs(
+        'notifications',
+        instNotifId,
+        {
+          id: instNotifId,
+          title: `Admin Forwarded Tutorial Request: ${req.courseTitle}`,
+          message: `${req.studentName} (${req.studentEmail}) booked a ${req.durationMinutes}min session on ${req.selectedDay} (${formatTime12h(req.selectedTimeSlot)}). Check Instructor Studio to review.`,
+          type: 'tutorial_request',
+          targetRole: 'instructor',
+          targetUserId: req.instructorId,
+          relatedId: req.id,
+          read: false,
+          createdAt: nowIso,
+        },
+        false
+      ).catch(() => {});
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to notify instructor' };
+  }
+}
+
+/**
  * Real-time listener for Tutorial Requests
  */
 export function subscribeTutorialRequests(
   onUpdate: (requests: TutorialRequest[]) => void
 ): () => void {
-  const collRef = collection(db, 'tutorial_requests');
-  return onSnapshot(
-    collRef,
-    (snapshot) => {
-      const list: TutorialRequest[] = [];
-      snapshot.forEach((d) => list.push({ id: d.id, ...d.data() } as TutorialRequest));
-      list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-      onUpdate(list);
-    },
-    (err) => console.warn('Tutorial requests subscription notice:', err)
-  );
+  const tutMap = new Map<string, TutorialRequest>();
+  const emit = () => {
+    const list = Array.from(tutMap.values());
+    list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    onUpdate(list);
+  };
+
+  const unsubs: (() => void)[] = [];
+  for (const targetDb of [appletDb, db, adminDb].filter(Boolean)) {
+    try {
+      const u = onSnapshot(
+        collection(targetDb, 'tutorial_requests'),
+        (snapshot) => {
+          snapshot.forEach((d) => tutMap.set(d.id, { id: d.id, ...d.data() } as TutorialRequest));
+          emit();
+        },
+        () => {}
+      );
+      unsubs.push(u);
+    } catch {}
+  }
+
+  return () => unsubs.forEach((u) => u());
 }
 
 /**
@@ -1904,22 +2134,22 @@ export async function updateTutorialRequestStatus(
   courseTitle?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const updatePayload: Partial<TutorialRequest> = {
+    const updatePayload = sanitizeForFirestore<Partial<TutorialRequest>>({
       status,
       adminFeedback: adminFeedback || '',
       meetingLink: meetingLink || '',
-    };
-    await setDoc(doc(db, 'tutorial_requests', requestId), updatePayload, { merge: true });
+    });
+    await writeDocToAllDbs('tutorial_requests', requestId, updatePayload, true);
 
-    // Notify Student
     if (studentId) {
       const notifId = `notif_user_${Date.now()}`;
       const userNotif = {
         id: notifId,
-        title: status === 'confirmed' ? `Tutorial Session Confirmed! 📅` : `Tutorial Request Update`,
-        message: status === 'confirmed'
-          ? `Your private session for "${courseTitle || 'Course'}" has been confirmed! Meeting Room: ${meetingLink || 'Check dashboard for details.'}`
-          : `Update on your tutorial request for "${courseTitle || 'Course'}": ${adminFeedback || status}`,
+        title: status === 'confirmed' ? 'Tutorial Session Confirmed!' : 'Tutorial Request Update',
+        message:
+          status === 'confirmed'
+            ? `Your private session for "${courseTitle || 'Course'}" has been confirmed! Meeting Room: ${meetingLink || 'Check dashboard for details.'}`
+            : `Update on your tutorial request for "${courseTitle || 'Course'}": ${adminFeedback || status}`,
         type: 'tutorial_request',
         targetRole: 'user',
         targetUserId: studentId,
@@ -1927,7 +2157,7 @@ export async function updateTutorialRequestStatus(
         read: false,
         createdAt: new Date().toISOString(),
       };
-      await setDoc(doc(db, 'notifications', notifId), userNotif, { merge: true }).catch(() => {});
+      writeDocToAllDbs('notifications', notifId, userNotif, false).catch(() => {});
     }
 
     return { success: true };
@@ -1946,16 +2176,21 @@ export async function approveCourseByAdmin(
   courseTitle?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    await setDoc(doc(db, 'courses', courseId), {
-      status: 'published',
-      updatedAt: new Date().toISOString(),
-    }, { merge: true });
+    await writeDocToAllDbs(
+      'courses',
+      courseId,
+      {
+        status: 'published',
+        updatedAt: new Date().toISOString(),
+      },
+      true
+    );
 
     if (creatorId) {
       const notifId = `notif_creator_${Date.now()}`;
       const notif = {
         id: notifId,
-        title: 'Course Published! 🚀',
+        title: 'Course Published!',
         message: `Your course "${courseTitle || 'New Course'}" has been approved by admin and is now live to all learners!`,
         type: 'course_submission',
         targetRole: 'instructor',
@@ -1964,7 +2199,7 @@ export async function approveCourseByAdmin(
         read: false,
         createdAt: new Date().toISOString(),
       };
-      await setDoc(doc(db, 'notifications', notifId), notif, { merge: true }).catch(() => {});
+      writeDocToAllDbs('notifications', notifId, notif, false).catch(() => {});
     }
 
     return { success: true };
@@ -1981,60 +2216,144 @@ export function subscribeUserNotifications(
   userId: string,
   onUpdate: (notifications: any[]) => void
 ): () => void {
-  const collRef = collection(db, 'notifications');
-  return onSnapshot(
-    collRef,
-    (snapshot) => {
-      const list: any[] = [];
-      snapshot.forEach((d) => {
-        const data = d.data();
-        if (data.targetUserId === userId || (!data.targetUserId && data.targetRole === 'user')) {
-          list.push({ id: d.id, ...data });
-        }
-      });
-      list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-      onUpdate(list);
-    },
-    (err) => console.warn('User notifications subscription notice:', err)
-  );
+  const notifMap = new Map<string, any>();
+  const emit = () => {
+    const list = Array.from(notifMap.values());
+    list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    onUpdate(list);
+  };
+
+  const unsubs: (() => void)[] = [];
+  for (const targetDb of [appletDb, db].filter(Boolean)) {
+    try {
+      const u = onSnapshot(
+        collection(targetDb, 'notifications'),
+        (snapshot) => {
+          snapshot.forEach((d) => {
+            const data = d.data();
+            if (data.targetUserId === userId || (!data.targetUserId && data.targetRole === 'user')) {
+              notifMap.set(d.id, { id: d.id, ...data });
+            }
+          });
+          emit();
+        },
+        () => {}
+      );
+      unsubs.push(u);
+    } catch {}
+  }
+
+  return () => unsubs.forEach((u) => u());
+}
+
+export type RadiographyGameMode = 'fill_blank' | 'word_scramble' | 'memory_match' | 'true_false';
+
+export interface GameAttemptRecord {
+  id: string;
+  mode: RadiographyGameMode;
+  category: string;
+  points: number;
+  correct: boolean;
+  timestamp: string;
 }
 
 export interface UserGameProgress {
+  activeMode?: RadiographyGameMode;
   currentLevel: 'easy' | 'medium' | 'difficult';
   levelIndices: {
     easy: number;
     medium: number;
     difficult: number;
   };
+  scrambleIndices?: {
+    easy: number;
+    medium: number;
+    difficult: number;
+  };
+  trueFalseIndices?: {
+    easy: number;
+    medium: number;
+    difficult: number;
+  };
+  memoryCompletedDecks?: string[];
   solvedQuestionIds: string[];
   totalScore: number;
   streak: number;
   bestStreak: number;
   marblesCount: number;
+  modeScores?: Record<RadiographyGameMode, number>;
+  modeSolved?: Record<RadiographyGameMode, number>;
+  gamesPlayed?: number;
+  correctAnswers?: number;
+  attemptsCount?: number;
+  recentActivity?: GameAttemptRecord[];
   lastPlayedAt: string;
 }
 
+export interface PlayerScoreRecord {
+  userId: string;
+  playerName: string;
+  role: string;
+  totalScore: number;
+  bestStreak: number;
+  currentStreak: number;
+  solvedCount: number;
+  gamesPlayed: number;
+  correctAnswers: number;
+  attemptsCount: number;
+  modeScores: Record<RadiographyGameMode, number>;
+  modeSolved: Record<RadiographyGameMode, number>;
+  updatedAt: string;
+}
+
+const DEFAULT_MODE_MAP: Record<RadiographyGameMode, number> = {
+  fill_blank: 0,
+  word_scramble: 0,
+  memory_match: 0,
+  true_false: 0,
+};
+
 const DEFAULT_GAME_PROGRESS: UserGameProgress = {
+  activeMode: 'fill_blank',
   currentLevel: 'easy',
   levelIndices: {
     easy: 0,
     medium: 0,
     difficult: 0,
   },
+  scrambleIndices: {
+    easy: 0,
+    medium: 0,
+    difficult: 0,
+  },
+  trueFalseIndices: {
+    easy: 0,
+    medium: 0,
+    difficult: 0,
+  },
+  memoryCompletedDecks: [],
   solvedQuestionIds: [],
   totalScore: 0,
   streak: 0,
   bestStreak: 0,
   marblesCount: 0,
+  modeScores: { ...DEFAULT_MODE_MAP },
+  modeSolved: { ...DEFAULT_MODE_MAP },
+  gamesPlayed: 0,
+  correctAnswers: 0,
+  attemptsCount: 0,
+  recentActivity: [],
   lastPlayedAt: new Date().toISOString(),
 };
 
 /**
- * Save user radiographic trivia & marble game progress
+ * Save user radiographic game progress, push total score directly to user profile,
+ * and update real-time player scoreboard record in Firestore.
  */
 export async function saveUserGameProgress(
   userId: string,
-  progress: UserGameProgress
+  progress: UserGameProgress,
+  playerMeta?: { fullName?: string; role?: string }
 ): Promise<void> {
   if (!userId) return;
   const storageKey = `studirad_game_progress_${userId}`;
@@ -2042,16 +2361,91 @@ export async function saveUserGameProgress(
     localStorage.setItem(storageKey, JSON.stringify(progress));
   } catch {}
 
-  try {
-    const docRef = doc(db, 'users', userId, 'game_progress', 'state');
-    await setDoc(docRef, progress, { merge: true });
-  } catch (e) {
-    // Non-blocking fallback to local storage
+  const cleanProgress = sanitizeForFirestore({
+    ...progress,
+    recentActivity: (progress.recentActivity || []).slice(0, 15),
+  });
+
+  const modeScores: Record<RadiographyGameMode, number> = {
+    fill_blank: progress.modeScores?.fill_blank ?? 0,
+    word_scramble: progress.modeScores?.word_scramble ?? 0,
+    memory_match: progress.modeScores?.memory_match ?? 0,
+    true_false: progress.modeScores?.true_false ?? 0,
+  };
+  const modeSolved: Record<RadiographyGameMode, number> = {
+    fill_blank: progress.modeSolved?.fill_blank ?? 0,
+    word_scramble: progress.modeSolved?.word_scramble ?? 0,
+    memory_match: progress.modeSolved?.memory_match ?? (progress.memoryCompletedDecks?.length || 0),
+    true_false: progress.modeSolved?.true_false ?? 0,
+  };
+  const solvedCount =
+    (progress.solvedQuestionIds?.length || 0) + (progress.memoryCompletedDecks?.length || 0);
+  const nowIso = new Date().toISOString();
+
+  const writes: Promise<any>[] = [
+    appletDb
+      ? setDoc(doc(appletDb, 'users', userId, 'game_progress', 'state'), cleanProgress, { merge: true }).catch((e) =>
+          handleFirestoreError(e, OperationType.WRITE, `users/${userId}/game_progress/state`)
+        )
+      : Promise.resolve(),
+    db
+      ? setDoc(doc(db, 'users', userId, 'game_progress', 'state'), cleanProgress, { merge: true }).catch(() => {})
+      : Promise.resolve(),
+  ];
+
+  // Push total score & stats directly to signed-in user's profile and real player scoreboard
+  if (userId !== 'guest') {
+    const profilePatch = sanitizeForFirestore({
+      gameScore: progress.totalScore || 0,
+      bestStreak: progress.bestStreak || 0,
+      gamesSolved: solvedCount,
+      gameStats: {
+        fill_blank: { score: modeScores.fill_blank, solved: modeSolved.fill_blank },
+        word_scramble: { score: modeScores.word_scramble, solved: modeSolved.word_scramble },
+        memory_match: { score: modeScores.memory_match, solved: modeSolved.memory_match },
+        true_false: { score: modeScores.true_false, solved: modeSolved.true_false },
+        lastPlayedAt: nowIso,
+      },
+      updatedAt: nowIso,
+    });
+
+    const scoreboardRecord = sanitizeForFirestore({
+      userId,
+      playerName: playerMeta?.fullName?.trim() || 'Radiography Scholar',
+      role: playerMeta?.role || 'Radiographer',
+      totalScore: progress.totalScore || 0,
+      bestStreak: progress.bestStreak || 0,
+      currentStreak: progress.streak || 0,
+      solvedCount,
+      gamesPlayed: progress.gamesPlayed || 0,
+      correctAnswers: progress.correctAnswers || 0,
+      attemptsCount: progress.attemptsCount || 0,
+      modeScores,
+      modeSolved,
+      updatedAt: nowIso,
+    });
+
+    writes.push(
+      appletDb
+        ? setDoc(doc(appletDb, 'users', userId), profilePatch, { merge: true }).catch((e) =>
+            handleFirestoreError(e, OperationType.WRITE, `users/${userId}`)
+          )
+        : Promise.resolve(),
+      db ? setDoc(doc(db, 'users', userId), profilePatch, { merge: true }).catch(() => {}) : Promise.resolve(),
+      appletDb
+        ? setDoc(doc(appletDb, 'game_scores', userId), scoreboardRecord, { merge: true }).catch((e) =>
+            handleFirestoreError(e, OperationType.WRITE, `game_scores/${userId}`)
+          )
+        : Promise.resolve(),
+      db ? setDoc(doc(db, 'game_scores', userId), scoreboardRecord, { merge: true }).catch(() => {}) : Promise.resolve()
+    );
   }
+
+  await Promise.allSettled(writes);
 }
 
 /**
- * Load user radiographic trivia & marble game progress (resumes where they stopped)
+ * Load user radiographic game progress (resumes where they stopped across all modes)
  */
 export async function loadUserGameProgress(
   userId: string
@@ -2066,32 +2460,517 @@ export async function loadUserGameProgress(
   } catch {}
 
   if (!userId || userId === 'guest') {
-    return localProgress || DEFAULT_GAME_PROGRESS;
+    return localProgress
+      ? {
+          ...DEFAULT_GAME_PROGRESS,
+          ...localProgress,
+          modeScores: { ...DEFAULT_MODE_MAP, ...(localProgress.modeScores || {}) },
+          modeSolved: { ...DEFAULT_MODE_MAP, ...(localProgress.modeSolved || {}) },
+        }
+      : DEFAULT_GAME_PROGRESS;
   }
 
-  try {
-    const docRef = doc(db, 'users', userId, 'game_progress', 'state');
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
-      const data = snap.data() as UserGameProgress;
-      // Merge with highest score
-      const merged: UserGameProgress = {
+  for (const targetDb of [appletDb, db].filter(Boolean)) {
+    try {
+      const docRef = doc(targetDb, 'users', userId, 'game_progress', 'state');
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data() as UserGameProgress;
+        const merged: UserGameProgress = {
+          ...DEFAULT_GAME_PROGRESS,
+          ...localProgress,
+          ...data,
+          levelIndices: {
+            ...DEFAULT_GAME_PROGRESS.levelIndices,
+            ...(localProgress?.levelIndices || {}),
+            ...(data.levelIndices || {}),
+          },
+          scrambleIndices: {
+            ...DEFAULT_GAME_PROGRESS.scrambleIndices!,
+            ...(localProgress?.scrambleIndices || {}),
+            ...(data.scrambleIndices || {}),
+          },
+          trueFalseIndices: {
+            ...DEFAULT_GAME_PROGRESS.trueFalseIndices!,
+            ...(localProgress?.trueFalseIndices || {}),
+            ...(data.trueFalseIndices || {}),
+          },
+          modeScores: {
+            ...DEFAULT_MODE_MAP,
+            ...(localProgress?.modeScores || {}),
+            ...(data.modeScores || {}),
+          },
+          modeSolved: {
+            ...DEFAULT_MODE_MAP,
+            ...(localProgress?.modeSolved || {}),
+            ...(data.modeSolved || {}),
+          },
+          memoryCompletedDecks: Array.from(
+            new Set([...(localProgress?.memoryCompletedDecks || []), ...(data.memoryCompletedDecks || [])])
+          ),
+          recentActivity: Array.isArray(data.recentActivity)
+            ? data.recentActivity
+            : localProgress?.recentActivity || [],
+        };
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(merged));
+        } catch {}
+        return merged;
+      }
+    } catch {}
+  }
+
+  return localProgress
+    ? {
         ...DEFAULT_GAME_PROGRESS,
         ...localProgress,
-        ...data,
-        levelIndices: {
-          ...DEFAULT_GAME_PROGRESS.levelIndices,
-          ...(localProgress?.levelIndices || {}),
-          ...(data.levelIndices || {}),
-        },
-      };
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(merged));
-      } catch {}
-      return merged;
-    }
-  } catch {}
-
-  return localProgress || DEFAULT_GAME_PROGRESS;
+        modeScores: { ...DEFAULT_MODE_MAP, ...(localProgress.modeScores || {}) },
+        modeSolved: { ...DEFAULT_MODE_MAP, ...(localProgress.modeSolved || {}) },
+      }
+    : DEFAULT_GAME_PROGRESS;
 }
+
+/**
+ * Subscribe to real Firestore player scoreboard records (no dummy entries)
+ */
+export function subscribePlayerScores(
+  onUpdate: (players: PlayerScoreRecord[]) => void
+): () => void {
+  const playersMap = new Map<string, PlayerScoreRecord>();
+
+  const emit = () => {
+    const sorted = Array.from(playersMap.values())
+      .filter((p) => p.totalScore > 0 || p.solvedCount > 0 || p.gamesPlayed > 0)
+      .sort((a, b) => {
+        if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+        return b.bestStreak - a.bestStreak;
+      });
+    onUpdate(sorted);
+  };
+
+  const unsubs: (() => void)[] = [];
+  for (const targetDb of [appletDb, db].filter(Boolean)) {
+    try {
+      const colRef = collection(targetDb, 'game_scores');
+      const u = onSnapshot(
+        colRef,
+        (snapshot) => {
+          snapshot.docs.forEach((d) => {
+            const data = d.data();
+            const uid = data.userId || d.id;
+            const prev = playersMap.get(uid);
+            const candidate: PlayerScoreRecord = {
+              userId: uid,
+              playerName: data.playerName || 'Radiography Scholar',
+              role: data.role || 'Radiographer',
+              totalScore: Number(data.totalScore) || 0,
+              bestStreak: Number(data.bestStreak) || 0,
+              currentStreak: Number(data.currentStreak) || 0,
+              solvedCount: Number(data.solvedCount) || 0,
+              gamesPlayed: Number(data.gamesPlayed) || 0,
+              correctAnswers: Number(data.correctAnswers) || 0,
+              attemptsCount: Number(data.attemptsCount) || 0,
+              modeScores: {
+                fill_blank: Number(data.modeScores?.fill_blank) || 0,
+                word_scramble: Number(data.modeScores?.word_scramble) || 0,
+                memory_match: Number(data.modeScores?.memory_match) || 0,
+                true_false: Number(data.modeScores?.true_false) || 0,
+              },
+              modeSolved: {
+                fill_blank: Number(data.modeSolved?.fill_blank) || 0,
+                word_scramble: Number(data.modeSolved?.word_scramble) || 0,
+                memory_match: Number(data.modeSolved?.memory_match) || 0,
+                true_false: Number(data.modeSolved?.true_false) || 0,
+              },
+              updatedAt: data.updatedAt || '',
+            };
+            if (!prev || candidate.totalScore >= prev.totalScore) {
+              playersMap.set(uid, candidate);
+            }
+          });
+          emit();
+        },
+        (err) => console.warn('Player scores listener notice:', err)
+      );
+      unsubs.push(u);
+    } catch {}
+  }
+
+  return () => unsubs.forEach((u) => u());
+}
+
+// =============================================================================
+// PRIVATE CLASSES CATALOG & ADMIN-FIRST BOOKING REQUESTS
+// =============================================================================
+
+/**
+ * Subscribe to real Private Classes catalog from Firestore (zero dummy data).
+ * Merges appletDb, db, and adminDb seamlessly.
+ */
+export function subscribePrivateClasses(
+  onUpdate: (classes: PrivateClass[]) => void
+): () => void {
+  const docsMap = new Map<string, any>();
+
+  const emit = () => {
+    const list: PrivateClass[] = [];
+    docsMap.forEach((item) => {
+      if (!item?._deleted) {
+        list.push(item as PrivateClass);
+      }
+    });
+    list.sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+    onUpdate(list);
+  };
+
+  const unsubs: (() => void)[] = [];
+  for (const targetDb of [appletDb, db, adminDb].filter(Boolean)) {
+    try {
+      const u = onSnapshot(
+        collection(targetDb, 'private_classes'),
+        (snapshot) => {
+          snapshot.forEach((docSnap) => {
+            docsMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
+          });
+          emit();
+        },
+        () => {}
+      );
+      unsubs.push(u);
+    } catch {}
+  }
+
+  return () => {
+    unsubs.forEach((u) => u());
+  };
+}
+
+/**
+ * Create or update a Private Class (enforces max 3 days/week and max 120 mins/session)
+ */
+export async function pushPrivateClassToFirestore(
+  classData: Partial<PrivateClass> & { id?: string }
+): Promise<{ success: boolean; id: string; error?: string }> {
+  const id = classData.id || `pc_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+  try {
+    const cleanDays = Array.isArray(classData.daysAvailable)
+      ? classData.daysAvailable.slice(0, 3)
+      : ['Monday', 'Wednesday'];
+    const cleanDuration = Math.min(120, Math.max(30, Number(classData.durationMinutes) || 60));
+    const nowIso = new Date().toISOString();
+
+    const formattedSlots =
+      Array.isArray(classData.timeSlots) && classData.timeSlots.length > 0
+        ? classData.timeSlots.map((slot) => formatTime12h(slot)).filter(Boolean)
+        : ['5:00 PM - 7:00 PM WAT'];
+
+    const payload = sanitizeForFirestore<PrivateClass>({
+      id,
+      title: (classData.title || 'Private Radiography Class').trim(),
+      category: classData.category || 'X-Ray & Plain Film',
+      level: classData.level || 'Undergraduate / BSc',
+      image: (classData.image || '').trim(),
+      daysAvailable: cleanDays,
+      timeSlots: formattedSlots,
+      durationMinutes: cleanDuration,
+      overview: (classData.overview || '').trim(),
+      introVideoUrl: (classData.introVideoUrl || '').trim(),
+      instructorId: classData.instructorId || '',
+      instructorName: classData.instructorName || 'Lead Clinical Instructor',
+      instructorRole: classData.instructorRole || 'Clinical Instructor / Tutor',
+      instructorBio: classData.instructorBio || '',
+      academicExperience: classData.academicExperience || 'Clinical & Academic Educator',
+      rating: Number(classData.rating) || 4.9,
+      instructorPhone: classData.instructorPhone || '',
+      chargePerHourNGN: Number(classData.chargePerHourNGN) || 8000,
+      chargePerHourUSD: Number(classData.chargePerHourUSD) || 5,
+      monthlyChargeNGN: Number(classData.monthlyChargeNGN) || 45000,
+      monthlyChargeUSD: Number(classData.monthlyChargeUSD) || 28,
+      creatorId: classData.creatorId || '',
+      creatorRole: classData.creatorRole || 'admin',
+      status: classData.status || 'published',
+      createdAt: classData.createdAt || nowIso,
+      updatedAt: nowIso,
+    });
+
+    await writeDocToAllDbs('private_classes', id, payload, true);
+
+    if (payload.creatorRole === 'instructor' && payload.status === 'pending_approval') {
+      const notifId = `notif_pc_${Date.now()}`;
+      writeDocToAllDbs(
+        'admin_notifications',
+        notifId,
+        {
+          id: notifId,
+          title: `New Private Class Awaiting Review: ${payload.title}`,
+          message: `${payload.instructorName} submitted a private class (${payload.category}) for approval.`,
+          type: 'course_submission',
+          targetRole: 'admin',
+          relatedId: id,
+          read: false,
+          createdAt: nowIso,
+          linkTab: 'private_classes',
+        },
+        true
+      ).catch(() => {});
+    }
+
+    return { success: true, id };
+  } catch (err: any) {
+    console.error('Error saving private class:', err);
+    return { success: false, id, error: err?.message || 'Failed to save private class' };
+  }
+}
+
+export async function approvePrivateClassByAdmin(
+  classId: string,
+  creatorId?: string,
+  classTitle?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const nowIso = new Date().toISOString();
+    await writeDocToAllDbs('private_classes', classId, { status: 'published', updatedAt: nowIso }, true);
+
+    if (creatorId) {
+      const notifId = `notif_pc_app_${Date.now()}`;
+      writeDocToAllDbs(
+        'notifications',
+        notifId,
+        {
+          id: notifId,
+          title: 'Private Class Approved!',
+          message: `Your private class "${classTitle || 'Private Class'}" has been approved by admin and is now live to learners.`,
+          type: 'class',
+          targetRole: 'instructor',
+          targetUserId: creatorId,
+          relatedId: classId,
+          read: false,
+          createdAt: nowIso,
+        },
+        false
+      ).catch(() => {});
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to approve private class' };
+  }
+}
+
+export async function deletePrivateClassFromFirestore(
+  classId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await deleteDocFromAllDbs('private_classes', classId);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to delete private class' };
+  }
+}
+
+/**
+ * Submit Private Class Booking Request (Admin-first routing: NEVER notifies instructor directly)
+ */
+export async function submitPrivateClassBooking(
+  bookingData: Omit<
+    PrivateClassBookingRequest,
+    'id' | 'referenceCode' | 'status' | 'sharedWithInstructor' | 'createdAt'
+  >
+): Promise<{ success: boolean; id: string; referenceCode: string; error?: string }> {
+  const id = `pc_req_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+  const referenceCode = `SR-CLS-${Math.floor(10000 + Math.random() * 90000)}`;
+  const nowIso = new Date().toISOString();
+
+  try {
+    const formattedSlot = formatTime12h(bookingData.selectedTimeSlot);
+    const payload = sanitizeForFirestore<PrivateClassBookingRequest>({
+      ...bookingData,
+      selectedTimeSlot: formattedSlot,
+      instructorId: bookingData.instructorId || '',
+      instructorPhone: bookingData.instructorPhone || '',
+      notes: bookingData.notes?.trim() || '',
+      id,
+      referenceCode,
+      status: 'New Request',
+      sharedWithInstructor: false, // Strictly Admin-first!
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    });
+
+    await writeDocToAllDbs('private_class_requests', id, payload, true);
+
+    // Notify Admin ONLY
+    const adminNotifId = `notif_admin_pc_${Date.now()}`;
+    writeDocToAllDbs(
+      'admin_notifications',
+      adminNotifId,
+      {
+        id: adminNotifId,
+        title: `New Private Class Request (${referenceCode})`,
+        message: `${bookingData.studentName} (${bookingData.studentEmail}) requested "${bookingData.classTitle}" with ${bookingData.instructorName}. Plan: ${bookingData.planType === 'monthly' ? 'Monthly Subscription' : `${bookingData.selectedDays.join(', ')}`} starting ${bookingData.startDate}.`,
+        type: 'booking',
+        targetRole: 'admin',
+        relatedId: id,
+        read: false,
+        createdAt: nowIso,
+        linkTab: 'private_classes',
+      },
+      true
+    ).catch(() => {});
+
+    // Notify student confirmation
+    if (bookingData.studentId) {
+      const userNotifId = `notif_user_pc_${Date.now()}`;
+      writeDocToAllDbs(
+        'notifications',
+        userNotifId,
+        {
+          id: userNotifId,
+          title: `Private Class Request Logged (${referenceCode})`,
+          message: `We received your booking request for "${bookingData.classTitle}". Our coordinator will notify your instructor and get back to you within 24–48 hours.`,
+          type: 'booking',
+          targetRole: 'user',
+          targetUserId: bookingData.studentId,
+          relatedId: id,
+          read: false,
+          createdAt: nowIso,
+        },
+        false
+      ).catch(() => {});
+    }
+
+    return { success: true, id, referenceCode };
+  } catch (err: any) {
+    console.error('Error submitting private class booking:', err);
+    return {
+      success: false,
+      id,
+      referenceCode,
+      error: err?.message || 'Could not submit private class request. Please try again.',
+    };
+  }
+}
+
+export function subscribePrivateClassBookings(
+  onUpdate: (bookings: PrivateClassBookingRequest[]) => void
+): () => void {
+  const bookingsMap = new Map<string, PrivateClassBookingRequest>();
+  const emit = () => {
+    const list = Array.from(bookingsMap.values());
+    list.sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+    onUpdate(list);
+  };
+
+  const unsubs: (() => void)[] = [];
+  for (const targetDb of [appletDb, db, adminDb].filter(Boolean)) {
+    try {
+      const u = onSnapshot(
+        collection(targetDb, 'private_class_requests'),
+        (snapshot) => {
+          snapshot.forEach((docSnap) => {
+            bookingsMap.set(docSnap.id, {
+              id: docSnap.id,
+              ...docSnap.data(),
+            } as PrivateClassBookingRequest);
+          });
+          emit();
+        },
+        () => {}
+      );
+      unsubs.push(u);
+    } catch {}
+  }
+
+  return () => unsubs.forEach((u) => u());
+}
+
+/**
+ * Admin: Forward/Notify Instructor of a Private Class Booking (In-App Profile + Notification Bell)
+ */
+export async function notifyInstructorOfPrivateBooking(
+  booking: PrivateClassBookingRequest
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const nowIso = new Date().toISOString();
+    await writeDocToAllDbs(
+      'private_class_requests',
+      booking.id,
+      { sharedWithInstructor: true, notifiedInstructorAt: nowIso, updatedAt: nowIso },
+      true
+    );
+
+    if (booking.instructorId) {
+      const notifId = `notif_inst_pc_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      writeDocToAllDbs(
+        'notifications',
+        notifId,
+        {
+          id: notifId,
+          title: `New Student Private Class Assigned (${booking.referenceCode})`,
+          message: `Admin forwarded a booking from ${booking.studentName} for "${booking.classTitle}" (${booking.selectedDays.join(', ')} at ${formatTime12h(booking.selectedTimeSlot)}, starting ${booking.startDate}). Open Instructor Studio to review.`,
+          type: 'booking',
+          targetRole: 'instructor',
+          targetUserId: booking.instructorId,
+          relatedId: booking.id,
+          read: false,
+          createdAt: nowIso,
+        },
+        false
+      ).catch(() => {});
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to notify instructor' };
+  }
+}
+
+export async function updatePrivateClassBookingStatus(
+  bookingId: string,
+  status: PrivateClassBookingRequest['status'],
+  adminFeedback?: string,
+  meetingLink?: string,
+  studentId?: string,
+  classTitle?: string,
+  referenceCode?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const nowIso = new Date().toISOString();
+    const updatePayload = sanitizeForFirestore<Partial<PrivateClassBookingRequest>>({
+      status,
+      ...(adminFeedback !== undefined ? { adminFeedback } : {}),
+      ...(meetingLink !== undefined ? { meetingLink } : {}),
+      updatedAt: nowIso,
+    });
+
+    await writeDocToAllDbs('private_class_requests', bookingId, updatePayload, true);
+
+    if (studentId) {
+      const notifId = `notif_user_pc_upd_${Date.now()}`;
+      writeDocToAllDbs(
+        'notifications',
+        notifId,
+        {
+          id: notifId,
+          title: `Private Class Update (${referenceCode || bookingId})`,
+          message: `Status for "${classTitle || 'Private Class'}" is now "${status}". ${meetingLink ? `Classroom Link: ${meetingLink}` : adminFeedback || ''}`.trim(),
+          type: 'booking',
+          targetRole: 'user',
+          targetUserId: studentId,
+          relatedId: bookingId,
+          read: false,
+          createdAt: nowIso,
+        },
+        false
+      ).catch(() => {});
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to update private class booking' };
+  }
+}
+
 

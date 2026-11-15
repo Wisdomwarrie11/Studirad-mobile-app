@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useCurrency } from '../../context/CurrencyContext';
+import { formatPriceString } from '../../utils/currency';
+import { formatTime12h } from '../../utils/timeFormat';
 import { LiveClass, Opportunity, StudyMaterial, Course } from '../../types';
 import { 
   subscribeOpportunities, 
@@ -50,6 +53,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   onStartQuiz,
 }) => {
   const { currentUser, setActiveTab, navigateToLearn } = useAuth();
+  const { currency } = useCurrency();
   
   // Real Firestore state
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -151,7 +155,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         category: cls.category || 'Live Cohort',
         image: cls.image || cls.thumbnail,
         type: 'class',
-        subtitle: `${cls.instructor} · ${cls.date || cls.time || 'Live Class'}`,
+        subtitle: `${cls.instructor} · ${cls.date || formatTime12h(cls.time) || 'Live Class'}`,
         originalData: cls,
       });
     });
@@ -258,7 +262,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                 {registeredClass.title}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
-                Instructor: {registeredClass.instructor} · {registeredClass.date || registeredClass.time || 'Upcoming Session'}
+                Instructor: {registeredClass.instructor} · {registeredClass.date || formatTime12h(registeredClass.time) || 'Upcoming Session'}
               </p>
 
               <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
@@ -502,7 +506,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
                   <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <span className="text-[11px] font-bold text-[#002147] dark:text-[#38BDF8]">
-                      {course.price || 'Free'}
+                      {formatPriceString(course.price, currency) || 'Free'}
                     </span>
                     <span className="text-[11px] font-bold text-[#FF7F32] group-hover:underline flex items-center gap-0.5">
                       <span>View</span>
@@ -574,7 +578,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                     <div className="pt-2.5 flex items-center justify-between border-t border-white/15 text-xs sm:text-sm">
                       <div className="flex items-center gap-1.5 text-slate-200 font-medium">
                         <Clock className="w-4 h-4 text-[#FF7F32] shrink-0" />
-                        <span>{cls.date || cls.time || 'Upcoming Cohort'}</span>
+                        <span>{cls.date || formatTime12h(cls.time) || 'Upcoming Cohort'}</span>
                       </div>
 
                       <button
@@ -648,7 +652,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs sm:text-sm">
                     <span className="font-bold text-[#002147] dark:text-[#38BDF8]">
-                      {job.rate}
+                      {formatPriceString(job.rate, currency)}
                     </span>
                     <span className="text-xs font-semibold text-[#002147] dark:text-[#38BDF8] flex items-center gap-0.5">
                       <span>Details</span>

@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Course } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { useCurrency } from '../../context/CurrencyContext';
+import { formatAmountInCurrency } from '../../utils/currency';
 import { submitTutorialRequest } from '../../services/firebaseDataService';
+import { formatTime12h } from '../../utils/timeFormat';
 import { 
   X, 
   Calendar, 
@@ -26,15 +29,20 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
   onSuccess,
 }) => {
   const { currentUser, requireAuth } = useAuth();
+  const { currency: activeCurrency } = useCurrency();
 
   const availability = course?.tutorAvailability;
   const availableDays = availability?.days?.length ? availability.days : ['Monday', 'Wednesday', 'Friday'];
-  const availableSlots = availability?.timeSlots?.length ? availability.timeSlots : ['10:00 - 12:00 BST', '14:00 - 16:00 BST', '18:00 - 20:00 BST'];
+  const availableSlots = (
+    availability?.timeSlots?.length
+      ? availability.timeSlots
+      : ['10:00 AM - 12:00 PM BST', '2:00 PM - 4:00 PM BST', '6:00 PM - 8:00 PM BST']
+  ).map((slot) => formatTime12h(slot));
   const baseRate = availability?.ratePer30Min || 25;
   const currency = availability?.currency || '£';
 
   const [selectedDay, setSelectedDay] = useState(availableDays[0] || 'Monday');
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState(availableSlots[0] || '10:00 - 12:00 BST');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState(availableSlots[0] || '10:00 AM - 12:00 PM BST');
   const [durationMinutes, setDurationMinutes] = useState<number>(30); // 30, 45, 60
   const [specificFocusTopic, setSpecificFocusTopic] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -152,8 +160,8 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
                     Please check back in <strong>24–48 hours</strong>. Once the instructor and admin confirm the schedule and meeting link, you will see it in your dashboard profile and receive confirmation at <strong>{currentUser?.email}</strong>.
                   </p>
                   <div className="pt-1 border-t border-orange-200/50 dark:border-orange-800/40 text-[11px] text-slate-500 dark:text-slate-400 flex justify-between">
-                    <span>Requested: {selectedDay} ({selectedTimeSlot})</span>
-                    <span className="font-bold text-[#002147] dark:text-[#38BDF8]">{currency}{calculatedRate}</span>
+                    <span>Requested: {selectedDay} ({formatTime12h(selectedTimeSlot)})</span>
+                    <span className="font-bold text-[#002147] dark:text-[#38BDF8]">{formatAmountInCurrency(calculatedRate, currency, activeCurrency)}</span>
                   </div>
                 </div>
               </div>
@@ -190,7 +198,7 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
                 <div className="text-right">
                   <span className="text-[10px] text-slate-400 block">Base Rate</span>
                   <span className="text-xs font-bold text-[#FF7F32]">
-                    {currency}{baseRate} / 30 min
+                    {formatAmountInCurrency(baseRate, currency, activeCurrency)} / 30 min
                   </span>
                 </div>
               </div>
@@ -237,7 +245,7 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
                           : 'bg-slate-50 dark:bg-[#1A2234] border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
                       }`}
                     >
-                      {slot}
+                      {formatTime12h(slot)}
                     </button>
                   ))}
                 </div>
@@ -283,7 +291,7 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
                 </div>
                 <div className="text-right">
                   <span className="text-lg font-extrabold text-[#002147] dark:text-[#FF7F32]">
-                    {currency}{calculatedRate}
+                    {formatAmountInCurrency(calculatedRate, currency, activeCurrency)}
                   </span>
                 </div>
               </div>
@@ -326,7 +334,7 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
                     </>
                   ) : (
                     <>
-                      <span>Submit Request ({currency}{calculatedRate})</span>
+                      <span>Submit Request ({formatAmountInCurrency(calculatedRate, currency, activeCurrency)})</span>
                       <Sparkles className="w-3.5 h-3.5" />
                     </>
                   )}

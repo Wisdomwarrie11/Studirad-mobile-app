@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Opportunity, ClinicalModality } from '../../types';
+import { useCurrency } from '../../context/CurrencyContext';
+import { formatPriceString } from '../../utils/currency';
 import { subscribeOpportunities } from '../../services/firebaseDataService';
 import { LocumFinderView } from '../locum/LocumFinderView';
 import { NIGERIAN_STATES } from '../../data/nigerianData';
@@ -42,6 +44,7 @@ const getDeadlineStatus = (deadline: string | null | undefined) => {
 export const ExploreTab: React.FC<ExploreTabProps> = ({
   onSelectOpportunity,
 }) => {
+  const { currency } = useCurrency();
   // Current active individual section
   const [activeSection, setActiveSection] = useState<OpportunitySection>('jobs');
 
@@ -324,7 +327,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                           <span>{job.location}</span>
                         </div>
                         <span className="font-bold text-[#002147] dark:text-[#38BDF8]">
-                          {job.rate}
+                          {formatPriceString(job.rate, currency)}
                         </span>
                       </div>
 
@@ -439,7 +442,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                           <span>{intern.location}</span>
                         </div>
                         <span className="font-bold text-cyan-700 dark:text-cyan-400">
-                          {intern.rate}
+                          {formatPriceString(intern.rate, currency)}
                         </span>
                       </div>
 
@@ -554,7 +557,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                           <span>{scholar.location}</span>
                         </div>
                         <span className="font-bold text-amber-600 dark:text-amber-400">
-                          {scholar.rate}
+                          {formatPriceString(scholar.rate, currency)}
                         </span>
                       </div>
 

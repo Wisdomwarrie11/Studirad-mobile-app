@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { LiveClass } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { useCurrency } from '../../context/CurrencyContext';
+import { formatPriceString } from '../../utils/currency';
+import { formatTime12h } from '../../utils/timeFormat';
 import { 
   X, 
   Calendar, 
@@ -29,6 +32,7 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
   onClose,
 }) => {
   const { requireAuth } = useAuth();
+  const { currency } = useCurrency();
   const [isRegistered, setIsRegistered] = useState(liveClass?.isRegistered || false);
   const [calendarAdded, setCalendarAdded] = useState(false);
 
@@ -132,7 +136,7 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="px-2.5 py-0.5 rounded-lg bg-[#002147] text-white text-xs font-bold">
-                {liveClass.price || 'FREE'}
+                {formatPriceString(liveClass.price, currency) || 'FREE'}
               </span>
               <span className="px-2.5 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
                 {liveClass.modality ? `${liveClass.modality.toUpperCase()} Session` : 'Live Masterclass'}
@@ -157,7 +161,7 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
                 <span>{liveClass.duration || liveClass.date}</span>
               </div>
               <span className="text-xs bg-white/15 px-2.5 py-0.5 rounded-lg font-mono">
-                {liveClass.time || 'Evening Cohort'}
+                {formatTime12h(liveClass.time) || 'Evening Cohort'}
               </span>
             </div>
 
@@ -167,7 +171,7 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
                 <span>{liveClass.duration || 'Session Cohort'}</span>
               </span>
               <span className="text-emerald-300 font-bold">
-                {liveClass.price || 'FREE'}
+                {formatPriceString(liveClass.price, currency) || 'FREE'}
               </span>
             </div>
           </div>

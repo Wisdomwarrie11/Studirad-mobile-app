@@ -1,6 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Course, LiveClass, StudyMaterial } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { useCurrency } from '../../context/CurrencyContext';
+import { formatPriceString } from '../../utils/currency';
+import { formatTime12h } from '../../utils/timeFormat';
 import { subscribeClasses, subscribeStudyMaterials, subscribeCourses } from '../../services/firebaseDataService';
 import { MaterialReaderModal } from '../modals/MaterialReaderModal';
 import { 
@@ -82,6 +85,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
   onSelectLiveClass,
 }) => {
   const { currentUser, setScreen, learnInitialView, requireAuth } = useAuth();
+  const { currency } = useCurrency();
 
   // Navigation mode: Classes, Study Materials, or Courses
   const [activeMainView, setActiveMainView] = useState<LearnMainView>(learnInitialView || 'classes');
@@ -223,8 +227,14 @@ export const LearnTab: React.FC<LearnTabProps> = ({
       const matchesCourse = selectedMaterialCourse === 'All' || mat.course === selectedMaterialCourse;
 
       // Type match (all vs reading vs videos)
-      const isVideo = mat.type === 'video' || mat.link?.includes('youtube.com') || mat.link?.includes('youtu.be') || mat.link?.includes('drive.google.com');
-      const matchesType = 
+      const lowerLink = (mat.link || '').toLowerCase();
+      const isVideo =
+        mat.type === 'video' ||
+        lowerLink.includes('youtube.com') ||
+        lowerLink.includes('youtu.be') ||
+        lowerLink.includes('docs.google.com/videos/') ||
+        /\.(mp4|webm|ogg|mov)($|\?)/i.test(lowerLink);
+      const matchesType =
         materialTypeFilter === 'all'
           ? true
           : materialTypeFilter === 'videos'
@@ -413,14 +423,14 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                         {/* Time & Date */}
                         <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
                           <Clock className="w-3 h-3 text-[#FF7F32] shrink-0" />
-                          <span className="truncate">{cls.date || cls.time || 'Scheduled Cohort'}</span>
+                          <span className="truncate">{cls.date || formatTime12h(cls.time) || 'Scheduled Cohort'}</span>
                         </div>
                       </div>
 
                       {/* Register Link / Status Badge */}
                       <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                         <span className="text-[11px] font-bold text-[#002147] dark:text-[#38BDF8]">
-                          {cls.price || 'Free Cohort'}
+                          {formatPriceString(cls.price, currency) || 'Free Cohort'}
                         </span>
 
                         <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
@@ -537,7 +547,13 @@ export const LearnTab: React.FC<LearnTabProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {filteredMaterials.map((mat) => {
                   const config = MATERIAL_COLORS[mat.course] || MATERIAL_COLORS.All;
-                  const isVideo = mat.type === 'video' || mat.link?.includes('youtube.com') || mat.link?.includes('youtu.be') || mat.link?.includes('drive.google.com');
+                  const lowerMatLink = (mat.link || '').toLowerCase();
+                  const isVideo =
+                    mat.type === 'video' ||
+                    lowerMatLink.includes('youtube.com') ||
+                    lowerMatLink.includes('youtu.be') ||
+                    lowerMatLink.includes('docs.google.com/videos/') ||
+                    /\.(mp4|webm|ogg|mov)($|\?)/i.test(lowerMatLink);
                   const isLink = mat.type === 'link';
 
                   return (
@@ -730,7 +746,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                       {/* Footer Actions */}
                       <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                         <span className="text-xs font-bold text-[#002147] dark:text-[#38BDF8]">
-                          {course.price || 'Free'}
+                          {formatPriceString(course.price, currency) || 'Free'}
                         </span>
 
                         <button

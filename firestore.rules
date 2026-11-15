@@ -83,43 +83,60 @@ service cloud.firestore {
 
     // Collection: Service & Research Requests
     match /requests/{requestId} {
-      allow read, write: if isValidId(requestId);
+      allow read, write, delete: if isValidId(requestId);
     }
 
     // Collection: Tutor & Instructor Applications
     match /tutor_applications/{applicationId} {
-      allow read, write: if isValidId(applicationId);
+      allow read, write, delete: if isValidId(applicationId);
     }
 
     // Collection: Tutorial Requests (Private 1-on-1 bookings and custom sessions)
     match /tutorial_requests/{requestId} {
-      allow read, write: if isValidId(requestId);
+      allow read, write, delete: if isValidId(requestId);
+    }
+
+    // Collection: Private Classes Catalog
+    match /private_classes/{classId} {
+      allow read: if true;
+      allow write, delete: if isValidId(classId);
+    }
+
+    // Collection: Private Class Booking Requests
+    match /private_class_requests/{requestId} {
+      allow read, write, delete: if isValidId(requestId);
     }
 
     // Collection: Admin Notifications
     match /admin_notifications/{notificationId} {
-      allow read, write: if isValidId(notificationId);
+      allow read, write, delete: if isValidId(notificationId);
     }
 
     // Collection: User Notifications
     match /notifications/{notificationId} {
-      allow read, write: if isValidId(notificationId);
+      allow read, write, delete: if isValidId(notificationId);
     }
 
     // Collection: Tutor & One-on-One Bookings
     match /bookings/{bookingId} {
-      allow read, write: if isValidId(bookingId);
+      allow read, write, delete: if isValidId(bookingId);
     }
 
     // Collection: Users (User profile and nested learning progress)
     match /users/{userId} {
       allow read: if true;
-      allow write: if isValidId(userId);
+      allow write, delete: if isValidId(userId);
 
-      // Subcollections: Completed Classes, Enrolled Courses, Saved Opportunities
+      // Subcollections: Completed Classes, Enrolled Courses, Game Progress, Saved Opportunities
       match /{allSubcollections=**} {
-        allow read, write: if isValidId(userId);
+        allow read, write, delete: if isValidId(userId);
       }
+    }
+
+    // Collection: Player Game Scores Leaderboard (Public arcade stats synced from users)
+    match /game_scores/{playerId} {
+      allow read: if true;
+      allow write, delete: if isValidId(playerId);
     }
 
     // Collection: Health check test connection

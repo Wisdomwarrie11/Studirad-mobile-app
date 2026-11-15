@@ -6,6 +6,7 @@
 import React from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import { RequestProvider } from './context/RequestContext';
 import { SplashScreen } from './components/steps/SplashScreen';
 import { OnboardingScreen } from './components/steps/OnboardingScreen';
@@ -49,9 +50,11 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <RequestProvider>
-          <AppContent />
-        </RequestProvider>
+        <CurrencyProvider>
+          <RequestProvider>
+            <AppContent />
+          </RequestProvider>
+        </CurrencyProvider>
       </ThemeProvider>
     </AuthProvider>
   );
