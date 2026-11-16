@@ -732,34 +732,41 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
             {/* Modal Body */}
             <div className="p-5 overflow-y-auto space-y-4 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
               <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 font-semibold">
-                ⚠️ Strict Age Requirement: Only persons above 17 years of age (18 years and above) are permitted to create an account and use the StudiRad platform.
+                Age Eligibility: Only individuals aged 18 years and older may register and use StudiRad.
               </div>
 
               <div>
-                <h4 className="font-bold text-slate-900 dark:text-white mb-1">1. Eligibility & Verification</h4>
+                <h4 className="font-bold text-slate-900 dark:text-white mb-1">1. Platform Eligibility &amp; Academic Scope</h4>
                 <p>
-                  StudiRad is a dedicated clinical e-learning and medical imaging education platform. To register, you must be at least 18 years of age and currently enrolled in a recognized radiography degree program or working as a qualified clinical diagnostic radiographer, sonographer, or medical imaging specialist.
+                  StudiRad is an academic and clinical imaging education platform built for radiography undergraduates, interns, and qualified radiographers. By registering, you affirm that all profile details, qualifications, and academic levels provided are accurate.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-slate-900 dark:text-white mb-1">2. Clinical Data & Patient Confidentiality</h4>
+                <h4 className="font-bold text-slate-900 dark:text-white mb-1">2. Patient Privacy &amp; De-Identification</h4>
                 <p>
-                  All case studies, DICOM images, and radiographic critiques uploaded or analyzed on StudiRad must be completely anonymized in compliance with international patient privacy laws (including HIPAA and GDPR). Uploading non-anonymized identifiable patient scans is strictly prohibited.
+                  Any clinical image, case discussion, or study file uploaded or shared on StudiRad must be 100% anonymized in compliance with HIPAA, GDPR, NDPR, and hospital confidentiality laws. Identifiable patient data is strictly prohibited.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-slate-900 dark:text-white mb-1">3. Privacy & Account Security</h4>
+                <h4 className="font-bold text-slate-900 dark:text-white mb-1">3. Privacy Policy &amp; Data Protection</h4>
                 <p>
-                  We store your educational profile and contact information securely via Firestore cloud authentication. Your credentials are encrypted and will never be sold or transferred to unauthorized third parties.
+                  We collect only the account details, learning activity, request records, and game scores necessary to deliver your educational experience. Data is encrypted in cloud storage, never sold to third parties, and can be deleted permanently at any time from your Account settings.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-slate-900 dark:text-white mb-1">4. Accredited CPD & Certificates</h4>
+                <h4 className="font-bold text-slate-900 dark:text-white mb-1">4. Educational Resources &amp; Non-Issuance of CPD Certificates</h4>
                 <p>
-                  Certificates and CPD credits issued through masterclasses and cohort participation are registered to your verified clinical profile. Misrepresentation of clinical credentials will result in immediate termination of account access.
+                  Courses, live sessions, study materials, private tutoring, and research guidance on StudiRad are provided strictly for academic enrichment, exam readiness, and peer mentorship. <strong>StudiRad does not issue accredited CPD certificates or statutory CPD credits at this time.</strong>
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-white mb-1">5. Conduct, Tutoring &amp; Academic Integrity</h4>
+                <p>
+                  Users and instructors must respect intellectual property, uphold clinical ethics, and refrain from bypassing StudiRad booking coordination or falsifying credentials. Violations carry immediate account suspension and potential legal liability. Contact support@studirad.org for academic support or privacy inquiries.
                 </p>
               </div>
             </div>

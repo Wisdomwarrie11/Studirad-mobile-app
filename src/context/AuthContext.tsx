@@ -182,7 +182,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               isGuest: false,
               avatarUrl: data.avatarUrl || fbUser.photoURL || undefined,
               createdAt: data.createdAt || new Date().toISOString(),
-              cpdCredits: typeof data.cpdCredits === 'number' ? data.cpdCredits : 18.5,
+              cpdCredits: typeof data.cpdCredits === 'number' ? data.cpdCredits : 0,
               gameScore: typeof data.gameScore === 'number' ? data.gameScore : 0,
               bestStreak: typeof data.bestStreak === 'number' ? data.bestStreak : 0,
               gamesSolved: typeof data.gamesSolved === 'number' ? data.gamesSolved : 0,
@@ -200,7 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               isGuest: false,
               avatarUrl: fbUser.photoURL || undefined,
               createdAt: new Date().toISOString(),
-              cpdCredits: 10.0,
+              cpdCredits: 0,
             };
             await setDoc(userDocRef, {
               fullName: newProfile.fullName,
@@ -225,7 +225,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             selectedTopics: ['general_radiography'],
             isGuest: false,
             createdAt: new Date().toISOString(),
-            cpdCredits: 10.0,
+            cpdCredits: 0,
           });
         }
       }
@@ -273,20 +273,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!currentUser?.id) return;
 
-    // 1. Listen for user notifications in real-time
-    const unsubNotifs = subscribeUserNotifications(currentUser.id, (realNotifs) => {
-      if (Array.isArray(realNotifs)) {
-        const mapped: AppNotification[] = realNotifs.map((n) => ({
-          id: n.id,
-          title: n.title || 'Notification',
-          message: n.message || '',
-          timestamp: n.createdAt ? formatClockTime12h(n.createdAt) || 'Just now' : 'Just now',
-          type: n.type || 'system',
-          read: Boolean(n.read),
-        }));
-        setNotifications(mapped);
+    // 1. Listen for user & instructor notifications in real-time
+    const unsubNotifs = subscribeUserNotifications(
+      {
+        userId: currentUser.id,
+        email: currentUser.email,
+        fullName: currentUser.fullName,
+        isInstructor: Boolean(
+          currentUser.isInstructor || currentUser.role === 'Clinical Instructor / Tutor'
+        ),
+      },
+      (realNotifs) => {
+        if (Array.isArray(realNotifs)) {
+          const mapped: AppNotification[] = realNotifs.map((n) => ({
+            id: n.id,
+            title: n.title || 'Notification',
+            message: n.message || '',
+            timestamp: n.createdAt ? formatClockTime12h(n.createdAt) || 'Just now' : 'Just now',
+            type: n.type || 'system',
+            targetRole: n.targetRole,
+            read: Boolean(n.read),
+          }));
+          setNotifications(mapped);
+        }
       }
-    });
+    );
 
     // 2. Listen for role changes, tutor approvals & live game score pushes on user profile in Firestore (appletDb + db)
     const handleProfileSnap = (snap: any) => {
@@ -338,25 +349,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsubUser?.();
       unsubAppletUser?.();
     };
-  }, [currentUser?.id]);
+  }, [currentUser?.id, currentUser?.email, currentUser?.fullName, currentUser?.isInstructor, currentUser?.role]);
+
+  const persistReadIds = (ids: string[]) => {
+    try {
+      const key = `studirad_read_notifs_${currentUser?.id || 'anon'}`;
+      const existing = JSON.parse(localStorage.getItem(key) || '{}');
+      ids.forEach((id) => {
+        existing[id] = true;
+      });
+      localStorage.setItem(key, JSON.stringify(existing));
+    } catch {}
+  };
 
   const markNotificationAsRead = (id: string) => {
+    persistReadIds([id]);
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
-    if (appletDb) {
-      setDoc(doc(appletDb, 'notifications', id), { read: true }, { merge: true }).catch(() => {});
+    if (!id.startsWith('inst_')) {
+      if (appletDb) {
+        setDoc(doc(appletDb, 'notifications', id), { read: true }, { merge: true }).catch(() => {});
+      }
+      setDoc(doc(db, 'notifications', id), { read: true }, { merge: true }).catch(() => {});
     }
-    setDoc(doc(db, 'notifications', id), { read: true }, { merge: true }).catch(() => {});
   };
 
   const markAllNotificationsAsRead = () => {
+    persistReadIds(notifications.map((n) => n.id));
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     notifications.forEach((n) => {
-      if (appletDb) {
-        setDoc(doc(appletDb, 'notifications', n.id), { read: true }, { merge: true }).catch(() => {});
+      if (!n.id.startsWith('inst_')) {
+        if (appletDb) {
+          setDoc(doc(appletDb, 'notifications', n.id), { read: true }, { merge: true }).catch(() => {});
+        }
+        setDoc(doc(db, 'notifications', n.id), { read: true }, { merge: true }).catch(() => {});
       }
-      setDoc(doc(db, 'notifications', n.id), { read: true }, { merge: true }).catch(() => {});
     });
   };
 
@@ -476,7 +504,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAdmin: true,
         institution: 'StudiRad Central Governance',
         createdAt: new Date().toISOString(),
-        cpdCredits: 100.0,
+        cpdCredits: 0,
       };
 
       setCurrentUser(adminProfile);
@@ -498,7 +526,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isAdmin: true,
           institution: 'StudiRad Central Governance',
           createdAt: new Date().toISOString(),
-          cpdCredits: 100.0,
+          cpdCredits: 0,
         };
         setCurrentUser(adminProfile);
         setScreen('admin');

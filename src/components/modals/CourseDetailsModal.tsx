@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 
 import { PrivateTutorialBookingModal } from './PrivateTutorialBookingModal';
+import { StarRatingWidget } from '../common/StarRatingWidget';
 
 interface CourseDetailsModalProps {
   course: Course | null;
@@ -139,15 +140,12 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
               </p>
             </div>
             <div className="text-right shrink-0">
-              <span className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 justify-end">
-                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                <span>{course.rating}</span>
-              </span>
-              <span className="text-xs text-slate-400">
-                ({course.reviewsCount} reviews)
-              </span>
+              <StarRatingWidget itemType="course" itemId={course.id} compact />
             </div>
           </div>
+
+          {/* Interactive Rating */}
+          <StarRatingWidget itemType="course" itemId={course.id} interactive />
 
           {/* Key Facts Strip */}
           <div className="grid grid-cols-3 gap-2.5 text-center">
@@ -163,8 +161,8 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
             </div>
             <div className="p-3 rounded-2xl bg-white dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 shadow-xs">
               <Award className="w-4 h-4 text-[#FF7F32] mx-auto mb-1" />
-              <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs sm:text-sm">Certificate</span>
-              <span className="text-xs text-slate-400">Included</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs sm:text-sm">Interactive</span>
+              <span className="text-xs text-slate-400">Case Quizzes</span>
             </div>
           </div>
 
@@ -279,7 +277,7 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
             onClick={() => {
               if (!requireAuth({
                 title: 'Sign In to Watch Course',
-                message: 'Create a free account or sign in to watch full curriculum video lectures, take quizzes, and earn course certificates.',
+                message: 'Create a free account or sign in to watch full curriculum video lectures and take quizzes.',
                 actionText: 'Watch Course',
               })) {
                 return;

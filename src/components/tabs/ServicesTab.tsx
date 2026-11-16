@@ -55,16 +55,13 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
   return (
     <div className="w-full flex flex-col space-y-6 sm:space-y-8 py-6 sm:py-8 px-4 sm:px-6 md:px-8 max-w-5xl mx-auto text-left pb-44 sm:pb-48">
       {/* Title & Introduction */}
-      <div className="space-y-2">
-        <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FF7F32]">
-          Academic &amp; Research Center
+      <div className="space-y-1">
+        <span className="text-xs font-bold uppercase tracking-wider text-[#FF7F32]">
+          Academic &amp; Research
         </span>
         <h1 className="heading-display text-[var(--text-primary)]">
           Submit &amp; Track Requests
         </h1>
-        <p className="body-large text-[var(--text-secondary)] max-w-3xl">
-          Tailored academic research assistance across BSc, PGD, MSc, and PhD levels, plus 1-on-1 private tutoring and submission tracking.
-        </p>
       </div>
 
       {/* Segmented Navigation Tabs */}
@@ -154,11 +151,8 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
             <div className="p-10 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center space-y-3">
               <ClipboardList className="w-12 h-12 text-slate-400 mx-auto" />
               <h3 className="heading-card text-[var(--text-primary)]">
-                No Requests Submitted Yet
+                No Requests Yet
               </h3>
-              <p className="body-standard text-[var(--text-secondary)] max-w-sm mx-auto">
-                Start a guided Research Assistance request to track status updates and assigned representatives here.
-              </p>
               <button
                 type="button"
                 onClick={() => setActiveFormTab('research')}

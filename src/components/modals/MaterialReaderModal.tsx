@@ -38,6 +38,7 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react';
+import { StarRatingWidget } from '../common/StarRatingWidget';
 
 // Configure local Vite-bundled PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
@@ -1081,6 +1082,8 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
               </div>
             </div>
           </div>
+
+          <StarRatingWidget itemType="material" itemId={material.id} interactive />
         </div>
 
         {/* Bottom Actions */}

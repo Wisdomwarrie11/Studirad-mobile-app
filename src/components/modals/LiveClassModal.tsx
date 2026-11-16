@@ -21,6 +21,7 @@ import {
   GraduationCap
 } from 'lucide-react';
 import classesImg from '../../assets/images/onboarding_classes_1792606674536.jpg';
+import { StarRatingWidget } from '../common/StarRatingWidget';
 
 interface LiveClassModalProps {
   liveClass: LiveClass | null;
@@ -159,6 +160,9 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
               {liveClass.title}
             </h2>
           </div>
+
+          {/* Real Live Class Rating */}
+          <StarRatingWidget itemType="live_class" itemId={liveClass.id} interactive />
 
           {/* Scheduled Date, Time & Cohort Details Strip */}
           <div className="p-4 rounded-2xl bg-[#002147] text-white space-y-3 shadow-sm">

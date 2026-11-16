@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { enrollUserInCourse } from '../../services/firebaseDataService';
 import { getVideoEmbedUrl, extractYouTubeId, extractGoogleDriveId } from '../../utils/youtube';
 import { MaterialReaderModal } from './MaterialReaderModal';
+import { StarRatingWidget } from '../common/StarRatingWidget';
 import { 
   X, 
   ChevronLeft, 
@@ -897,6 +898,7 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
                       </p>
                     )}
                   </div>
+                  <StarRatingWidget itemType="course" itemId={course.id} interactive />
                 </div>
               )}
 

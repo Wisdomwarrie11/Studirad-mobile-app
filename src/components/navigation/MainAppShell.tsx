@@ -90,7 +90,7 @@ export const MainAppShell: React.FC = () => {
   const handleBookTutor = (tutor: Tutor) => {
     if (!requireAuth({
       title: 'Sign In to Book Mentorship',
-      message: 'Sign in or register to schedule live 1-on-1 tutorials with accredited clinical tutors.',
+      message: 'Sign in or register to schedule live 1-on-1 tutorials with verified clinical tutors.',
       actionText: 'Book Mentorship',
     })) {
       return;

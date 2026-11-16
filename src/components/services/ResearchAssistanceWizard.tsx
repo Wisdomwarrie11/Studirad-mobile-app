@@ -426,9 +426,6 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
             <h2 className="heading-section text-[var(--text-primary)]">
               Select Your Current Academic Level
             </h2>
-            <p className="body-standard text-[var(--text-secondary)]">
-              Your academic level determines applicable research pricing and tailors our support package to your study requirements.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -493,9 +490,6 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
             <h2 className="heading-section text-[var(--text-primary)]">
               Choose a Research Service Category
             </h2>
-            <p className="body-standard text-[var(--text-secondary)]">
-              Select the category that best describes the support you need.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -749,9 +743,6 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
             <h2 className="heading-section text-[var(--text-primary)]">
               Complete Your Research Brief
             </h2>
-            <p className="body-standard text-[var(--text-secondary)]">
-              Provide your contact details and project timeline so your assigned representative is prepared before your WhatsApp conversation.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -911,9 +902,6 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
             <h2 className="heading-section text-[var(--text-primary)]">
               Confirm Your Research Request
             </h2>
-            <p className="body-standard text-[var(--text-secondary)]">
-              Please review your details below. Submitting saves your request to our system and connects you directly with an available Research Representative on WhatsApp.
-            </p>
           </div>
 
           <div className="rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] divide-y divide-[var(--border-subtle)] overflow-hidden">

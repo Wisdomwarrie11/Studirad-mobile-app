@@ -11,7 +11,8 @@ import {
   Award, 
   FileText, 
   Sparkles,
-  Phone
+  Phone,
+  Globe
 } from 'lucide-react';
 
 interface TutorApplicationModalProps {
@@ -42,10 +43,12 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
   const [fullName, setFullName] = useState(currentUser?.fullName || '');
   const [email, setEmail] = useState(currentUser?.email || '');
   const [phone, setPhone] = useState('');
+  const [country, setCountry] = useState('');
+  const [academicQualification, setAcademicQualification] = useState('BSc (Hons) Diagnostic Radiography');
   const [bio, setBio] = useState('');
   const [academicBackground, setAcademicBackground] = useState('');
   const [selectedExpertise, setSelectedExpertise] = useState<string[]>([]);
-  const [experienceYears, setExperienceYears] = useState('3-5 years');
+  const [experienceYears, setExperienceYears] = useState('Undergraduate / Student Tutor');
   const [summary, setSummary] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,8 +72,13 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
       return;
     }
 
-    if (!academicBackground.trim()) {
-      setErrorMessage('Please state your academic background (e.g. BSc Radiography, MSc Medical Imaging).');
+    if (!country.trim()) {
+      setErrorMessage('Please enter your country of residence / practice.');
+      return;
+    }
+
+    if (!academicQualification.trim() || !academicBackground.trim()) {
+      setErrorMessage('Please specify your academic qualification and institution details.');
       return;
     }
 
@@ -97,6 +105,8 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
         fullName: fullName.trim(),
         email: email.trim(),
         phone: phone.trim(),
+        country: country.trim(),
+        academicQualification: academicQualification.trim(),
         bio: bio.trim(),
         academicBackground: academicBackground.trim(),
         areaOfExpertise: selectedExpertise,
@@ -134,7 +144,7 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                 Be a Tutor / Instructor
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Join our teaching faculty to mentor radiographers and create specialized courses
+                Open to qualified radiographers &amp; undergraduate radiography students
               </p>
             </div>
           </div>
@@ -196,7 +206,7 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
               <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 text-xs text-slate-600 dark:text-slate-300 flex items-start gap-2.5">
                 <Sparkles className="w-4 h-4 text-[#002147] dark:text-[#38BDF8] shrink-0 mt-0.5" />
                 <p>
-                  StudiRad instructors build accredited video courses and mentor radiography students. After submitting your details, our clinical team will review your application within <strong>24–72 hours</strong>.
+                  Both <strong>qualified radiographers</strong> and <strong>undergraduate radiography students</strong> may apply. Verification takes <strong>24–72 hours</strong>.
                 </p>
               </div>
 
@@ -233,12 +243,12 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                 </div>
               </div>
 
-              {/* Phone & Experience */}
+              {/* Phone & Country */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Phone / WhatsApp (Optional)</span>
+                    <span>Phone / WhatsApp</span>
                   </label>
                   <input
                     type="tel"
@@ -251,14 +261,53 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
 
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Country *</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    placeholder="e.g. Nigeria, United Kingdom, Ghana"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#FF7F32]"
+                  />
+                </div>
+              </div>
+
+              {/* Qualification & Experience */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Award className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Academic Qualification *</span>
+                  </label>
+                  <select
+                    value={academicQualification}
+                    onChange={(e) => setAcademicQualification(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#FF7F32] cursor-pointer"
+                  >
+                    <option value="Undergraduate Radiography Student">Undergraduate Radiography Student</option>
+                    <option value="HND / Diploma in Radiography">HND / Diploma in Radiography</option>
+                    <option value="BSc (Hons) Diagnostic Radiography">BSc (Hons) Diagnostic Radiography</option>
+                    <option value="PGD Medical Imaging">PGD Medical Imaging</option>
+                    <option value="MSc Radiography / Medical Imaging">MSc Radiography / Medical Imaging</option>
+                    <option value="PhD / Doctorate">PhD / Doctorate</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Years of Clinical Experience</span>
+                    <span>Teaching / Clinical Experience</span>
                   </label>
                   <select
                     value={experienceYears}
                     onChange={(e) => setExperienceYears(e.target.value)}
                     className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#FF7F32] cursor-pointer"
                   >
+                    <option value="Undergraduate / Student Tutor">Undergraduate / Peer Student</option>
                     <option value="1-2 years">1 - 2 years</option>
                     <option value="3-5 years">3 - 5 years</option>
                     <option value="6-10 years">6 - 10 years</option>
@@ -267,18 +316,18 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                 </div>
               </div>
 
-              {/* Academic Background */}
+              {/* Academic Background & Institution */}
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <Award className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Academic Background & Qualifications</span>
+                  <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Institution &amp; Academic Details *</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={academicBackground}
                   onChange={(e) => setAcademicBackground(e.target.value)}
-                  placeholder="e.g. BSc (Hons) Radiography, MSc Computed Tomography, PgCert Teaching"
+                  placeholder="e.g. 400L Radiography, UNN or MSc CT, University of Salford"
                   className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#FF7F32]"
                 />
               </div>

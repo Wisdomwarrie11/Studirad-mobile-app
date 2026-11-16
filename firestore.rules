@@ -139,6 +139,19 @@ service cloud.firestore {
       allow write, delete: if isValidId(playerId);
     }
 
+    // Collection: Content Ratings (Courses, Private Classes, Live Classes, Materials)
+    match /ratings/{ratingId} {
+      allow read: if true;
+      allow write: if isValidId(ratingId)
+        && request.resource.data.score is number
+        && request.resource.data.score >= 1
+        && request.resource.data.score <= 5
+        && request.resource.data.userId is string
+        && request.resource.data.itemId is string
+        && request.resource.data.itemType is string;
+      allow delete: if isValidId(ratingId);
+    }
+
     // Collection: Health check test connection
     match /test/{testId} {
       allow read, write: if true;

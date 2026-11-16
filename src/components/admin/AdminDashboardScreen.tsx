@@ -36,6 +36,7 @@ import {
   pushMaterialToFirestore,
   pushVideoToFirestore,
   deleteMaterialFromFirestore,
+  approveMaterialOrVideoByAdmin,
   pushOfficialClassesToFirestore,
   subscribeAdminNotifications,
   markNotificationAsRead,
@@ -57,6 +58,8 @@ import {
 } from '../../services/firebaseDataService';
 import { uploadFileToCloudinary } from '../../services/cloudinaryService';
 import { Wordmark } from '../brand/Wordmark';
+import { PrivateClassCreatorTerms } from '../common/PrivateClassCreatorTerms';
+import { useContentRatingsMap } from '../../hooks/useContentRatings';
 import { 
   BookOpen, 
   Video, 
@@ -177,6 +180,13 @@ export const AdminDashboardScreen: React.FC = () => {
   const [isPrivateClassModalOpen, setIsPrivateClassModalOpen] = useState(false);
   const [pcSlotDraft, setPcSlotDraft] = useState('');
   const [isSavingPcAdmin, setIsSavingPcAdmin] = useState(false);
+  const [pcTermsAccepted, setPcTermsAccepted] = useState(false);
+  const [playingPromiseVideo, setPlayingPromiseVideo] = useState<{
+    title: string;
+    instructorName: string;
+    url: string;
+  } | null>(null);
+  const ratingsMap = useContentRatingsMap();
   const [selectedPcBookingForStatus, setSelectedPcBookingForStatus] = useState<PrivateClassBookingRequest | null>(null);
   const [pcBookingStatusInput, setPcBookingStatusInput] = useState<PrivateClassBookingRequest['status']>('Scheduled');
   const [pcBookingMeetingInput, setPcBookingMeetingInput] = useState('');
@@ -218,7 +228,7 @@ export const AdminDashboardScreen: React.FC = () => {
     instructorRole: 'Senior Clinical Educator',
     academicExperience: '8 Years Clinical & University Lecturing',
     instructorBio: '',
-    rating: 4.9,
+    rating: 0,
     instructorPhone: '2349029729621',
     chargePerHourNGN: 8000,
     chargePerHourUSD: 5,
@@ -348,7 +358,7 @@ export const AdminDashboardScreen: React.FC = () => {
     institution: 'StudiRad Clinical Academy',
     modality: 'xray' as ClinicalModality,
     duration: '3 Weeks · 2 hrs/week',
-    cpdCredits: 'Course Certificate Included',
+    cpdCredits: '',
     price: 'Free with Membership',
     isFree: true,
     videoUrl: '',
@@ -420,7 +430,7 @@ export const AdminDashboardScreen: React.FC = () => {
     time: '6:00 PM BST',
     duration: '50 minutes',
     meetingLink: 'https://meet.studirad.org/room/masterclass',
-    cpdCredits: '1.5 CPD Hours',
+    cpdCredits: '',
     description: '',
     image: '',
   });
@@ -1209,7 +1219,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     institution: 'StudiRad Clinical Academy',
                     modality: 'xray',
                     duration: '4 Weeks · 2 hrs/week',
-                    cpdCredits: '2.5 CPD Points',
+                    cpdCredits: '',
                     price: 'Free with Membership',
                     isFree: true,
                     videoUrl: '',
@@ -1266,7 +1276,7 @@ export const AdminDashboardScreen: React.FC = () => {
                       time: '6:00 PM BST',
                       duration: '50 minutes',
                       meetingLink: 'https://meet.studirad.org/room/masterclass',
-                      cpdCredits: '1.5 CPD Hours',
+                      cpdCredits: '',
                       description: '',
                       image: '',
                     });
@@ -1353,7 +1363,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     instructorRole: 'Senior Clinical Educator',
                     academicExperience: '8 Years Clinical & University Lecturing',
                     instructorBio: '',
-                    rating: 4.9,
+                    rating: 0,
                     instructorPhone: '2349029729621',
                     chargePerHourNGN: 8000,
                     chargePerHourUSD: 5,
@@ -1362,6 +1372,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     status: 'published',
                   });
                   setPcSlotDraft('');
+                  setPcTermsAccepted(false);
                   setIsPrivateClassModalOpen(true);
                 }}
                 className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white text-xs font-bold shadow-md shadow-[#FF7F32]/20 transition-all cursor-pointer whitespace-nowrap shrink-0"
@@ -1500,7 +1511,7 @@ export const AdminDashboardScreen: React.FC = () => {
                               institution: c.institution || '',
                               modality: c.modality || 'xray',
                               duration: c.duration || '',
-                              cpdCredits: c.cpdCredits || 'Course Certificate Included',
+                              cpdCredits: c.cpdCredits || '',
                               price: c.price || 'Free with Membership',
                               isFree: !!c.isFree,
                               videoUrl: c.videoUrl || '',
@@ -1596,7 +1607,7 @@ export const AdminDashboardScreen: React.FC = () => {
                               time: formatTime12h(cls.time || ''),
                               duration: cls.duration || 'Session',
                               meetingLink: cls.meetingLink || '',
-                              cpdCredits: cls.cpdCredits || '1.0 CPD Hour',
+                              cpdCredits: cls.cpdCredits || '',
                               description: cls.description || '',
                               image: cls.image || '',
                             });
@@ -1734,60 +1745,98 @@ export const AdminDashboardScreen: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredMaterials.map((m) => (
-                  <div key={m.id} className="p-4 rounded-2xl bg-[#121824] border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-all">
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] font-bold uppercase tracking-wider">
-                          {m.format}
-                        </span>
-                        <span className="text-[11px] text-slate-400 font-mono">
-                          {m.size}
-                        </span>
-                      </div>
+                {filteredMaterials.map((m) => {
+                  const isVideoItem = m.format?.toLowerCase() === 'video';
+                  const matRating = ratingsMap[`${isVideoItem ? 'video' : 'material'}_${m.id}`];
+                  return (
+                    <div key={m.id} className="p-4 rounded-2xl bg-[#121824] border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-all">
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] font-bold uppercase tracking-wider">
+                              {m.format}
+                            </span>
+                            {m.status === 'pending_approval' ? (
+                              <span className="px-2 py-0.5 rounded bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider">
+                                Pending Approval
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                                Live
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {matRating && matRating.count > 0 && (
+                              <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-amber-400">
+                                <Star className="w-3 h-3 fill-amber-400" />
+                                {matRating.average.toFixed(1)} ({matRating.count})
+                              </span>
+                            )}
+                            <span className="text-[11px] text-slate-400 font-mono">
+                              {m.size}
+                            </span>
+                          </div>
+                        </div>
 
-                      <h3 className="text-sm font-bold text-white line-clamp-2 mb-1.5">
-                        {m.title}
-                      </h3>
-                      <p className="text-xs text-slate-400 mb-1">
-                        Course: <span className="text-slate-200 font-semibold">{m.category}</span>
-                      </p>
-                      {m.uploader && (
-                        <p className="text-xs text-slate-500 mb-2">
-                          Uploader: {m.uploader}
+                        <h3 className="text-sm font-bold text-white line-clamp-2 mb-1.5">
+                          {m.title}
+                        </h3>
+                        <p className="text-xs text-slate-400 mb-1">
+                          Course: <span className="text-slate-200 font-semibold">{m.category}</span>
                         </p>
-                      )}
-                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-3">
-                        {m.description}
-                      </p>
-                    </div>
+                        {m.uploader && (
+                          <p className="text-xs text-slate-500 mb-2">
+                            Uploader: {m.uploader}
+                          </p>
+                        )}
+                        <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-3">
+                          {m.description}
+                        </p>
+                      </div>
 
-                    <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                      {m.downloadUrl ? (
-                        <a
-                          href={m.downloadUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-[#FF7F32] hover:underline font-semibold"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span>View Link</span>
-                        </a>
-                      ) : (
-                        <span className="capitalize">{m.modality || 'General'}</span>
-                      )}
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => setItemToDelete({ type: 'materials', id: m.id, title: m.title })}
-                          className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-300 transition-colors"
-                          title="Delete material"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                      <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 gap-2">
+                        {m.downloadUrl ? (
+                          <a
+                            href={m.downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-[#FF7F32] hover:underline font-semibold"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>View Link</span>
+                          </a>
+                        ) : (
+                          <span className="capitalize">{m.modality || 'General'}</span>
+                        )}
+                        <div className="flex items-center gap-1.5">
+                          {m.status === 'pending_approval' && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const res = await approveMaterialOrVideoByAdmin(m.id, isVideoItem);
+                                if (res.success) {
+                                  triggerSuccess(`${isVideoItem ? 'Video' : 'Material'} "${m.title}" approved and published!`);
+                                }
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Approve</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setItemToDelete({ type: 'materials', id: m.id, title: m.title })}
+                            className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-300 transition-colors cursor-pointer"
+                            title="Delete material"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1862,26 +1911,38 @@ export const AdminDashboardScreen: React.FC = () => {
                           </span>
                         </div>
 
-                        {/* Qualifications & Experience */}
+                        {/* Qualifications, Country & Experience */}
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80">
                             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-0.5">
-                              Qualifications
+                              Academic Qualification
                             </span>
                             <span className="font-semibold text-slate-200 line-clamp-2">
-                              {app.academicBackground}
+                              {app.academicQualification || app.academicBackground}
                             </span>
                           </div>
 
                           <div className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80">
                             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-0.5">
-                              Experience
+                              Country & Experience
                             </span>
-                            <span className="font-semibold text-slate-200">
+                            <span className="font-semibold text-slate-200 block">
+                              {app.country || 'Not provided'}
+                            </span>
+                            <span className="text-[11px] text-slate-400">
                               {app.experienceYears || '3+ years'}
                             </span>
                           </div>
                         </div>
+
+                        {app.academicQualification && app.academicBackground && app.academicQualification !== app.academicBackground && (
+                          <div className="p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/70 text-[11px] text-slate-300">
+                            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-0.5">
+                              Credentials / Institution
+                            </span>
+                            {app.academicBackground}
+                          </div>
+                        )}
 
                         {/* Modality Expertise Chips */}
                         {app.areaOfExpertise && app.areaOfExpertise.length > 0 && (
@@ -2655,10 +2716,17 @@ export const AdminDashboardScreen: React.FC = () => {
                         <h4 className="text-sm font-extrabold text-white line-clamp-2">{pc.title}</h4>
                         <div className="flex items-center justify-between text-xs text-slate-400">
                           <span>{pc.instructorName}</span>
-                          <span className="inline-flex items-center gap-1 text-amber-400 font-bold">
-                            <Star className="w-3 h-3 fill-amber-400" />
-                            <span>{pc.rating.toFixed(1)}</span>
-                          </span>
+                          {(() => {
+                            const rSummary = ratingsMap[`private_class_${pc.id}`];
+                            return rSummary && rSummary.count > 0 ? (
+                              <span className="inline-flex items-center gap-1 text-amber-400 font-bold">
+                                <Star className="w-3 h-3 fill-amber-400" />
+                                <span>{rSummary.average.toFixed(1)} ({rSummary.count})</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-slate-500">New</span>
+                            );
+                          })()}
                         </div>
                         <p className="text-[11px] text-slate-500 line-clamp-2">{pc.overview}</p>
 
@@ -2693,25 +2761,42 @@ export const AdminDashboardScreen: React.FC = () => {
                       </div>
 
                       <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
-                        {pc.status === 'pending_approval' ? (
+                        <div className="flex items-center gap-1.5">
                           <button
                             type="button"
-                            onClick={async () => {
-                              const res = await approvePrivateClassByAdmin(pc.id, pc.creatorId, pc.title);
-                              if (res.success) {
-                                triggerSuccess(`Private class "${pc.title}" approved and published!`);
-                              }
-                            }}
-                            className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                            onClick={() =>
+                              setPlayingPromiseVideo({
+                                title: pc.title,
+                                instructorName: pc.instructorName,
+                                url: pc.introVideoUrl || '',
+                              })
+                            }
+                            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[#FF7F32] border border-slate-700 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                            title="Watch tutor promise video before approving"
                           >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Approve</span>
+                            <Play className="w-3 h-3 fill-current" />
+                            <span>Watch Video</span>
                           </button>
-                        ) : (
-                          <span className="text-[10px] text-slate-500 truncate max-w-[120px]">
-                            {pc.academicExperience}
-                          </span>
-                        )}
+                          {pc.status === 'pending_approval' ? (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const res = await approvePrivateClassByAdmin(pc.id, pc.creatorId, pc.title);
+                                if (res.success) {
+                                  triggerSuccess(`Private class "${pc.title}" approved and published!`);
+                                }
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Approve</span>
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-slate-500 truncate max-w-[100px]">
+                              {pc.academicExperience}
+                            </span>
+                          )}
+                        </div>
 
                         <div className="flex items-center gap-1">
                           <button
@@ -2732,7 +2817,7 @@ export const AdminDashboardScreen: React.FC = () => {
                                 instructorRole: pc.instructorRole || 'Clinical Educator',
                                 academicExperience: pc.academicExperience,
                                 instructorBio: pc.instructorBio,
-                                rating: pc.rating || 4.9,
+                                rating: pc.rating || 0,
                                 instructorPhone: pc.instructorPhone || '',
                                 chargePerHourNGN: pc.chargePerHourNGN,
                                 chargePerHourUSD: pc.chargePerHourUSD,
@@ -2741,6 +2826,7 @@ export const AdminDashboardScreen: React.FC = () => {
                                 status: pc.status === 'pending_approval' ? 'pending_approval' : 'published',
                               });
                               setPcSlotDraft('');
+                              setPcTermsAccepted(true);
                               setIsPrivateClassModalOpen(true);
                             }}
                             className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
@@ -2932,12 +3018,12 @@ export const AdminDashboardScreen: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-300 mb-1">Certificate / Tag</label>
+                      <label className="block font-semibold text-slate-300 mb-1">Course Tag</label>
                       <input
                         type="text"
                         value={courseForm.cpdCredits}
                         onChange={(e) => setCourseForm({ ...courseForm, cpdCredits: e.target.value })}
-                        placeholder="e.g. Verified Certificate"
+                        placeholder="e.g. Clinical Mastery"
                         className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
                       />
                     </div>
@@ -4060,12 +4146,12 @@ export const AdminDashboardScreen: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Certificate / Tag</label>
+                  <label className="block font-semibold text-slate-300 mb-1">Session Tag</label>
                   <input
                     type="text"
                     value={classForm.cpdCredits}
                     onChange={(e) => setClassForm({ ...classForm, cpdCredits: e.target.value })}
-                    placeholder="Attendance Certificate"
+                    placeholder="e.g. Live Clinical Review"
                     className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
                   />
                 </div>
@@ -4764,7 +4850,7 @@ export const AdminDashboardScreen: React.FC = () => {
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
-                if (!privateClassForm.title.trim() || privateClassForm.daysAvailable.length === 0) return;
+                if (!privateClassForm.title.trim() || privateClassForm.daysAvailable.length === 0 || !pcTermsAccepted) return;
                 setIsSavingPcAdmin(true);
                 const res = await pushPrivateClassToFirestore({
                   ...privateClassForm,
@@ -5030,7 +5116,7 @@ export const AdminDashboardScreen: React.FC = () => {
               </div>
 
               {/* Instructor Info & Promise Video */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-300 block mb-1">Instructor Name</label>
                   <input
@@ -5047,18 +5133,6 @@ export const AdminDashboardScreen: React.FC = () => {
                     type="text"
                     value={privateClassForm.academicExperience}
                     onChange={(e) => setPrivateClassForm({ ...privateClassForm, academicExperience: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-slate-300 block mb-1">Rating (1.0–5.0)</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={5}
-                    step={0.1}
-                    value={privateClassForm.rating}
-                    onChange={(e) => setPrivateClassForm({ ...privateClassForm, rating: Number(e.target.value) })}
                     className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
                   />
                 </div>
@@ -5102,6 +5176,12 @@ export const AdminDashboardScreen: React.FC = () => {
                 />
               </div>
 
+              <PrivateClassCreatorTerms
+                accepted={pcTermsAccepted}
+                onChange={setPcTermsAccepted}
+                variant="admin"
+              />
+
               <div className="pt-2 flex justify-end gap-2 border-t border-slate-800">
                 <button
                   type="button"
@@ -5112,7 +5192,7 @@ export const AdminDashboardScreen: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSavingPcAdmin}
+                  disabled={isSavingPcAdmin || !pcTermsAccepted}
                   className="px-5 py-2.5 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold cursor-pointer disabled:opacity-50"
                 >
                   {isSavingPcAdmin ? 'Saving...' : 'Save & Publish Private Class'}
@@ -5220,6 +5300,63 @@ export const AdminDashboardScreen: React.FC = () => {
               >
                 Save & Notify Student
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* ADMIN PROMISE VIDEO PREVIEW MODAL */}
+      {/* ---------------------------------------------------- */}
+      {playingPromiseVideo && (
+        <div
+          className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs"
+          onClick={() => setPlayingPromiseVideo(null)}
+        >
+          <div
+            className="w-full max-w-2xl bg-[#121824] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl text-left animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+              <div className="min-w-0">
+                <h4 className="text-sm font-extrabold text-white truncate">
+                  {playingPromiseVideo.title}
+                </h4>
+                <p className="text-[11px] text-slate-400">
+                  Tutor Promise Video · {playingPromiseVideo.instructorName}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPlayingPromiseVideo(null)}
+                className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="bg-black aspect-video flex items-center justify-center">
+              {!playingPromiseVideo.url.trim() || !isPlayableVideoUrl(playingPromiseVideo.url) ? (
+                <div className="p-6 text-center text-xs text-slate-400 space-y-2">
+                  <Video className="w-8 h-8 text-slate-600 mx-auto" />
+                  <p>No valid intro / promise video link was attached by the tutor.</p>
+                </div>
+              ) : /\.(mp4|webm|ogg)(\?.*)?$/i.test(playingPromiseVideo.url) ? (
+                <video
+                  src={playingPromiseVideo.url}
+                  controls
+                  autoPlay
+                  className="w-full h-full"
+                />
+              ) : (
+                <iframe
+                  src={getVideoEmbedUrl(playingPromiseVideo.url, true) || undefined}
+                  title={`Promise video for ${playingPromiseVideo.title}`}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowFullScreen
+                />
+              )}
             </div>
           </div>
         </div>

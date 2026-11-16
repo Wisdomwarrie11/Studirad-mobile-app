@@ -60,7 +60,7 @@ const CLINICAL_TOPICS: LearningTopic[] = [
     id: 'research_cpd',
     title: 'Research & Professional Development',
     category: 'Academic & Career',
-    description: 'Dissertation support, clinical audit, journal appraisal, CPD portfolio, and locum interview prep.',
+    description: 'Dissertation support, clinical audit, journal appraisal, clinical portfolio, and locum interview prep.',
     iconName: 'research',
     moduleCount: 26,
   },

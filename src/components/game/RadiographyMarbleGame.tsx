@@ -229,6 +229,13 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
 
   // Selected game: null shows the Games List Hub; clicking a game opens only that game
   const [selectedGame, setSelectedGame] = useState<GameMode | null>(null);
+  // Session seed rotates every time the user enters or leaves a game so question ordering refreshes dynamically
+  const [sessionSeed, setSessionSeed] = useState<string>(
+    () => `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+  );
+  const rotateSeed = useCallback(() => {
+    setSessionSeed(`${Date.now()}_${Math.random().toString(36).slice(2, 7)}`);
+  }, []);
 
   // Real live leaderboard records from Firestore
   const [leaderboard, setLeaderboard] = useState<PlayerScoreRecord[]>([]);
@@ -376,20 +383,36 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
   // LEVEL POOLS FOR EACH GAME
   // =========================================================================
   const fillLevelItems = useMemo(
-    () => FILL_BLANK_ITEMS.filter((q) => q.level === currentLevel),
-    [currentLevel]
+    () =>
+      seededShuffle(
+        FILL_BLANK_ITEMS.filter((q) => q.level === currentLevel),
+        `${userId}_fill_${currentLevel}_${sessionSeed}`
+      ),
+    [currentLevel, userId, sessionSeed]
   );
   const scrambleLevelItems = useMemo(
-    () => WORD_SCRAMBLE_ITEMS.filter((q) => q.level === currentLevel),
-    [currentLevel]
+    () =>
+      seededShuffle(
+        WORD_SCRAMBLE_ITEMS.filter((q) => q.level === currentLevel),
+        `${userId}_scramble_${currentLevel}_${sessionSeed}`
+      ),
+    [currentLevel, userId, sessionSeed]
   );
   const tfLevelItems = useMemo(
-    () => TRUE_FALSE_ITEMS.filter((q) => q.level === currentLevel),
-    [currentLevel]
+    () =>
+      seededShuffle(
+        TRUE_FALSE_ITEMS.filter((q) => q.level === currentLevel),
+        `${userId}_tf_${currentLevel}_${sessionSeed}`
+      ),
+    [currentLevel, userId, sessionSeed]
   );
   const memoryLevelDecks = useMemo(
-    () => MEMORY_MATCH_DECKS.filter((d) => d.level === currentLevel),
-    [currentLevel]
+    () =>
+      seededShuffle(
+        MEMORY_MATCH_DECKS.filter((d) => d.level === currentLevel),
+        `${userId}_memory_${currentLevel}_${sessionSeed}`
+      ),
+    [currentLevel, userId, sessionSeed]
   );
 
   const rawFillIdx = progress.levelIndices?.[currentLevel] ?? 0;
@@ -626,8 +649,8 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
       raw.push({ uid: `${activeDeck.id}_${pair.id}_L`, pairId: pair.id, side: 'left', text: pair.left, colorIdx });
       raw.push({ uid: `${activeDeck.id}_${pair.id}_R`, pairId: pair.id, side: 'right', text: pair.right, colorIdx });
     });
-    return seededShuffle(raw, `${activeDeck.id}_cards`);
-  }, [activeDeck]);
+    return seededShuffle(raw, `${activeDeck.id}_cards_${userId}_${sessionSeed}`);
+  }, [activeDeck, userId, sessionSeed]);
 
   const [flippedUids, setFlippedUids] = useState<string[]>([]);
   const [matchedPairIds, setMatchedPairIds] = useState<string[]>([]);
@@ -909,6 +932,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                 type="button"
                 onClick={() => {
                   sfx.tap();
+                  rotateSeed();
                   setSelectedGame(game.id);
                   persistProgress({ ...progress, activeMode: game.id });
                 }}
@@ -1052,6 +1076,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
             type="button"
             onClick={() => {
               sfx.tap();
+              rotateSeed();
               setSelectedGame(null);
             }}
             className="min-h-[44px] px-3.5 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 flex items-center gap-1.5 text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:border-[#FF7F32] cursor-pointer transition-colors shrink-0"

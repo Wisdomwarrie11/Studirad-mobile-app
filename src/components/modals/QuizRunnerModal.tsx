@@ -134,7 +134,7 @@ export const QuizRunnerModal: React.FC<QuizRunnerModalProps> = ({
 
               <div>
                 <span className="text-xs font-bold text-purple-700 uppercase tracking-wider">
-                  Accredited Practice Challenge
+                  Clinical Practice Challenge
                 </span>
                 <h3 className="text-lg font-bold text-[#002147] mt-1">
                   {quiz.title}

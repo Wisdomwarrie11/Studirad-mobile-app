@@ -7,6 +7,8 @@ import { formatTime12h } from '../../utils/timeFormat';
 import { scrollToTopInstant } from '../../utils/scrollTop';
 import { submitPrivateClassBooking } from '../../services/firebaseDataService';
 import { getVideoEmbedUrl } from '../../utils/youtube';
+import { StarRatingWidget } from '../common/StarRatingWidget';
+import { useContentRatingSummary } from '../../hooks/useContentRatings';
 import {
   Calendar,
   Clock,
@@ -46,6 +48,13 @@ function addDaysIso(daysFromToday: number): string {
   return `${y}-${m}-${day}`;
 }
 
+function getWeekdayName(isoDate: string): string {
+  if (!isoDate) return '';
+  const d = new Date(`${isoDate}T12:00:00`);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', { weekday: 'long' });
+}
+
 export function getPrivateClassFallbackImage(category?: string): string {
   const cat = (category || '').toLowerCase();
   if (cat.includes('ultrasound') || cat.includes('sono')) return abdUsImg;
@@ -62,6 +71,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
 }) => {
   const { currentUser, requireAuth } = useAuth();
   const { currency, setCurrency } = useCurrency();
+  const ratingSummary = useContentRatingSummary('private_class', privateClass.id);
 
   const minStartDate = useMemo(() => addDaysIso(2), []);
 
@@ -139,13 +149,28 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
   const calculatedAmountNGN = planType === 'monthly' ? monthlyNGN : perDayWeeklyNGN;
   const calculatedAmountUSD = planType === 'monthly' ? monthlyUSD : perDayWeeklyUSD;
 
+  const allowedStartDays = useMemo(
+    () =>
+      planType === 'per_day' && selectedDays.length > 0
+        ? selectedDays
+        : effectiveAvailableDays,
+    [planType, selectedDays, effectiveAvailableDays]
+  );
+
+  const pickedWeekday = useMemo(() => getWeekdayName(startDate), [startDate]);
+  const startDateMatchesDay = Boolean(
+    startDate &&
+      startDate >= minStartDate &&
+      pickedWeekday &&
+      allowedStartDays.includes(pickedWeekday)
+  );
+
   // Reveal tuition ONLY after the learner has completed their selections
   const isSelectionComplete = Boolean(
     planType &&
       (planType === 'monthly' || selectedDays.length > 0) &&
       selectedTimeSlot &&
-      startDate &&
-      startDate >= minStartDate
+      startDateMatchesDay
   );
 
   const fallbackImg = getPrivateClassFallbackImage(privateClass.category);
@@ -193,7 +218,14 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
 
     if (!startDate || startDate < minStartDate) {
       setErrorMessage(
-        `Please pick a start date on or after ${minStartDate} (1–2 days needed to notify the instructor and set up your session).`
+        `Please pick a start date at least 2 days from today (${minStartDate} or later) so we can notify the instructor.`
+      );
+      return;
+    }
+
+    if (!pickedWeekday || !allowedStartDays.includes(pickedWeekday)) {
+      setErrorMessage(
+        `${startDate} falls on a ${pickedWeekday || 'different day'}. Your start date must match the tutor's selected day(s): ${allowedStartDays.join(', ')}.`
       );
       return;
     }
@@ -284,8 +316,12 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent flex flex-col justify-end p-5 sm:p-7">
               <div className="flex items-center gap-2 text-amber-400 text-xs font-extrabold mb-1.5">
-                <Star className="w-4 h-4 fill-amber-400" />
-                <span>{Number(privateClass.rating || 4.9).toFixed(1)} Instructor Rating</span>
+                <Star className={`w-4 h-4 ${ratingSummary.count > 0 ? 'fill-amber-400' : 'text-slate-300'}`} />
+                <span>
+                  {ratingSummary.count > 0
+                    ? `${ratingSummary.average.toFixed(1)} (${ratingSummary.count} ${ratingSummary.count === 1 ? 'review' : 'reviews'})`
+                    : 'No ratings yet'}
+                </span>
               </div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-white leading-snug">
                 {privateClass.title}
@@ -339,10 +375,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-1 text-amber-500 text-xs font-extrabold shrink-0">
-                    <Star className="w-4 h-4 fill-amber-500" />
-                    <span>{Number(privateClass.rating || 4.9).toFixed(1)}</span>
-                  </div>
+                  <StarRatingWidget itemType="private_class" itemId={privateClass.id} compact />
                 </div>
 
                 {privateClass.instructorBio && (
@@ -350,6 +383,8 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                     {privateClass.instructorBio}
                   </p>
                 )}
+
+                <StarRatingWidget itemType="private_class" itemId={privateClass.id} interactive />
               </div>
 
               {/* Class Overview & Session Metadata (No Prices Here) */}
@@ -521,8 +556,14 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                     className="w-full px-3.5 h-11 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-xs sm:text-sm text-[var(--text-primary)] font-semibold focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
                   />
                   <p className="text-[11px] text-[var(--text-muted)]">
-                    Earliest start is {minStartDate} (1–2 days needed to notify instructor &amp; prepare).
+                    Earliest: <strong className="text-[var(--text-primary)]">{minStartDate}</strong> (2+ days notice) · Matches:{' '}
+                    <strong className="text-[#FF7F32]">{allowedStartDays.join(', ')}</strong>
                   </p>
+                  {startDate && startDate >= minStartDate && !startDateMatchesDay && (
+                    <p className="text-[11px] font-bold text-rose-500">
+                      {startDate} is a {pickedWeekday}. Pick a date falling on {allowedStartDays.join(', ')}.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -614,7 +655,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                   onClick={handleProceedToVideoGate}
                   className="w-full sm:w-auto min-h-[44px] px-8 py-2.5 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer"
                 >
-                  <span>Proceed</span>
+                  <span>Watch this first</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>

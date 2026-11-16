@@ -32,6 +32,7 @@ import {
   Heart
 } from 'lucide-react';
 import { OfflineStudyPackModal } from '../modals/OfflineStudyPackModal';
+import { StarRatingWidget } from '../common/StarRatingWidget';
 import { getYouTubeThumbnail } from '../../utils/youtube';
 import classesImg from '../../assets/images/onboarding_classes_1792606674536.jpg';
 
@@ -458,14 +459,9 @@ export const LearnTab: React.FC<LearnTabProps> = ({
             
             {/* Header & Sub-filter (All | Reading Materials | Video Lectures) */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-                  Study Materials
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Reading documents, lecture notes & clinical video recordings
-                </p>
-              </div>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                Study Materials
+              </h2>
 
               {/* Type Switcher */}
               <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#161F30] p-1 rounded-xl shrink-0">
@@ -602,10 +598,13 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                           {mat.title}
                         </h3>
 
-                        {/* Uploader & Date */}
-                        <div className="flex items-center gap-2 text-[10px] text-slate-400 pl-2 mt-2">
-                          <User className="w-3 h-3 text-slate-400" />
-                          <span className="truncate">{mat.uploader}</span>
+                        {/* Uploader & Rating */}
+                        <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400 pl-2 mt-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <User className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate">{mat.uploader}</span>
+                          </div>
+                          <StarRatingWidget itemType="material" itemId={mat.id} compact />
                         </div>
                       </div>
 
@@ -700,16 +699,19 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                         {/* Title & Description */}
                         <div>
                           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-                            <span className="flex items-center gap-1">
-                              <GraduationCap className="w-3.5 h-3.5 text-[#FF7F32]" />
-                              <span>{course.instructor || 'StudiRad Faculty'}</span>
+                            <span className="flex items-center gap-1 min-w-0 truncate">
+                              <GraduationCap className="w-3.5 h-3.5 text-[#FF7F32] shrink-0" />
+                              <span className="truncate">{course.instructor || 'StudiRad Faculty'}</span>
                             </span>
-                            {course.duration && (
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span>{course.duration}</span>
-                              </span>
-                            )}
+                            <div className="flex items-center gap-2.5 shrink-0">
+                              <StarRatingWidget itemType="course" itemId={course.id} compact />
+                              {course.duration && (
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span>{course.duration}</span>
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover:text-[#002147] dark:group-hover:text-[#38BDF8] transition-colors">
@@ -781,9 +783,6 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                   <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">
                     No courses uploaded yet
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
-                    Courses published from the admin console will appear here with in-app video lectures, study materials, and module quizzes.
-                  </p>
                 </div>
 
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">

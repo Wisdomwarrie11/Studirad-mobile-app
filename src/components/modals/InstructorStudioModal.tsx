@@ -39,8 +39,12 @@ import {
   GraduationCap,
   Award,
   Phone,
-  Video
+  Video,
+  Bell
 } from 'lucide-react';
+import { NotificationCenter } from '../drawers/NotificationCenter';
+import { PrivateClassCreatorTerms } from '../common/PrivateClassCreatorTerms';
+import { StarRatingWidget } from '../common/StarRatingWidget';
 
 interface InstructorStudioModalProps {
   isOpen: boolean;
@@ -81,8 +85,9 @@ export const InstructorStudioModal: React.FC<InstructorStudioModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, unreadNotificationCount } = useAuth();
   const { currency: appCurrency, toggleCurrency } = useCurrency();
+  const [showNotifModal, setShowNotifModal] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'courses' | 'create' | 'private_classes' | 'tutorials'>('courses');
   const [courses, setCourses] = useState<Course[]>([]);
@@ -116,6 +121,7 @@ export const InstructorStudioModal: React.FC<InstructorStudioModalProps> = ({
   const [pcMonthlyChargeUSD, setPcMonthlyChargeUSD] = useState<number>(28);
   const [pcError, setPcError] = useState('');
   const [isSavingPc, setIsSavingPc] = useState(false);
+  const [pcTermsAccepted, setPcTermsAccepted] = useState(false);
 
   // Course Form
   const [title, setTitle] = useState('');
@@ -277,6 +283,7 @@ export const InstructorStudioModal: React.FC<InstructorStudioModalProps> = ({
     setPcChargePerHourUSD(5);
     setPcMonthlyChargeNGN(45000);
     setPcMonthlyChargeUSD(28);
+    setPcTermsAccepted(false);
     setPcError('');
   };
 
@@ -326,6 +333,10 @@ export const InstructorStudioModal: React.FC<InstructorStudioModalProps> = ({
       setPcError('Please enter an overview of what students will learn.');
       return;
     }
+    if (!pcTermsAccepted) {
+      setPcError('You must read and accept the Private Class Creator Terms & Legal Undertaking.');
+      return;
+    }
 
     setIsSavingPc(true);
     const existing = editingPrivateClassId
@@ -349,7 +360,7 @@ export const InstructorStudioModal: React.FC<InstructorStudioModalProps> = ({
       academicExperience: pcAcademicExperience.trim() || 'Clinical & Academic Educator',
       instructorBio: pcInstructorBio.trim(),
       instructorPhone: pcInstructorPhone.trim(),
-      rating: existing?.rating || 4.9,
+      rating: existing?.rating || 0,
       chargePerHourNGN: Number(pcChargePerHourNGN) || 8000,
       chargePerHourUSD: Number(pcChargePerHourUSD) || 5,
       monthlyChargeNGN: Number(pcMonthlyChargeNGN) || 45000,
@@ -517,7 +528,7 @@ export const InstructorStudioModal: React.FC<InstructorStudioModalProps> = ({
         institution: currentUser?.institution || 'StudiRad Clinical Academy',
         modality,
         duration,
-        cpdCredits: 'Course Certificate Included',
+        cpdCredits: '',
         price: isFree ? 'Free with Membership' : price,
         isFree,
         videoUrl: videoUrl.trim(),
@@ -526,7 +537,7 @@ export const InstructorStudioModal: React.FC<InstructorStudioModalProps> = ({
         learningOutcomes: [
           'Master clinical radiologic pathology and protocol indications',
           'Evaluate real patient diagnostic imaging cases with precision',
-          'Pass end-of-module knowledge quiz and earn verified certificate'
+          'Complete end-of-module knowledge quiz'
         ],
         modules: [initialModule],
         materials,
@@ -589,12 +600,26 @@ export const InstructorStudioModal: React.FC<InstructorStudioModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Upload accredited radiography courses and review 1-on-1 private tutorial bookings
+                Manage courses, private classes &amp; bookings
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowNotifModal(true)}
+              className="relative w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-200 transition-colors cursor-pointer"
+              title="Notifications"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadNotificationCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-[#FF7F32] text-white text-[9px] font-extrabold flex items-center justify-center">
+                  {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                </span>
+              )}
+            </button>
+
             <button
               type="button"
               onClick={toggleCurrency}
@@ -1521,6 +1546,12 @@ export const InstructorStudioModal: React.FC<InstructorStudioModalProps> = ({
                     </div>
                   </div>
 
+                  {/* Required Legal Undertaking & Creator Terms */}
+                  <PrivateClassCreatorTerms
+                    accepted={pcTermsAccepted}
+                    onChange={setPcTermsAccepted}
+                  />
+
                   <div className="flex justify-end gap-2 pt-2">
                     <button
                       type="button"
@@ -1534,7 +1565,7 @@ export const InstructorStudioModal: React.FC<InstructorStudioModalProps> = ({
                     </button>
                     <button
                       type="submit"
-                      disabled={isSavingPc}
+                      disabled={isSavingPc || !pcTermsAccepted}
                       className="px-5 py-2 rounded-xl bg-[#002147] dark:bg-[#FF7F32] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
@@ -1571,10 +1602,7 @@ export const InstructorStudioModal: React.FC<InstructorStudioModalProps> = ({
                           }`}>
                             {pc.status === 'published' ? 'Live to Students' : 'Pending Admin Approval'}
                           </span>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-500">
-                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                            <span>{pc.rating.toFixed(1)}</span>
-                          </span>
+                          <StarRatingWidget itemType="private_class" itemId={pc.id} compact />
                         </div>
 
                         <h5 className="text-sm font-extrabold text-slate-900 dark:text-white line-clamp-2">
@@ -1778,6 +1806,11 @@ export const InstructorStudioModal: React.FC<InstructorStudioModalProps> = ({
           )}
         </div>
       </div>
+
+      <NotificationCenter
+        isOpen={showNotifModal}
+        onClose={() => setShowNotifModal(false)}
+      />
     </div>
   );
 };

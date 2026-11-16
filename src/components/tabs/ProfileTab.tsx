@@ -32,7 +32,8 @@ import {
   Building2,
   Gamepad2,
   Flame,
-  Trophy
+  Trophy,
+  Bell
 } from 'lucide-react';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ProfileSkeleton } from '../common/Skeletons';
@@ -46,7 +47,7 @@ interface ProfileTabProps {
 }
 
 export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlayer }) => {
-  const { currentUser, signOut, deleteAccount, setScreen, setActiveTab } = useAuth();
+  const { currentUser, signOut, deleteAccount, setScreen, setActiveTab, unreadNotificationCount } = useAuth();
   const { requests } = useRequests();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -144,7 +145,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
     general_radiography: 'General Radiography',
     ct_mri: 'CT & MRI',
     radiation_protection: 'Radiation Protection',
-    research_cpd: 'Research & Academic CPD',
+    research_cpd: 'Research & Academic Study',
   };
 
   const handleDeleteAccount = async () => {
@@ -154,7 +155,6 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
     setShowDeleteModal(false);
   };
 
-  const cpdHours = typeof currentUser?.cpdCredits === 'number' ? currentUser.cpdCredits : 0;
   const userJoinedDate = currentUser?.createdAt
     ? new Date(currentUser.createdAt).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
     : 'Recently';
@@ -174,13 +174,10 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-7 space-y-6">
         
         {/* Top Header */}
-        <header className="space-y-1">
+        <header>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#002147] dark:text-white tracking-tight">
             Account & Profile
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Enrolled courses, learning progress, and clinical affiliations
-          </p>
         </header>
 
         {/* If guest (no account), display concise inviting profile layout */}
@@ -273,8 +270,8 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                     <Award className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Course Certificates</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Take quizzes, track real-time completion, and earn verified certificates.</p>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Learning Progress & Quizzes</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Take quizzes and track real-time lesson completion.</p>
                   </div>
                 </div>
 
@@ -344,6 +341,12 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                 >
                   <GraduationCap className="w-4 h-4" />
                   <span>Open Instructor Studio</span>
+                  {unreadNotificationCount > 0 && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-extrabold">
+                      <Bell className="w-2.5 h-2.5 fill-white" />
+                      {unreadNotificationCount}
+                    </span>
+                  )}
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
@@ -375,7 +378,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                       Be a Tutor / Instructor
                     </h3>
                     <p className="text-xs text-slate-200 mt-0.5">
-                      Join our teaching faculty to upload accredited courses, mentor radiography scholars, and offer 1-on-1 private tutorials.
+                      Join our teaching faculty to upload clinical courses, mentor radiography scholars, and offer 1-on-1 private tutorials.
                     </p>
                   </div>
                 </div>
@@ -451,7 +454,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                   </div>
 
                   <p className="text-xs text-slate-200 leading-relaxed">
-                    Build accredited courses, configure your private tutoring rates, and manage 1-on-1 student tutorial bookings.
+                    Build specialized courses, configure your private tutoring rates, and manage 1-on-1 student tutorial bookings.
                   </p>
 
                   <button
@@ -460,6 +463,12 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                     className="w-full py-2.5 px-4 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <span>Open Instructor Studio</span>
+                    {unreadNotificationCount > 0 && (
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-extrabold">
+                        <Bell className="w-2.5 h-2.5 fill-white" />
+                        {unreadNotificationCount}
+                      </span>
+                    )}
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -506,7 +515,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                 </div>
               )}
 
-              {/* 2. Course Progress & Certificates Card */}
+              {/* 2. Course Progress Card */}
             <div className="w-full bg-white dark:bg-[#121824] rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -530,7 +539,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
 
               <div className="space-y-1.5">
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Track lesson completions, pass knowledge check quizzes, and earn verifiable course certificates.
+                  Track lesson completions and pass knowledge check quizzes.
                 </p>
               </div>
             </div>
@@ -787,7 +796,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                     No courses enrolled yet
                   </p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                    Explore available courses in the Learn library to begin your accredited clinical development.
+                    Explore available courses in the Learn library.
                   </p>
                   <button
                     onClick={() => setActiveTab('learn')}
@@ -1012,7 +1021,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                 Delete Account?
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                This will permanently delete your user profile, course progress, and verified certificates.
+                This will permanently delete your user profile and course progress.
               </p>
             </div>
 

@@ -124,13 +124,10 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-7 space-y-6 sm:space-y-8">
         
         {/* Header */}
-        <header className="space-y-1">
+        <header>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#002147] dark:text-white tracking-tight">
             Opportunities
           </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Dedicated portals for jobs, internships, scholarships, and locum radiographers
-          </p>
         </header>
 
         {/* ================= 4 DISTINCT INDIVIDUAL SECTIONS ================= */}
@@ -205,14 +202,9 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         {activeSection === 'jobs' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-                  Job Openings
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Verified radiography vacancies from hospitals and diagnostic centers
-                </p>
-              </div>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                Job Openings
+              </h2>
               <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                 {currentFilteredList.length} {currentFilteredList.length === 1 ? 'Job' : 'Jobs'}
               </span>
@@ -353,14 +345,9 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         {activeSection === 'internships' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-                  Clinical Internships
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Graduate radiographer internships, hospital attachments, and clinical rotations
-                </p>
-              </div>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                Clinical Internships
+              </h2>
               <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950/50 text-cyan-700 dark:text-cyan-300">
                 {currentFilteredList.length} {currentFilteredList.length === 1 ? 'Internship' : 'Internships'}
               </span>
@@ -393,7 +380,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                   No internship openings posted right now
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                  New accredited internship placements and rotation positions will appear here directly from healthcare institutions.
+                  New internship placements will appear here.
                 </p>
               </div>
             ) : (
@@ -468,14 +455,9 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         {activeSection === 'scholarships' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-                  Scholarships & Grants
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Radiography scholarships, academic travel grants, and postgraduate funding
-                </p>
-              </div>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                Scholarships & Grants
+              </h2>
               <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300">
                 {currentFilteredList.length} {currentFilteredList.length === 1 ? 'Grant' : 'Grants'}
               </span>

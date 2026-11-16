@@ -70,6 +70,8 @@ export interface TutorApplication {
   experienceYears: string;
   summary: string;
   phone?: string;
+  country?: string;
+  academicQualification?: string;
   status: 'pending' | 'approved' | 'rejected';
   appliedAt: string | number;
   reviewedAt?: string | number;
@@ -138,6 +140,7 @@ export interface PrivateClass {
   instructorBio: string; // Details about instructor in relation to this class/title
   academicExperience: string;
   rating: number;
+  reviewsCount?: number | string;
   instructorPhone?: string; // WhatsApp contact for admin dual notification
   chargePerHourNGN: number;
   chargePerHourUSD: number;
@@ -187,7 +190,7 @@ export interface AppNotification {
   id: string;
   title: string;
   message: string;
-  type: 'tutor_application' | 'course_submission' | 'tutorial_request' | 'class' | 'job' | 'system' | 'quiz' | 'booking';
+  type: 'tutor_application' | 'course_submission' | 'course_approval' | 'course' | 'tutorial_request' | 'class' | 'job' | 'system' | 'quiz' | 'booking';
   targetRole?: 'admin' | 'instructor' | 'user';
   targetUserId?: string;
   relatedId?: string;
@@ -196,6 +199,18 @@ export interface AppNotification {
   timestamp?: string;
   linkTab?: string;
   actionTarget?: { tab: NavTab; itemId?: string };
+}
+
+export type RatableContentType = 'course' | 'private_class' | 'live_class' | 'material';
+
+export interface ContentRating {
+  id: string;
+  itemType: RatableContentType;
+  itemId: string;
+  userId: string;
+  userName?: string;
+  score: number;
+  updatedAt: string;
 }
 
 export interface EnrolledCourseRecord {
@@ -337,6 +352,8 @@ export interface LiveClass {
   status?: 'published' | 'upcoming' | 'completed' | 'coming-soon' | string;
   cohortStatus?: 'upcoming' | 'completed' | 'coming-soon' | string;
   whatYouWillLearn?: string[];
+  rating?: number;
+  reviewsCount?: number | string;
   createdAt?: number | string;
 }
 
@@ -351,6 +368,9 @@ export interface StudyMaterial {
   createdAt?: any;
   description?: string;
   fileSize?: string;
+  status?: 'published' | 'pending_approval';
+  rating?: number;
+  reviewsCount?: number | string;
 }
 
 export interface ClinicalResource {
@@ -367,6 +387,9 @@ export interface ClinicalResource {
   link?: string;
   type?: string;
   thumbnailUrl?: string;
+  status?: 'published' | 'pending_approval';
+  rating?: number;
+  reviewsCount?: number | string;
 }
 
 export interface QuizQuestion {

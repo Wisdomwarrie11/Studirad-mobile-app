@@ -89,7 +89,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
     ultrasound: 'Ultrasound',
     mammography: 'Mammography',
     radiation_protection: 'Radiation Protection',
-    research_cpd: 'Research & CPD',
+    research_cpd: 'Research & Academic Study',
   };
 
   const handleDeleteAccount = async () => {
@@ -247,7 +247,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                   if (enrolledCourses.length === 0) {
                     setActiveModalInfo({
                       title: 'Enrolled Courses',
-                      content: 'You have not enrolled in any courses yet. Browse the Learn library to start accredited clinical imaging modules.',
+                      content: 'You have not enrolled in any courses yet. Browse the Learn library to start clinical imaging modules.',
                       actionLabel: 'Browse Courses',
                       onAction: () => {
                         onClose();
@@ -524,15 +524,15 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
               Legal & Support
             </span>
 
-            <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden shadow-2xs">
+            <div className="bg-white dark:bg-[#121824] rounded-2xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden shadow-2xs">
               <div 
                 onClick={() => setActiveModalInfo({
                   title: 'Help & Academic Support',
-                  content: 'Reach our clinical education team at support@studirad.org for curriculum questions, CPD certificate verification, and locum recruitment inquiries.'
+                  content: 'Reach our academic team at support@studirad.org for curriculum guidance, tutoring bookings, research assistance, and technical support. Note: StudiRad provides educational enrichment only and does not issue CPD certificates at this time.'
                 })}
-                className="p-3 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer"
+                className="p-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
               >
-                <span className="text-xs font-semibold text-slate-800">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                   Help & Academic Support
                 </span>
                 <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -541,11 +541,11 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
               <div 
                 onClick={() => setActiveModalInfo({
                   title: 'Privacy Policy & Terms of Service',
-                  content: 'StudiRad adheres to GDPR, NDPR, and healthcare clinical information standards. Only individuals 17 years of age or older are authorized to use the platform. Your learner records and diagnostic quiz attempts are confidential and protected.'
+                  content: 'StudiRad complies with GDPR, NDPR, and clinical confidentiality rules. Users must be aged 18+. Patient imaging shared on the platform must be anonymized. We do not sell personal data, and we do not issue CPD certificates or statutory credits at this time.'
                 })}
-                className="p-3 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer"
+                className="p-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
               >
-                <span className="text-xs font-semibold text-slate-800">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                   Privacy Policy & Terms of Service
                 </span>
                 <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -691,7 +691,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
             </p>
 
             <ul className="text-[11px] text-slate-600 space-y-1 mb-4 bg-red-50/50 p-3 rounded-xl border border-red-100">
-              <li className="text-red-700">• All verified course certificates and learning records</li>
+              <li className="text-red-700">• All saved course progress and learning records</li>
               <li className="text-red-700">• Course progress and clinical quiz submissions</li>
               <li className="text-red-700">• Bookmarked hospital locum vacancies</li>
               <li className="text-red-700">• Scheduled 1-on-1 tutor bookings</li>

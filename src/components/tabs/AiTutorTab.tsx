@@ -32,9 +32,6 @@ export const AiTutorTab: React.FC = () => {
                 Coming Soon
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Specialized clinical intelligence for diagnostic radiographers
-            </p>
           </div>
         </div>
 
@@ -51,10 +48,6 @@ export const AiTutorTab: React.FC = () => {
             <h2 className="text-2xl sm:text-3xl font-extrabold leading-tight">
               Your Personal Radiography Clinical Mentor
             </h2>
-
-            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed max-w-2xl">
-              We are fine-tuning our specialized AI tutoring engine on standardized radiographic positioning protocols, anatomy critique, physics principles, and board exam viva prep.
-            </p>
 
             <div className="pt-2">
               <button

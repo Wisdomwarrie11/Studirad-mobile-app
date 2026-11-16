@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { subscribeUserRequests, pushResearchRequestToFirestore } from '../services/firebaseDataService';
+import {
+  subscribeUserRequests,
+  pushResearchRequestToFirestore,
+  pushGeneralRequestToFirestore,
+  deleteUserRequestFromFirestore,
+} from '../services/firebaseDataService';
 import { RepresentativeInfo } from '../services/researchAssistanceConfig';
 
 export type RequestCategory = 'service' | 'research' | 'private_class';
@@ -108,12 +113,35 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   });
 
-  // Real-time synchronization with Firestore requests collection when signed in; preserve session requests for guests
+  // Real-time synchronization with Firestore requests collection; preserve unsynced session requests
   useEffect(() => {
     if (currentUser?.id || currentUser?.email) {
-      const unsub = subscribeUserRequests(currentUser.id || currentUser.email || '', (realRequests) => {
-        setRequests(realRequests);
-      });
+      const uid = currentUser.id;
+      const uEmail = currentUser.email?.toLowerCase();
+      const unsub = subscribeUserRequests(
+        { userId: uid, email: currentUser.email },
+        (realRequests) => {
+          setRequests((prev) => {
+            const seenRefs = new Set(realRequests.map((r: any) => r.referenceCode || r.id));
+            const unsyncedLocal = prev.filter((r: any) => {
+              const key = r.referenceCode || r.id;
+              if (seenRefs.has(key)) return false;
+              const matchesOwner =
+                !r.userId ||
+                r.userId === uid ||
+                (uEmail && r.userEmail?.toLowerCase() === uEmail);
+              return matchesOwner;
+            });
+            const merged = [...realRequests, ...unsyncedLocal];
+            merged.sort(
+              (a: any, b: any) =>
+                new Date(b.submittedAt || b.createdAt || 0).getTime() -
+                new Date(a.submittedAt || a.createdAt || 0).getTime()
+            );
+            return merged;
+          });
+        }
+      );
       return () => unsub?.();
     } else {
       try {
@@ -165,6 +193,7 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     setRequests((prev) => [newRequest, ...prev]);
+    pushGeneralRequestToFirestore(newRequest).catch(() => {});
     return { success: true, referenceCode: ref };
   };
 
@@ -241,6 +270,7 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     setRequests((prev) => [newRequest, ...prev]);
+    pushGeneralRequestToFirestore(newRequest).catch(() => {});
     return { success: true, referenceCode: ref };
   };
 
@@ -250,6 +280,7 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const cancelRequest = (id: string) => {
     setRequests((prev) => prev.filter((r) => r.id !== id));
+    deleteUserRequestFromFirestore(id).catch(() => {});
   };
 
   return (

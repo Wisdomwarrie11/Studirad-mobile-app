@@ -24,7 +24,9 @@ import {
   TutorAvailability,
   AppNotification,
   PrivateClass,
-  PrivateClassBookingRequest
+  PrivateClassBookingRequest,
+  RatableContentType,
+  ContentRating
 } from '../types';
 import { MOCK_OPPORTUNITIES, MOCK_LIVE_CLASSES, MOCK_WEBINARS, MOCK_COURSES, MOCK_RESOURCES } from '../data/mockData';
 import { getYouTubeThumbnail } from '../utils/youtube';
@@ -32,6 +34,28 @@ import { formatTime12h } from '../utils/timeFormat';
 import { RESEARCH_REPRESENTATIVES, RepresentativeInfo } from './researchAssistanceConfig';
 
 export type { EnrolledCourseRecord };
+
+export interface UserIdentityFilter {
+  userId?: string;
+  email?: string;
+  fullName?: string;
+  isInstructor?: boolean;
+}
+
+function matchesUserRecord(
+  filter: UserIdentityFilter,
+  ...candidates: Array<string | undefined | null>
+): boolean {
+  const uid = filter.userId?.trim();
+  const email = filter.email?.trim().toLowerCase();
+  return candidates.some((val) => {
+    if (!val || typeof val !== 'string') return false;
+    const trimmed = val.trim();
+    if (uid && trimmed === uid) return true;
+    if (email && trimmed.toLowerCase() === email) return true;
+    return false;
+  });
+}
 
 /**
  * Recursively removes undefined values from objects/arrays so Firestore setDoc never throws
@@ -98,6 +122,54 @@ async function deleteDocFromAllDbs(collectionName: string, docId: string): Promi
   if (db) targets.push(deleteDoc(doc(db, collectionName, docId)));
   if (adminDb && adminDb !== db) targets.push(deleteDoc(doc(adminDb, collectionName, docId)));
   await Promise.allSettled(targets);
+}
+
+function toTimestampMs(val: any): number {
+  if (!val) return 0;
+  if (typeof val === 'number') return val;
+  if (typeof val === 'string') {
+    const t = Date.parse(val);
+    return Number.isNaN(t) ? 0 : t;
+  }
+  if (typeof val?.toMillis === 'function') return val.toMillis();
+  if (typeof val?.toDate === 'function') return val.toDate().getTime();
+  return 0;
+}
+
+/**
+ * Merges a document from multiple Firestore projects without letting a lagging external DB
+ * overwrite a newer update or revert an admin-approved 'published' doc back to 'pending_approval'.
+ */
+function mergeStatusDoc<T extends { status?: string; updatedAt?: any; createdAt?: any; _deleted?: boolean }>(
+  existing: T | undefined,
+  incoming: T,
+  sourcePriority: 'applet' | 'secondary' = 'secondary'
+): T {
+  if (!existing) return incoming;
+  if (incoming._deleted) return incoming;
+  if (existing._deleted) return existing;
+
+  const exTime = Math.max(toTimestampMs(existing.updatedAt), toTimestampMs(existing.createdAt));
+  const inTime = Math.max(toTimestampMs(incoming.updatedAt), toTimestampMs(incoming.createdAt));
+
+  // If existing is already published and incoming has stale pending_approval from an un-updated external DB, keep published
+  if (existing.status === 'published' && incoming.status === 'pending_approval' && inTime <= exTime) {
+    return {
+      ...incoming,
+      ...existing,
+      status: 'published',
+    };
+  }
+  if (incoming.status === 'published' && existing.status === 'pending_approval' && inTime >= exTime) {
+    return {
+      ...existing,
+      ...incoming,
+      status: 'published',
+    };
+  }
+  if (inTime > exTime) return incoming;
+  if (exTime > inTime) return existing;
+  return sourcePriority === 'applet' ? incoming : existing;
 }
 
 export interface UserCompletedRecord {
@@ -325,7 +397,7 @@ export const ACTIVE_CLASSES: LiveClass[] = [
     createdAt: 1788259200,
     instructor: "StudiRad Ultrasound Faculty",
     instructorRole: "Lead Clinical Sonographer",
-    cpdCredits: "2.0 CPD Points",
+    cpdCredits: "",
     date: "1st – 4th September 2026",
     modality: "ultrasound",
     cohortStatus: "completed",
@@ -361,7 +433,7 @@ export const ACTIVE_CLASSES: LiveClass[] = [
     createdAt: 1781827200,
     instructor: "StudiRad Radiology Faculty",
     instructorRole: "Consultant Radiography Specialist",
-    cpdCredits: "2.5 CPD Points",
+    cpdCredits: "",
     date: "22nd – 26th June 2026",
     modality: "xray",
     cohortStatus: "completed",
@@ -389,7 +461,7 @@ export const COMING_SOON_CLASSES: LiveClass[] = [
     createdAt: 1785000000,
     instructor: "StudiRad Ultrasound Faculty",
     instructorRole: "Lead Sonography Specialist",
-    cpdCredits: "4.0 CPD Points",
+    cpdCredits: "",
     date: "Coming Soon · 4 Weeks",
     modality: "ultrasound",
     cohortStatus: "coming-soon",
@@ -437,7 +509,7 @@ export function subscribeClasses(
       duration: data.duration || 'Session',
       isLiveNow: !!data.isLiveNow,
       isRegistered: !!data.isRegistered,
-      cpdCredits: data.cpdCredits || '2.0 CPD Points',
+      cpdCredits: data.cpdCredits || '',
       description: data.description || '',
       requirements: Array.isArray(data.requirements) ? data.requirements : [],
       relatedMaterials: Array.isArray(data.relatedMaterials) ? data.relatedMaterials : [],
@@ -459,6 +531,8 @@ export function subscribeClasses(
       status: data.status || (isCompleted ? 'completed' : isComingSoon ? 'coming-soon' : 'published'),
       cohortStatus: isCompleted ? 'completed' : isComingSoon ? 'coming-soon' : 'upcoming',
       whatYouWillLearn: Array.isArray(data.whatYouWillLearn) ? data.whatYouWillLearn : [],
+      rating: typeof data.rating === 'number' ? data.rating : 0,
+      reviewsCount: data.reviewsCount || '0',
       createdAt: data.createdAt,
     };
   };
@@ -467,6 +541,27 @@ export function subscribeClasses(
 
   // Emit initial pre-seeded state
   emit();
+
+  // 0. Subscribe to appletDb classes (primary AI Studio DB)
+  try {
+    if (appletDb) {
+      const appletCollRef = collection(appletDb, 'classes');
+      const u0 = onSnapshot(
+        appletCollRef,
+        (snapshot) => {
+          snapshot.docs.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (!data.status || data.status === 'published' || data.status === 'completed' || data.status === 'coming-soon' || data.status === 'upcoming') {
+              classesMap.set(docSnap.id, parseClassDoc(docSnap));
+            }
+          });
+          emit();
+        },
+        () => {}
+      );
+      unsubs.push(u0);
+    }
+  } catch (_) {}
 
   // 1. Subscribe to db (studirad-platform-new) with query matching web app ClassesPage
   try {
@@ -545,9 +640,9 @@ export function subscribeWebinars(
               speakerRole: data.speakerRole || '',
               duration: data.duration || '',
               date: data.date || '',
-              views: data.views || '1.2k views',
-              rating: typeof data.rating === 'number' ? data.rating : 4.9,
-              cpdCredits: data.cpdCredits || '1.0 CPD Point',
+              views: data.views || '0 views',
+              rating: typeof data.rating === 'number' ? data.rating : 0,
+              cpdCredits: data.cpdCredits || '',
               description: data.description || '',
               thumbnail: data.thumbnail || '',
               modality: data.modality || 'xray',
@@ -594,7 +689,7 @@ export function subscribeUserCompletedClasses(
           classId: d.classId || docSnap.id,
           title: d.title || 'Completed Masterclass',
           modality: d.modality || 'General',
-          cpdCredits: d.cpdCredits || '1.0 CPD Point',
+          cpdCredits: d.cpdCredits || '',
           completedAt: d.completedAt || new Date().toISOString(),
         });
       });
@@ -615,7 +710,7 @@ export function subscribeUserCompletedClasses(
             classId: d.classId || docSnap.id,
             title: d.title || 'Completed Masterclass',
             modality: d.modality || 'General',
-            cpdCredits: d.cpdCredits || '1.0 CPD Point',
+            cpdCredits: d.cpdCredits || '',
             completedAt: d.completedAt || new Date().toISOString(),
           });
         });
@@ -651,7 +746,7 @@ export async function recordClassCompletionInFirestore(
     classId: classData.classId,
     title: classData.title,
     modality: classData.modality || 'xray',
-    cpdCredits: classData.cpdCredits || '1.0 CPD Point',
+    cpdCredits: classData.cpdCredits || '',
     completedAt: new Date().toISOString(),
     userId,
   };
@@ -815,13 +910,13 @@ export function subscribeCourses(
       institution: data.institution || 'StudiRad Clinical Academy',
       instructor: data.instructor || 'Clinical Specialist',
       instructorRole: data.instructorRole || 'Clinical Specialist',
-      rating: typeof data.rating === 'number' ? data.rating : 5.0,
+      rating: typeof data.rating === 'number' ? data.rating : 0,
       reviewsCount: data.reviewsCount || '0',
       learners: data.learners || '0',
       duration: data.duration || 'Flexible',
       level: data.level || 'All Levels',
       category: data.category || 'general_radiography',
-      cpdCredits: data.cpdCredits || '1.0 CPD Point',
+      cpdCredits: data.cpdCredits || '',
       price: data.price || 'Free',
       isFree: data.isFree !== undefined ? !!data.isFree : true,
       overview: data.overview || '',
@@ -846,12 +941,13 @@ export function subscribeCourses(
 
   const unsubs: (() => void)[] = [];
 
-  // 1. Dedicated courses collection in db (primary Firestore)
+  // 1. Dedicated courses collection in db (primary external Firestore)
   try {
     const coursesRef = collection(db, 'courses');
     const u1 = onSnapshot(coursesRef, (snapshot) => {
       snapshot.docs.forEach((docSnap) => {
-        coursesMap.set(docSnap.id, parseCourseDoc(docSnap));
+        const parsed = parseCourseDoc(docSnap);
+        coursesMap.set(docSnap.id, mergeStatusDoc(coursesMap.get(docSnap.id), parsed, 'secondary'));
       });
       emit();
     }, (err) => {
@@ -869,7 +965,8 @@ export function subscribeCourses(
       const adminCoursesRef = collection(adminDb, 'courses');
       const u2 = onSnapshot(adminCoursesRef, (snapshot) => {
         snapshot.docs.forEach((docSnap) => {
-          coursesMap.set(docSnap.id, parseCourseDoc(docSnap));
+          const parsed = parseCourseDoc(docSnap);
+          coursesMap.set(docSnap.id, mergeStatusDoc(coursesMap.get(docSnap.id), parsed, 'secondary'));
         });
         emit();
       }, (err) => {
@@ -881,13 +978,14 @@ export function subscribeCourses(
     console.warn('Admin courses listener error:', e);
   }
 
-  // 3. Dedicated appletDb courses collection (ai-studio-studiradmobileap-6f5d2912-b23e-4c44-828e-081071b478b2)
+  // 3. Dedicated appletDb courses collection (authoritative AI Studio DB)
   try {
     if (appletDb) {
       const appletCoursesRef = collection(appletDb, 'courses');
       const u3 = onSnapshot(appletCoursesRef, (snapshot) => {
         snapshot.docs.forEach((docSnap) => {
-          coursesMap.set(docSnap.id, parseCourseDoc(docSnap));
+          const parsed = parseCourseDoc(docSnap);
+          coursesMap.set(docSnap.id, mergeStatusDoc(coursesMap.get(docSnap.id), parsed, 'applet'));
         });
         emit();
       }, () => {});
@@ -908,7 +1006,7 @@ export function subscribeMaterials(
   onUpdate: (materials: ClinicalResource[]) => void,
   onError?: (error: unknown) => void
 ): () => void {
-  const matsMap = new Map<string, ClinicalResource>();
+  const matsMap = new Map<string, ClinicalResource & { updatedAt?: any; createdAt?: any }>();
 
   const emit = () => {
     const list = Array.from(matsMap.values());
@@ -917,9 +1015,9 @@ export function subscribeMaterials(
 
   const unsubs: (() => void)[] = [];
   const dbs = [
-    { name: 'applet', instance: appletDb },
-    { name: 'client', instance: db },
-    { name: 'admin', instance: adminDb },
+    { name: 'applet' as const, instance: appletDb },
+    { name: 'client' as const, instance: db },
+    { name: 'admin' as const, instance: adminDb },
   ].filter((d) => Boolean(d.instance));
 
   const inferFormat = (data: any, resolvedLink: string): string => {
@@ -933,7 +1031,8 @@ export function subscribeMaterials(
   };
 
   // 1. Materials across synced dbs
-  dbs.forEach(({ instance }) => {
+  dbs.forEach(({ name, instance }) => {
+    const prio = name === 'applet' ? 'applet' : 'secondary';
     try {
       const matsRef = collection(instance, 'materials');
       const u1 = onSnapshot(matsRef, (snapshot) => {
@@ -944,7 +1043,7 @@ export function subscribeMaterials(
             return;
           }
           const resolvedLink = (data.link || data.downloadUrl || data.url || '').trim();
-          matsMap.set(`mat_${docSnap.id}`, {
+          const parsed: ClinicalResource & { updatedAt?: any; createdAt?: any } = {
             id: docSnap.id,
             title: data.title || 'Clinical Material',
             category: data.course || data.category || 'General Radiography',
@@ -956,7 +1055,13 @@ export function subscribeMaterials(
             course: data.course,
             uploader: data.uploader,
             link: resolvedLink,
-          });
+            status: data.status || 'published',
+            rating: typeof data.rating === 'number' ? data.rating : 0,
+            reviewsCount: data.reviewsCount || '0',
+            updatedAt: data.updatedAt,
+            createdAt: data.createdAt,
+          };
+          matsMap.set(`mat_${docSnap.id}`, mergeStatusDoc(matsMap.get(`mat_${docSnap.id}`), parsed, prio));
         });
         emit();
       }, (err) => {
@@ -979,7 +1084,7 @@ export function subscribeMaterials(
             return;
           }
           const resolvedLink = (data.link || data.downloadUrl || data.url || '').trim();
-          matsMap.set(`vid_${docSnap.id}`, {
+          const parsed: ClinicalResource & { updatedAt?: any; createdAt?: any } = {
             id: docSnap.id,
             title: data.title || 'Recorded Clinical Video',
             category: data.course || 'Educational Video',
@@ -991,7 +1096,13 @@ export function subscribeMaterials(
             course: data.course,
             uploader: data.uploader,
             link: resolvedLink,
-          });
+            status: data.status || 'published',
+            rating: typeof data.rating === 'number' ? data.rating : 0,
+            reviewsCount: data.reviewsCount || '0',
+            updatedAt: data.updatedAt,
+            createdAt: data.createdAt,
+          };
+          matsMap.set(`vid_${docSnap.id}`, mergeStatusDoc(matsMap.get(`vid_${docSnap.id}`), parsed, prio));
         });
         emit();
       }, (err) => console.warn('Videos as materials notice:', err));
@@ -1044,7 +1155,8 @@ export function subscribeStudyMaterials(
     return 'pdf';
   };
 
-  dbs.forEach(({ instance }) => {
+  dbs.forEach(({ name, instance }) => {
+    const prio = name === 'applet' ? 'applet' : 'secondary';
     try {
       const matsRef = collection(instance, 'materials');
       const u1 = onSnapshot(matsRef, (snapshot) => {
@@ -1055,7 +1167,7 @@ export function subscribeStudyMaterials(
             return;
           }
           const resolvedLink = (data.link || data.downloadUrl || data.url || '').trim();
-          matsMap.set(`mat_${docSnap.id}`, {
+          const parsed: StudyMaterial & { updatedAt?: any } = {
             id: docSnap.id,
             title: data.title || 'Study Material',
             course: data.course || data.category || 'Others',
@@ -1065,8 +1177,13 @@ export function subscribeStudyMaterials(
             fileSize: data.size || data.fileSize,
             thumbnailUrl: data.thumbnailUrl,
             createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
             description: data.description,
-          });
+            status: data.status || 'published',
+            rating: typeof data.rating === 'number' ? data.rating : 0,
+            reviewsCount: data.reviewsCount || '0',
+          };
+          matsMap.set(`mat_${docSnap.id}`, mergeStatusDoc(matsMap.get(`mat_${docSnap.id}`) as any, parsed as any, prio));
         });
         emit();
       }, (err) => {
@@ -1088,7 +1205,7 @@ export function subscribeStudyMaterials(
             return;
           }
           const resolvedLink = (data.link || data.downloadUrl || data.url || '').trim();
-          matsMap.set(`vid_${docSnap.id}`, {
+          const parsed: StudyMaterial & { updatedAt?: any } = {
             id: docSnap.id,
             title: data.title || 'Clinical Video Lecture',
             course: data.course || data.category || 'Others',
@@ -1097,8 +1214,13 @@ export function subscribeStudyMaterials(
             type: 'video',
             thumbnailUrl: data.thumbnailUrl,
             createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
             description: data.description || 'Recorded clinical session',
-          });
+            status: data.status || 'published',
+            rating: typeof data.rating === 'number' ? data.rating : 0,
+            reviewsCount: data.reviewsCount || '0',
+          };
+          matsMap.set(`vid_${docSnap.id}`, mergeStatusDoc(matsMap.get(`vid_${docSnap.id}`) as any, parsed as any, prio));
         });
         emit();
       }, (err) => console.warn('Videos as materials notice:', err));
@@ -1277,6 +1399,23 @@ export async function pushVideoToFirestore(videoData: {
 }
 
 /**
+ * Admin: Approve pending video or study material across all synced databases
+ */
+export async function approveMaterialOrVideoByAdmin(
+  itemId: string,
+  isVideo: boolean
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const nowIso = new Date().toISOString();
+    const collName = isVideo ? 'videos' : 'materials';
+    await writeDocToAllDbs(collName, itemId, { status: 'published', updatedAt: nowIso }, true);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Failed to approve content' };
+  }
+}
+
+/**
  * Admin: Delete a clinical material or video from Firestore
  */
 export async function deleteMaterialFromFirestore(
@@ -1397,13 +1536,76 @@ export async function seedFirestoreIfEmpty(): Promise<void> {
 }
 
 /**
+export interface UserIdentityFilter {
+  userId?: string;
+  email?: string;
+  fullName?: string;
+  isInstructor?: boolean;
+}
+
+function matchesUserRecord(
+  filter: UserIdentityFilter,
+  ...candidates: Array<string | undefined | null>
+): boolean {
+  const uid = filter.userId?.trim();
+  const em = filter.email?.trim().toLowerCase();
+  if (!uid && !em) return false;
+
+  return candidates.some((val) => {
+    if (!val) return false;
+    const str = String(val).trim();
+    if (uid && str === uid) return true;
+    if (em && str.toLowerCase() === em) return true;
+    return false;
+  });
+}
+
+/**
+ * Persist non-research requests (e.g., general service or custom private class requests) into Firestore 'requests'
+ */
+export async function pushGeneralRequestToFirestore(
+  requestDoc: Record<string, any>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const id = requestDoc.id || `req_${Date.now()}`;
+    await writeDocToAllDbs('requests', id, { ...requestDoc, id }, true);
+    return { success: true };
+  } catch (err: any) {
+    console.warn('Could not persist general request to Firestore:', err);
+    return { success: false, error: err?.message };
+  }
+}
+
+/**
+ * Remove / soft-delete a user request across collections
+ */
+export async function deleteUserRequestFromFirestore(
+  requestId: string
+): Promise<void> {
+  try {
+    await Promise.allSettled([
+      deleteDocFromAllDbs('requests', requestId),
+      writeDocToAllDbs('private_class_requests', requestId, { _deleted: true }, true),
+      writeDocToAllDbs('tutorial_requests', requestId, { _deleted: true }, true),
+    ]);
+  } catch {}
+}
+
+/**
  * Real-time listener for user requests (research assistance, tutoring, etc.)
- * Merges snapshots from appletDb and db so requests always appear reliably.
+ * Accepts userId + email so all submitted requests match reliably across collections.
  */
 export function subscribeUserRequests(
-  userEmailOrId: string,
+  identity: string | UserIdentityFilter,
   onUpdate: (requests: any[]) => void
 ): () => void {
+  const filter: UserIdentityFilter =
+    typeof identity === 'string'
+      ? identity.includes('@')
+        ? { email: identity }
+        : { userId: identity }
+      : identity || {};
+
   const reqMap = new Map<string, any>();
   const tutMap = new Map<string, any>();
   const privMap = new Map<string, any>();
@@ -1413,7 +1615,7 @@ export function subscribeUserRequests(
       ...Array.from(reqMap.values()),
       ...Array.from(tutMap.values()),
       ...Array.from(privMap.values()),
-    ];
+    ].filter((r) => !r?._deleted);
     combined.sort(
       (a, b) =>
         new Date(b.submittedAt || b.createdAt || 0).getTime() -
@@ -1433,11 +1635,11 @@ export function subscribeUserRequests(
           snapshot.forEach((docSnap) => {
             if (docSnap.id === '_rep_routing') return;
             const data = docSnap.data();
-            if (
-              !userEmailOrId ||
-              data.userId === userEmailOrId ||
-              data.userEmail?.toLowerCase() === userEmailOrId.toLowerCase()
-            ) {
+            if (data?._deleted) {
+              reqMap.delete(docSnap.id);
+              return;
+            }
+            if (matchesUserRecord(filter, data.userId, data.userEmail, data.studentId, data.studentEmail)) {
               reqMap.set(docSnap.id, {
                 id: docSnap.id,
                 ...data,
@@ -1457,12 +1659,11 @@ export function subscribeUserRequests(
         (snapshot) => {
           snapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            if (
-              !userEmailOrId ||
-              data.studentId === userEmailOrId ||
-              data.studentEmail?.toLowerCase() === userEmailOrId.toLowerCase() ||
-              data.userId === userEmailOrId
-            ) {
+            if (data?._deleted) {
+              tutMap.delete(docSnap.id);
+              return;
+            }
+            if (matchesUserRecord(filter, data.studentId, data.studentEmail, data.userId, data.userEmail)) {
               const formattedSlot = formatTime12h(data.selectedTimeSlot);
               tutMap.set(docSnap.id, {
                 id: docSnap.id,
@@ -1499,11 +1700,11 @@ export function subscribeUserRequests(
         (snapshot) => {
           snapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            if (
-              !userEmailOrId ||
-              data.studentId === userEmailOrId ||
-              data.studentEmail?.toLowerCase() === userEmailOrId.toLowerCase()
-            ) {
+            if (data?._deleted) {
+              privMap.delete(docSnap.id);
+              return;
+            }
+            if (matchesUserRecord(filter, data.studentId, data.studentEmail, data.userId, data.userEmail)) {
               const formattedSlot = formatTime12h(data.selectedTimeSlot);
               privMap.set(docSnap.id, {
                 id: docSnap.id,
@@ -1887,6 +2088,8 @@ export async function submitTutorApplication(
           instructorAcademicBackground: applicationData.academicBackground,
           instructorExpertise: applicationData.areaOfExpertise,
           instructorExperience: applicationData.experienceYears,
+          country: applicationData.country || '',
+          academicQualification: applicationData.academicQualification || '',
         },
         false
       ).catch(() => {});
@@ -2210,15 +2413,49 @@ export async function approveCourseByAdmin(
 }
 
 /**
- * Real-time listener for user/instructor notifications
+ * Real-time listener for user/instructor notifications (synchronized across Home bell & Instructor Studio)
  */
 export function subscribeUserNotifications(
-  userId: string,
+  identity: string | UserIdentityFilter,
   onUpdate: (notifications: any[]) => void
 ): () => void {
+  const filter: UserIdentityFilter =
+    typeof identity === 'string' ? { userId: identity } : identity || {};
+  const userId = filter.userId || '';
+  const userEmail = filter.email?.trim().toLowerCase() || '';
+  const fullNameLower = filter.fullName?.trim().toLowerCase() || '';
+  const isInstructor = Boolean(filter.isInstructor);
+
   const notifMap = new Map<string, any>();
+  const synthMap = new Map<string, any>();
+
+  const readSyntheticIds = (): Record<string, boolean> => {
+    try {
+      return JSON.parse(localStorage.getItem(`studirad_read_notifs_${userId || 'anon'}`) || '{}');
+    } catch {
+      return {};
+    }
+  };
+
   const emit = () => {
-    const list = Array.from(notifMap.values());
+    const readLookup = readSyntheticIds();
+    const merged = new Map<string, any>();
+
+    synthMap.forEach((val, key) => {
+      merged.set(key, {
+        ...val,
+        read: Boolean(val.read || readLookup[key]),
+      });
+    });
+
+    notifMap.forEach((val, key) => {
+      merged.set(key, {
+        ...val,
+        read: Boolean(val.read || readLookup[key]),
+      });
+    });
+
+    const list = Array.from(merged.values());
     list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     onUpdate(list);
   };
@@ -2231,8 +2468,19 @@ export function subscribeUserNotifications(
         (snapshot) => {
           snapshot.forEach((d) => {
             const data = d.data();
-            if (data.targetUserId === userId || (!data.targetUserId && data.targetRole === 'user')) {
-              notifMap.set(d.id, { id: d.id, ...data });
+            const matchesDirect =
+              (userId && data.targetUserId === userId) ||
+              (userEmail && data.targetEmail?.toLowerCase() === userEmail) ||
+              (!data.targetUserId && data.targetRole === 'user') ||
+              (isInstructor && !data.targetUserId && data.targetRole === 'instructor');
+
+            if (matchesDirect) {
+              const existing = notifMap.get(d.id);
+              notifMap.set(d.id, {
+                id: d.id,
+                ...data,
+                read: Boolean(existing?.read || data.read),
+              });
             }
           });
           emit();
@@ -2241,6 +2489,69 @@ export function subscribeUserNotifications(
       );
       unsubs.push(u);
     } catch {}
+
+    // When user is an instructor, sync forwarded bookings & tutorials directly into the unified bell
+    if (isInstructor) {
+      const matchesInstructor = (d: any) =>
+        (userId && d.instructorId === userId) ||
+        (fullNameLower && String(d.instructorName || '').trim().toLowerCase() === fullNameLower);
+
+      try {
+        const uTut = onSnapshot(
+          collection(targetDb, 'tutorial_requests'),
+          (snapshot) => {
+            snapshot.forEach((d) => {
+              const data = d.data();
+              if (!data?._deleted && data?.sharedWithInstructor === true && matchesInstructor(data)) {
+                const synthId = `inst_tut_${d.id}`;
+                synthMap.set(synthId, {
+                  id: synthId,
+                  title: `Course Tutorial Request: ${data.courseTitle || '1-on-1 Session'}`,
+                  message: `${data.studentName || 'A student'} requested ${data.durationMinutes || 30}min session (${data.selectedDay} at ${formatTime12h(data.selectedTimeSlot)}). Open Instructor Studio to review.`,
+                  type: 'tutorial_request',
+                  targetRole: 'instructor',
+                  targetUserId: userId,
+                  relatedId: d.id,
+                  read: Boolean(notifMap.get(synthId)?.read),
+                  createdAt: data.notifiedInstructorAt || data.createdAt || new Date().toISOString(),
+                });
+              }
+            });
+            emit();
+          },
+          () => {}
+        );
+        unsubs.push(uTut);
+      } catch {}
+
+      try {
+        const uPc = onSnapshot(
+          collection(targetDb, 'private_class_requests'),
+          (snapshot) => {
+            snapshot.forEach((d) => {
+              const data = d.data();
+              if (!data?._deleted && data?.sharedWithInstructor === true && matchesInstructor(data)) {
+                const synthId = `inst_pc_${d.id}`;
+                synthMap.set(synthId, {
+                  id: synthId,
+                  title: `Assigned Private Class (${data.referenceCode || d.id})`,
+                  message: `Admin forwarded ${data.studentName || 'a student'} for "${data.classTitle}" (${(data.selectedDays || []).join(', ')} starting ${data.startDate}). Open Instructor Studio to review.`,
+                  type: 'booking',
+                  targetRole: 'instructor',
+                  targetUserId: userId,
+                  relatedId: d.id,
+                  read: Boolean(notifMap.get(synthId)?.read),
+                  createdAt: data.notifiedInstructorAt || data.updatedAt || data.createdAt || new Date().toISOString(),
+                });
+              }
+            });
+            emit();
+          },
+          () => {}
+        );
+        unsubs.push(uPc);
+      } catch {}
+    }
   }
 
   return () => unsubs.forEach((u) => u());
@@ -2626,13 +2937,23 @@ export function subscribePrivateClasses(
   };
 
   const unsubs: (() => void)[] = [];
-  for (const targetDb of [appletDb, db, adminDb].filter(Boolean)) {
+  const dbs = [
+    { name: 'applet' as const, instance: appletDb },
+    { name: 'db' as const, instance: db },
+    { name: 'adminDb' as const, instance: adminDb },
+  ].filter((d) => Boolean(d.instance));
+
+  for (const { name, instance } of dbs) {
     try {
       const u = onSnapshot(
-        collection(targetDb, 'private_classes'),
+        collection(instance, 'private_classes'),
         (snapshot) => {
           snapshot.forEach((docSnap) => {
-            docsMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
+            const incoming = { id: docSnap.id, ...docSnap.data(), rating: Number(docSnap.data().rating) || 0 };
+            docsMap.set(
+              docSnap.id,
+              mergeStatusDoc(docsMap.get(docSnap.id), incoming, name === 'applet' ? 'applet' : 'secondary')
+            );
           });
           emit();
         },
@@ -2682,7 +3003,8 @@ export async function pushPrivateClassToFirestore(
       instructorRole: classData.instructorRole || 'Clinical Instructor / Tutor',
       instructorBio: classData.instructorBio || '',
       academicExperience: classData.academicExperience || 'Clinical & Academic Educator',
-      rating: Number(classData.rating) || 4.9,
+      rating: typeof classData.rating === 'number' ? classData.rating : 0,
+      reviewsCount: classData.reviewsCount || 0,
       instructorPhone: classData.instructorPhone || '',
       chargePerHourNGN: Number(classData.chargePerHourNGN) || 8000,
       chargePerHourUSD: Number(classData.chargePerHourUSD) || 5,
@@ -2972,5 +3294,149 @@ export async function updatePrivateClassBookingStatus(
     return { success: false, error: err?.message || 'Failed to update private class booking' };
   }
 }
+
+// =============================================================================
+// REAL CONTENT RATINGS (Courses, Private Classes, Live Classes, Videos/Materials)
+// =============================================================================
+
+export interface RatingSummary {
+  average: number;
+  count: number;
+  userRatings: Record<string, number>;
+}
+
+const PARENT_COLLECTION_BY_TYPE: Record<RatableContentType, string[]> = {
+  course: ['courses'],
+  private_class: ['private_classes'],
+  live_class: ['classes'],
+  material: ['materials', 'videos'],
+};
+
+export async function submitContentRating(params: {
+  itemType: RatableContentType;
+  itemId: string;
+  userId: string;
+  userName?: string;
+  score: number;
+}): Promise<{ success: boolean; average?: number; count?: number; error?: string }> {
+  const { itemType, itemId, userId, userName, score } = params;
+  if (!itemId || !userId) return { success: false, error: 'Missing itemId or userId' };
+
+  const clampedScore = Math.min(5, Math.max(1, Math.round(score)));
+  const ratingId = `${itemType}_${itemId}_${userId}`;
+  const nowIso = new Date().toISOString();
+
+  const ratingDoc: ContentRating = {
+    id: ratingId,
+    itemType,
+    itemId,
+    userId,
+    userName: userName || 'StudiRad User',
+    score: clampedScore,
+    updatedAt: nowIso,
+  };
+
+  try {
+    await writeDocToAllDbs('ratings', ratingId, ratingDoc, true);
+
+    // Recompute real average for this item across synced ratings docs
+    const allScores = new Map<string, number>();
+    allScores.set(userId, clampedScore);
+
+    const snaps = await Promise.allSettled([
+      appletDb ? getDocs(collection(appletDb, 'ratings')) : Promise.reject('no appletDb'),
+      db ? getDocs(collection(db, 'ratings')) : Promise.reject('no db'),
+    ]);
+
+    for (const s of snaps) {
+      if (s.status === 'fulfilled') {
+        s.value.forEach((dSnap) => {
+          const d = dSnap.data();
+          if (d?.itemType === itemType && d?.itemId === itemId && d?.userId && typeof d?.score === 'number') {
+            allScores.set(d.userId, d.score);
+          }
+        });
+      }
+    }
+
+    const values = Array.from(allScores.values());
+    const count = values.length;
+    const avg = count > 0 ? Number((values.reduce((a, b) => a + b, 0) / count).toFixed(1)) : clampedScore;
+
+    // Best-effort sync average back onto parent content doc
+    const colls = PARENT_COLLECTION_BY_TYPE[itemType] || [];
+    for (const collName of colls) {
+      writeDocToAllDbs(
+        collName,
+        itemId,
+        { rating: avg, reviewsCount: String(count), updatedAt: nowIso },
+        false
+      ).catch(() => {});
+    }
+
+    return { success: true, average: avg, count };
+  } catch (err: any) {
+    console.error('Error submitting rating:', err);
+    return { success: false, error: err?.message || 'Failed to save rating' };
+  }
+}
+
+export function subscribeContentRatings(
+  onUpdate: (summaries: Record<string, RatingSummary>) => void
+): () => void {
+  const rawRatings = new Map<string, ContentRating>();
+
+  const emit = () => {
+    const grouped: Record<string, { total: number; count: number; userRatings: Record<string, number> }> = {};
+    rawRatings.forEach((r) => {
+      if (!r?.itemType || !r?.itemId || typeof r?.score !== 'number') return;
+      const key = `${r.itemType}_${r.itemId}`;
+      if (!grouped[key]) {
+        grouped[key] = { total: 0, count: 0, userRatings: {} };
+      }
+      grouped[key].total += r.score;
+      grouped[key].count += 1;
+      if (r.userId) {
+        grouped[key].userRatings[r.userId] = r.score;
+      }
+    });
+
+    const summaries: Record<string, RatingSummary> = {};
+    Object.entries(grouped).forEach(([k, g]) => {
+      summaries[k] = {
+        average: g.count > 0 ? Number((g.total / g.count).toFixed(1)) : 0,
+        count: g.count,
+        userRatings: g.userRatings,
+      };
+    });
+    onUpdate(summaries);
+  };
+
+  const unsubs: (() => void)[] = [];
+  for (const targetDb of [appletDb, db, adminDb].filter(Boolean)) {
+    try {
+      const u = onSnapshot(
+        collection(targetDb, 'ratings'),
+        (snapshot) => {
+          snapshot.forEach((d) => {
+            const data = d.data() as ContentRating;
+            if (data?.itemType && data?.itemId && typeof data?.score === 'number') {
+              const prev = rawRatings.get(d.id);
+              if (!prev || toTimestampMs(data.updatedAt) >= toTimestampMs(prev.updatedAt)) {
+                rawRatings.set(d.id, { ...data, id: d.id });
+              }
+            }
+          });
+          emit();
+        },
+        () => {}
+      );
+      unsubs.push(u);
+    } catch {}
+  }
+
+  return () => unsubs.forEach((u) => u());
+}
+
 
 

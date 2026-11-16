@@ -6,7 +6,8 @@ import {
   PrivateClassDetailPage,
   getPrivateClassFallbackImage,
 } from './PrivateClassDetailPage';
-import { GraduationCap, Search, Star } from 'lucide-react';
+import { StarRatingWidget } from '../common/StarRatingWidget';
+import { GraduationCap, Search } from 'lucide-react';
 
 interface PrivateClassesViewProps {
   onViewMyRequests: () => void;
@@ -65,16 +66,13 @@ export const PrivateClassesView: React.FC<PrivateClassesViewProps> = ({
     <div className="space-y-5 text-left">
       {/* Section Header */}
       <div className="bg-[var(--bg-surface)] rounded-3xl p-5 sm:p-6 border border-[var(--border-subtle)] shadow-xs space-y-4">
-        <div className="space-y-1">
+        <div>
           <span className="text-xs font-bold uppercase tracking-wider text-[#FF7F32]">
-            Live 1-on-1 Coaching Catalog
+            1-on-1 Coaching
           </span>
           <h2 className="heading-section text-[var(--text-primary)]">
             Available Private Classes
           </h2>
-          <p className="body-secondary text-[var(--text-secondary)]">
-            Select a class card to view full details, instructor background, and customize your preferred schedule.
-          </p>
         </div>
 
         {/* Show Search & Category Filter only when real published classes exist */}
@@ -122,7 +120,7 @@ export const PrivateClassesView: React.FC<PrivateClassesViewProps> = ({
             No private class sessions right now
           </h3>
           <p className="body-secondary text-[var(--text-secondary)] max-w-sm mx-auto">
-            There are currently no active private class sessions available. Please check back later.
+            Please check back later.
           </p>
         </div>
       ) : filteredClasses.length === 0 ? (
@@ -131,9 +129,6 @@ export const PrivateClassesView: React.FC<PrivateClassesViewProps> = ({
           <h3 className="heading-card text-[var(--text-primary)]">
             No matching private classes found
           </h3>
-          <p className="body-secondary text-[var(--text-secondary)] max-w-sm mx-auto">
-            Try choosing another category or clearing your search term.
-          </p>
           <button
             type="button"
             onClick={() => {
@@ -146,7 +141,7 @@ export const PrivateClassesView: React.FC<PrivateClassesViewProps> = ({
           </button>
         </div>
       ) : (
-        /* Horizontally Stacked Cards: ONLY Image, Title, Instructor & Ratings */
+        /* Horizontally Stacked Cards: Image, Title, Instructor & Real Ratings */
         <div className="flex flex-row gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-1 px-1">
           {filteredClasses.map((item) => {
             const fallbackImg = getPrivateClassFallbackImage(item.category);
@@ -179,10 +174,7 @@ export const PrivateClassesView: React.FC<PrivateClassesViewProps> = ({
                     <span className="font-semibold text-[var(--text-secondary)] truncate">
                       {item.instructorName}
                     </span>
-                    <span className="inline-flex items-center gap-1 font-extrabold text-amber-500 shrink-0">
-                      <Star className="w-3.5 h-3.5 fill-amber-500" />
-                      <span>{Number(item.rating || 4.9).toFixed(1)}</span>
-                    </span>
+                    <StarRatingWidget itemType="private_class" itemId={item.id} compact />
                   </div>
                 </div>
               </button>

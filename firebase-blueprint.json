@@ -84,13 +84,12 @@
     },
     "userCompletedClass": {
       "title": "UserCompletedClass",
-      "description": "Record of a class or webinar completed by a user for CPD certification",
+      "description": "Record of a class or webinar completed by a user",
       "type": "object",
       "properties": {
         "classId": { "type": "string", "maxLength": 100 },
         "title": { "type": "string", "maxLength": 200 },
         "modality": { "type": "string", "maxLength": 100 },
-        "cpdCredits": { "type": "string", "maxLength": 50 },
         "completedAt": { "type": "string", "maxLength": 100 }
       },
       "required": ["classId", "title"]
@@ -104,6 +103,8 @@
         "fullName": { "type": "string", "maxLength": 200 },
         "email": { "type": "string", "maxLength": 200 },
         "phone": { "type": "string", "maxLength": 50 },
+        "country": { "type": "string", "maxLength": 120 },
+        "academicQualification": { "type": "string", "maxLength": 200 },
         "bio": { "type": "string", "maxLength": 3000 },
         "academicBackground": { "type": "string", "maxLength": 500 },
         "areaOfExpertise": { "type": "array" },
@@ -115,7 +116,7 @@
         "reviewedBy": { "type": "string", "maxLength": 200 },
         "feedback": { "type": "string", "maxLength": 2000 }
       },
-      "required": ["fullName", "email", "academicBackground", "bio", "status"]
+      "required": ["fullName", "email", "country", "academicQualification", "academicBackground", "bio", "status"]
     },
     "tutorialRequest": {
       "title": "TutorialRequest",
@@ -245,6 +246,20 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "playerName", "totalScore"]
+    },
+    "contentRating": {
+      "title": "ContentRating",
+      "description": "Real 1-to-5 star rating submitted by a signed-in user for courses, private classes, live classes, or study materials",
+      "type": "object",
+      "properties": {
+        "itemType": { "type": "string", "enum": ["course", "private_class", "class", "material", "video"] },
+        "itemId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "userName": { "type": "string", "maxLength": 150 },
+        "score": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["itemType", "itemId", "userId", "score"]
     }
   },
   "firestore": {
@@ -266,11 +281,11 @@
     },
     "/users/{userId}/completedClasses/{classId}": {
       "schema": "userCompletedClass",
-      "description": "Completed classes and CPD accreditation log for the user"
+      "description": "Completed classes log for the user"
     },
     "/tutor_applications/{applicationId}": {
       "schema": "tutorApplication",
-      "description": "Instructor applications submitted by radiographers"
+      "description": "Instructor applications submitted by radiographers and undergraduate scholars"
     },
     "/tutorial_requests/{requestId}": {
       "schema": "tutorialRequest",
@@ -295,6 +310,10 @@
     "/game_scores/{playerId}": {
       "schema": "gameScoreRecord",
       "description": "Real-time player arcade scoreboard records"
+    },
+    "/ratings/{ratingId}": {
+      "schema": "contentRating",
+      "description": "User ratings for courses, private classes, live classes, and materials"
     }
   }
 }

@@ -35,12 +35,18 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     clearNotifications,
   } = useAuth();
 
-  const [activeFilter, setActiveFilter] = useState<'all' | 'class' | 'job' | 'quiz'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'booking' | 'class' | 'job' | 'quiz'>('all');
 
   if (!isOpen) return null;
 
   const filteredNotifications = notifications.filter((n) => {
     if (activeFilter === 'all') return true;
+    if (activeFilter === 'booking') {
+      return n.type === 'booking' || n.type === 'tutorial_request' || n.type === 'tutor_application';
+    }
+    if (activeFilter === 'class') {
+      return n.type === 'class' || n.type === 'course_approval' || n.type === 'course';
+    }
     return n.type === activeFilter;
   });
 
@@ -70,14 +76,16 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     markNotificationAsRead(notif.id);
     onClose();
 
-    if (notif.type === 'class') {
+    if (notif.type === 'class' || notif.type === 'course_approval' || notif.type === 'course') {
       onNavigateTab?.('learn');
     } else if (notif.type === 'job') {
       onNavigateTab?.('explore');
     } else if (notif.type === 'quiz') {
       onNavigateTab?.('learn');
+    } else if (notif.type === 'tutorial_request' || notif.type === 'tutor_application') {
+      onNavigateTab?.('profile');
     } else if (notif.type === 'booking') {
-      onNavigateTab?.('services');
+      onNavigateTab?.(notif.targetRole === 'instructor' ? 'profile' : 'services');
     }
   };
 
@@ -135,8 +143,18 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
               All
             </button>
             <button
+              onClick={() => setActiveFilter('booking')}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors whitespace-nowrap ${
+                activeFilter === 'booking'
+                  ? 'bg-white dark:bg-[#002147] text-[#002147] dark:text-white shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Bookings
+            </button>
+            <button
               onClick={() => setActiveFilter('class')}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors whitespace-nowrap ${
                 activeFilter === 'class'
                   ? 'bg-white dark:bg-[#002147] text-[#002147] dark:text-white shadow-2xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -146,7 +164,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
             </button>
             <button
               onClick={() => setActiveFilter('job')}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors whitespace-nowrap ${
                 activeFilter === 'job'
                   ? 'bg-white dark:bg-[#002147] text-[#002147] dark:text-white shadow-2xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -156,7 +174,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
             </button>
             <button
               onClick={() => setActiveFilter('quiz')}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors whitespace-nowrap ${
                 activeFilter === 'quiz'
                   ? 'bg-white dark:bg-[#002147] text-[#002147] dark:text-white shadow-2xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
