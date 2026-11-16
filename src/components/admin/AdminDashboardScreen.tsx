@@ -37,7 +37,6 @@ import {
   pushVideoToFirestore,
   deleteMaterialFromFirestore,
   approveMaterialOrVideoByAdmin,
-  pushOfficialClassesToFirestore,
   subscribeAdminNotifications,
   markNotificationAsRead,
   subscribeTutorApplications,
@@ -1249,27 +1248,11 @@ export const AdminDashboardScreen: React.FC = () => {
             {activeTab === 'classes' && (
               <div className="flex items-center gap-2">
                 <button
-                  onClick={async () => {
-                    setIsSyncing(true);
-                    const res = await pushOfficialClassesToFirestore();
-                    setIsSyncing(false);
-                    if (res.success) {
-                      triggerSuccess(`Successfully synchronized ${res.count} official classes (Artifacts in Ultrasound, Chest Critique, Foundation Ultrasound) to StudiRad Cloud!`);
-                    }
-                  }}
-                  className="flex items-center gap-1.5 px-3 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border border-slate-700"
-                  title="Push official completed and future cohorts to StudiRad Cloud"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 text-[#FF7F32] ${isSyncing ? 'animate-spin' : ''}`} />
-                  <span className="hidden sm:inline">Push Official Classes</span>
-                </button>
-
-                <button
                   onClick={() => {
                     setClassForm({
                       id: '',
                       title: '',
-                      instructor: currentUser?.fullName || 'Dr. David Chen',
+                      instructor: currentUser?.fullName || '',
                       instructorRole: 'Consultant Clinical Educator',
                       modality: 'xray',
                       date: 'Thursday, Nov 12',

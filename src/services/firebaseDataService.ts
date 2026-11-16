@@ -28,7 +28,6 @@ import {
   RatableContentType,
   ContentRating
 } from '../types';
-import { MOCK_OPPORTUNITIES, MOCK_LIVE_CLASSES, MOCK_WEBINARS, MOCK_COURSES, MOCK_RESOURCES } from '../data/mockData';
 import { getYouTubeThumbnail } from '../utils/youtube';
 import { formatTime12h } from '../utils/timeFormat';
 import { RESEARCH_REPRESENTATIVES, RepresentativeInfo } from './researchAssistanceConfig';
@@ -362,138 +361,33 @@ export function subscribeOpportunities(
 // Official Classes: Completed Cohorts & Coming Soon Masterclasses
 // Provided by StudiRad faculty & synchronized directly to Firestore
 // =========================================================================
-export const ACTIVE_CLASSES: LiveClass[] = [
-  {
-    id: "artifacts-abdominal-ultrasound-2026",
-    title: "Artifacts in Abdominal Ultrasound: Recognition, Interpretation, and Clinical Application",
-    category: "Ultrasound",
-    level: "All Levels",
-    status: "completed",
-    price: "FREE",
-    isPaid: false,
-    duration: "4 Days (1st – 4th September 2026)",
-    time: "7:00 PM Daily",
-    venue: "StudiRad Classroom",
-    thumbnail: "/artifacts.jpeg",
-    image: "/artifacts.jpeg",
-    hasCustomRegistration: true,
-    customConfirmationMessage: "Congratulations! Your registration for Artifacts in Abdominal Ultrasound is complete. To successfully join the class, please use the secure Google Classroom invitation link below.",
-    description: "Master the principles, physics, and clinical significance of abdominal ultrasound artifacts. Learn to differentiate real pathology from artificial signals and avoid common diagnostic pitfalls.",
-    features: [
-      "Live Interactive Classroom",
-      "Physics & Artifact Formation",
-      "Case-Based Pathology Differentiation",
-      "Diagnostic Pitfalls & Errors Guide"
-    ],
-    whatYouWillLearn: [
-      "Understand ultrasound artifacts and why they occur",
-      "Learn the physics behind artifact formation",
-      "Recognise common abdominal ultrasound artifacts",
-      "Differentiate artifacts from pathology",
-      "Apply artifacts in clinical interpretation",
-      "Avoid common pitfalls and diagnostic errors"
-    ],
-    technologies: ["StudiRad Classroom", "Google Classroom", "Google Meet"],
-    createdAt: 1788259200,
-    instructor: "StudiRad Ultrasound Faculty",
-    instructorRole: "Lead Clinical Sonographer",
-    cpdCredits: "",
-    date: "1st – 4th September 2026",
-    modality: "ultrasound",
-    cohortStatus: "completed",
-  },
-  {
-    id: "chest-critique-2026",
-    title: "Radiographic Image Critique: Systematic Evaluation of Chest Radiographs",
-    category: "X-ray",
-    level: "All Levels",
-    status: "completed",
-    price: "FREE",
-    isPaid: false,
-    duration: "5 Days (22nd – 26th June 2026)",
-    time: "8:30 PM Daily",
-    venue: "StudiRad Google Classroom",
-    thumbnail: "/Critiquing.jpeg",
-    image: "/Critiquing.jpeg",
-    hasCustomRegistration: true,
-    customConfirmationMessage: "Congratulations! Your registration is complete. To successfully join the class, please use the secure Google Classroom invitation link below.",
-    description: "Master the art and science of chest radiograph interpretation. This intensive five-day cohort is designed for radiography students, pre-interns, interns, and practicing radiographers who want to perfect their systematic approach to chest X-ray quality evaluation and pattern recognition.",
-    features: [
-      "Live Classes",
-      "Case-Based Sessions",
-      "Guided Image Critique"
-    ],
-    whatYouWillLearn: [
-      "Systematic assessment of chest radiograph image quality",
-      "Recognition of major chest radiographic patterns",
-      "Identification of common chest pathologies",
-      "And more…"
-    ],
-    technologies: ["Google Classroom", "Google Meet"],
-    createdAt: 1781827200,
-    instructor: "StudiRad Radiology Faculty",
-    instructorRole: "Consultant Radiography Specialist",
-    cpdCredits: "",
-    date: "22nd – 26th June 2026",
-    modality: "xray",
-    cohortStatus: "completed",
-  }
-];
+export const ACTIVE_CLASSES: LiveClass[] = [];
+export const COMING_SOON_CLASSES: LiveClass[] = [];
+export const OFFICIAL_CLASSES: LiveClass[] = [];
 
-export const COMING_SOON_CLASSES: LiveClass[] = [
-  {
-    id: "cs-class-1",
-    title: "Foundation of Abdominal Ultrasound",
-    category: "Ultrasound",
-    level: "Beginner",
-    status: "coming-soon",
-    thumbnail: "/Abd.jpg",
-    image: "/Abd.jpg",
-    price: "FREE",
-    isPaid: false,
-    duration: "4 Weeks (Online)",
-    time: "To be announced",
-    venue: "StudiRad Google Classroom",
-    registrationLink: "https://docs.google.com/forms/...",
-    registerLink: "https://docs.google.com/forms/...",
-    description: "A clinical masterclass on interpreting chest X-rays. Perfect for students and interns preparing for clinical rotations.",
-    technologies: ["Google Meet", "StudiRad Google Classroom"],
-    createdAt: 1785000000,
-    instructor: "StudiRad Ultrasound Faculty",
-    instructorRole: "Lead Sonography Specialist",
-    cpdCredits: "",
-    date: "Coming Soon · 4 Weeks",
-    modality: "ultrasound",
-    cohortStatus: "coming-soon",
-  }
-];
-
-export const OFFICIAL_CLASSES: LiveClass[] = [
-  ...ACTIVE_CLASSES,
-  ...COMING_SOON_CLASSES
-];
+const SEEDED_DUMMY_CLASS_IDS = new Set([
+  'artifacts-abdominal-ultrasound-2026',
+  'chest-critique-2026',
+  'cs-class-1',
+  'live_pediatric_nai',
+  'live_ct_contrast_emergency',
+  'live_mri_safety_implants',
+  'live_ultrasound_dvt',
+  'live_anatomy_cspine',
+  'live_rad_physics_drl',
+  'live_hospital_chaperone',
+]);
 
 /**
  * Real-time listener for classes
- * Synchronized with db and adminDb collection: 'classes' (matching web app ClassesPage & Admin)
+ * Reads strictly from appletDb (ai-studio-studiradmobileap-6f5d2912-b23e-4c44-828e-081071b478b2)
+ * without dummy, seeded, or external legacy classes.
  */
 export function subscribeClasses(
   onUpdate: (classes: LiveClass[]) => void,
   onError?: (error: unknown) => void
 ): () => void {
-  const classesMap = new Map<string, LiveClass>();
-
-  // Pre-seed official classes so UI renders instantly with verified data
-  OFFICIAL_CLASSES.forEach((c) => {
-    classesMap.set(c.id, c);
-  });
-
-  const emit = () => {
-    const list = Array.from(classesMap.values());
-    onUpdate(list);
-  };
-
-  const parseClassDoc = (docSnap: any): LiveClass => {
+  const parseClassDoc = (docSnap: any): LiveClass & { _deleted?: boolean } => {
     const data = docSnap.data();
     const rawCategory = data.category || data.modality || 'X-ray';
     const isCompleted = data.status === 'completed' || data.cohortStatus === 'completed';
@@ -508,8 +402,8 @@ export function subscribeClasses(
       time: data.time || '',
       duration: data.duration || 'Session',
       isLiveNow: !!data.isLiveNow,
-      isRegistered: !!data.isRegistered,
-      cpdCredits: data.cpdCredits || '',
+      isRegistered: false,
+      cpdCredits: '',
       description: data.description || '',
       requirements: Array.isArray(data.requirements) ? data.requirements : [],
       relatedMaterials: Array.isArray(data.relatedMaterials) ? data.relatedMaterials : [],
@@ -534,85 +428,44 @@ export function subscribeClasses(
       rating: typeof data.rating === 'number' ? data.rating : 0,
       reviewsCount: data.reviewsCount || '0',
       createdAt: data.createdAt,
-    };
+      updatedAt: data.updatedAt,
+      _deleted: !!data._deleted,
+    } as LiveClass & { _deleted?: boolean };
   };
 
-  const unsubs: (() => void)[] = [];
+  const isVisibleClass = (docSnap: any) => {
+    if (SEEDED_DUMMY_CLASS_IDS.has(docSnap.id)) return false;
+    const data = docSnap.data();
+    if (data?._deleted) return false;
+    return !data.status || data.status === 'published' || data.status === 'completed' || data.status === 'coming-soon' || data.status === 'upcoming';
+  };
 
-  // Emit initial pre-seeded state
-  emit();
+  if (!appletDb) {
+    onUpdate([]);
+    return () => {};
+  }
 
-  // 0. Subscribe to appletDb classes (primary AI Studio DB)
   try {
-    if (appletDb) {
-      const appletCollRef = collection(appletDb, 'classes');
-      const u0 = onSnapshot(
-        appletCollRef,
-        (snapshot) => {
-          snapshot.docs.forEach((docSnap) => {
-            const data = docSnap.data();
-            if (!data.status || data.status === 'published' || data.status === 'completed' || data.status === 'coming-soon' || data.status === 'upcoming') {
-              classesMap.set(docSnap.id, parseClassDoc(docSnap));
-            }
-          });
-          emit();
-        },
-        () => {}
-      );
-      unsubs.push(u0);
-    }
-  } catch (_) {}
-
-  // 1. Subscribe to db (studirad-platform-new) with query matching web app ClassesPage
-  try {
-    const collRef = collection(db, 'classes');
-    const u1 = onSnapshot(
-      collRef,
+    const appletCollRef = collection(appletDb, 'classes');
+    return onSnapshot(
+      appletCollRef,
       (snapshot) => {
-        snapshot.docs.forEach((docSnap) => {
-          const data = docSnap.data();
-          if (!data.status || data.status === 'published' || data.status === 'completed' || data.status === 'coming-soon' || data.status === 'upcoming') {
-            classesMap.set(docSnap.id, parseClassDoc(docSnap));
-          }
-        });
-        emit();
+        const list = snapshot.docs
+          .filter(isVisibleClass)
+          .map(parseClassDoc);
+        onUpdate(list);
       },
       (error) => {
-        console.warn('DB Classes subscription notice:', error);
+        console.warn('AppletDb Classes subscription notice:', error);
         onError?.(error);
+        onUpdate([]);
       }
     );
-    unsubs.push(u1);
   } catch (error) {
     console.warn('Classes subscription error:', error);
+    onUpdate([]);
+    return () => {};
   }
-
-  // 2. Also subscribe to adminDb (studirad-admin-portal) in case admin created classes there
-  try {
-    const adminCollRef = collection(adminDb, 'classes');
-    const u2 = onSnapshot(
-      adminCollRef,
-      (snapshot) => {
-        snapshot.docs.forEach((docSnap) => {
-          const data = docSnap.data();
-          if (!data.status || data.status === 'published' || data.status === 'completed' || data.status === 'coming-soon' || data.status === 'upcoming') {
-            classesMap.set(docSnap.id, parseClassDoc(docSnap));
-          }
-        });
-        emit();
-      },
-      (error) => {
-        console.warn('AdminDb Classes notice:', error);
-      }
-    );
-    unsubs.push(u2);
-  } catch (error) {
-    console.warn('AdminDb Classes subscription error:', error);
-  }
-
-  return () => {
-    unsubs.forEach((u) => u());
-  };
 }
 
 /**
@@ -629,7 +482,7 @@ export function subscribeWebinars(
       collRef,
       (snapshot) => {
         if (snapshot.empty) {
-          onUpdate(MOCK_WEBINARS);
+          onUpdate([]);
         } else {
           const list: Webinar[] = snapshot.docs.map((docSnap) => {
             const data = docSnap.data();
@@ -663,71 +516,40 @@ export function subscribeWebinars(
 }
 
 /**
- * Real-time listener for user completed classes
- * Uses appletDb as primary source with deployed security rules,
- * with graceful fallback to db (studirad-platform-new)
+ * Real-time listener for user completed classes (strictly appletDb)
  */
 export function subscribeUserCompletedClasses(
   userId: string,
   onUpdate: (records: UserCompletedRecord[]) => void
 ): () => void {
-  if (!userId) {
+  if (!userId || !appletDb) {
     onUpdate([]);
     return () => {};
   }
-  const unsubs: (() => void)[] = [];
-  const recordsMap = new Map<string, UserCompletedRecord>();
-  const emit = () => onUpdate(Array.from(recordsMap.values()));
 
-  // 1. Primary listener from appletDb (ai-studio-studiradmobileap-6f5d2912-b23e-4c44-828e-081071b478b2)
   try {
     const appletRef = collection(appletDb, 'users', userId, 'completedClasses');
-    const u1 = onSnapshot(appletRef, (snapshot) => {
-      snapshot.docs.forEach((docSnap) => {
-        const d = docSnap.data();
-        recordsMap.set(docSnap.id, {
-          classId: d.classId || docSnap.id,
-          title: d.title || 'Completed Masterclass',
-          modality: d.modality || 'General',
-          cpdCredits: d.cpdCredits || '',
-          completedAt: d.completedAt || new Date().toISOString(),
-        });
-      });
-      emit();
-    }, () => {});
-    unsubs.push(u1);
-  } catch (_) {}
-
-  // 2. Secondary listener from db (studirad-platform-new) with silent permission fallback
-  try {
-    const collRef = collection(db, 'users', userId, 'completedClasses');
-    const u2 = onSnapshot(
-      collRef,
+    return onSnapshot(
+      appletRef,
       (snapshot) => {
-        snapshot.docs.forEach((docSnap) => {
+        const list: UserCompletedRecord[] = snapshot.docs.map((docSnap) => {
           const d = docSnap.data();
-          recordsMap.set(docSnap.id, {
+          return {
             classId: d.classId || docSnap.id,
             title: d.title || 'Completed Masterclass',
             modality: d.modality || 'General',
-            cpdCredits: d.cpdCredits || '',
+            cpdCredits: '',
             completedAt: d.completedAt || new Date().toISOString(),
-          });
+          };
         });
-        emit();
+        onUpdate(list);
       },
-      (error: any) => {
-        // Suppress permission notices if external project restricts unauthenticated reading
-        if (error?.code === 'permission-denied') return;
-        console.warn('Completed classes subscription notice:', error);
-      }
+      () => onUpdate([])
     );
-    unsubs.push(u2);
-  } catch (_) {}
-
-  return () => {
-    unsubs.forEach((u) => u());
-  };
+  } catch (_) {
+    onUpdate([]);
+    return () => {};
+  }
 }
 
 /**
@@ -746,22 +568,71 @@ export async function recordClassCompletionInFirestore(
     classId: classData.classId,
     title: classData.title,
     modality: classData.modality || 'xray',
-    cpdCredits: classData.cpdCredits || '',
+    cpdCredits: '',
     completedAt: new Date().toISOString(),
     userId,
   };
 
   try {
-    // Write to appletDb with deployed rules
-    const appletDocRef = doc(appletDb, 'users', userId, 'completedClasses', classData.classId);
-    await setDoc(appletDocRef, payload, { merge: true });
+    if (appletDb) {
+      const appletDocRef = doc(appletDb, 'users', userId, 'completedClasses', classData.classId);
+      await setDoc(appletDocRef, payload, { merge: true });
+    }
   } catch (_) {}
+}
+
+/**
+ * Real-time listener for per-user registered class IDs (strictly appletDb)
+ */
+export function subscribeUserRegisteredClasses(
+  userId: string,
+  onUpdate: (classIds: string[]) => void
+): () => void {
+  if (!userId || !appletDb) {
+    onUpdate([]);
+    return () => {};
+  }
 
   try {
-    // Also sync to secondary db
-    const docRef = doc(db, 'users', userId, 'completedClasses', classData.classId);
-    await setDoc(docRef, payload, { merge: true }).catch(() => {});
-  } catch (_) {}
+    const appletRef = collection(appletDb, 'users', userId, 'registeredClasses');
+    return onSnapshot(
+      appletRef,
+      (snapshot) => {
+        onUpdate(snapshot.docs.map((d) => d.id));
+      },
+      () => onUpdate([])
+    );
+  } catch (_) {
+    onUpdate([]);
+    return () => {};
+  }
+}
+
+/**
+ * Persist a user's live class registration in their personal Firestore subcollection
+ */
+export async function registerUserForClass(
+  userId: string,
+  liveClass: Pick<LiveClass, 'id' | 'title' | 'meetingLink' | 'registrationLink' | 'registerLink'>
+): Promise<{ success: boolean; error?: string }> {
+  if (!userId || !liveClass?.id || !appletDb) {
+    return { success: false, error: 'Invalid user or class details' };
+  }
+
+  const payload = sanitizeForFirestore({
+    classId: liveClass.id,
+    title: liveClass.title || 'Live Class',
+    meetingLink: liveClass.meetingLink || liveClass.registrationLink || liveClass.registerLink || '',
+    registeredAt: new Date().toISOString(),
+    userId,
+  });
+
+  try {
+    await setDoc(doc(appletDb, 'users', userId, 'registeredClasses', liveClass.id), payload, { merge: true });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to register for class' };
+  }
 }
 
 /**
@@ -1507,32 +1378,11 @@ export async function deleteOpportunityFromFirestore(
  * in both db (studirad-platform-new) and adminDb (studirad-admin-portal)
  */
 export async function pushOfficialClassesToFirestore(): Promise<{ success: boolean; count: number; error?: string }> {
-  let count = 0;
-  for (const cls of OFFICIAL_CLASSES) {
-    try {
-      const payload = {
-        ...cls,
-        updatedAt: new Date().toISOString(),
-      };
-      await setDoc(doc(db, 'classes', cls.id), payload, { merge: true });
-      await setDoc(doc(adminDb, 'classes', cls.id), payload, { merge: true });
-      count++;
-    } catch (e) {
-      console.warn(`Class ${cls.id} push notice:`, e);
-    }
-  }
-  return { success: true, count };
+  return { success: true, count: 0 };
 }
 
-/**
- * Seeds initial documents if Firestore collections are empty
- */
 export async function seedFirestoreIfEmpty(): Promise<void> {
-  try {
-    await pushOfficialClassesToFirestore();
-  } catch (err) {
-    console.warn('Initial classes push notice:', err);
-  }
+  // No-op: Live classes and cohorts are populated strictly from real Admin & Instructor entries.
 }
 
 /**

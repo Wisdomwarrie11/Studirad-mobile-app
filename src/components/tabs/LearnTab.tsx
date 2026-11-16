@@ -376,6 +376,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
               <div className="flex gap-3 overflow-x-auto no-scrollbar py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
                 {filteredClasses.map((cls) => {
                   const isCompleted = cls.cohortStatus === 'completed' || cls.status === 'completed';
+                  const isComingSoon = cls.cohortStatus === 'coming-soon' || cls.status === 'coming-soon';
 
                   return (
                     <div
@@ -409,14 +410,16 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                             </span>
                           </div>
 
-                          {/* Completed / Coming Soon Badge */}
+                          {/* Completed / Upcoming / Coming Soon Badge */}
                           <div className="absolute bottom-2 left-2">
                             <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
                               isCompleted
                                 ? 'bg-slate-800 text-slate-300'
-                                : 'bg-blue-600 text-white shadow-xs'
+                                : isComingSoon
+                                  ? 'bg-blue-600 text-white shadow-xs'
+                                  : 'bg-[#FF7F32] text-white shadow-xs'
                             }`}>
-                              {isCompleted ? 'Completed' : 'Coming Soon'}
+                              {isCompleted ? 'Completed' : isComingSoon ? 'Coming Soon' : 'Upcoming'}
                             </span>
                           </div>
                         </div>
@@ -439,8 +442,12 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                           {formatPriceString(cls.price, currency) || 'Free Cohort'}
                         </span>
 
-                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                          {isCompleted ? 'Completed' : 'Coming Soon'}
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                          isCompleted || isComingSoon
+                            ? 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800'
+                            : 'text-[#FF7F32] bg-[#FF7F32]/10'
+                        }`}>
+                          {isCompleted ? 'Completed' : isComingSoon ? 'Coming Soon' : 'Register'}
                         </span>
                       </div>
                     </div>

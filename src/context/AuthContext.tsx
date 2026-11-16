@@ -11,7 +11,7 @@ import {
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, adminAuth, googleProvider, db, appletDb, handleFirestoreError, OperationType } from '../firebase';
 import { UserProfile, AppScreen, ProfessionalRole, NavTab, AppNotification, AuthMode } from '../types';
-import { seedFirestoreIfEmpty, subscribeUserNotifications } from '../services/firebaseDataService';
+import { subscribeUserNotifications } from '../services/firebaseDataService';
 import { formatClockTime12h } from '../utils/timeFormat';
 
 interface AuthContextType {
@@ -146,13 +146,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return [];
     }
   });
-
-  // Seed / sync initial Firestore collections if empty
-  useEffect(() => {
-    seedFirestoreIfEmpty().catch((err) => {
-      console.warn('Initial seed error:', err);
-    });
-  }, []);
 
   // Listen to Admin Firebase Auth state (studirad-admin-portal)
   useEffect(() => {

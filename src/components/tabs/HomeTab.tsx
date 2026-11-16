@@ -1,33 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useCurrency } from '../../context/CurrencyContext';
-import { formatPriceString } from '../../utils/currency';
-import { formatTime12h } from '../../utils/timeFormat';
-import { LiveClass, Opportunity, StudyMaterial, Course } from '../../types';
+import { LiveClass, Opportunity, Course } from '../../types';
 import { 
   subscribeOpportunities, 
   subscribeClasses, 
-  subscribeStudyMaterials,
   subscribeCourses,
-  subscribeUserCompletedClasses,
-  UserCompletedRecord
+  subscribeUserRegisteredClasses
 } from '../../services/firebaseDataService';
-import { MaterialReaderModal } from '../modals/MaterialReaderModal';
 import { getYouTubeThumbnail } from '../../utils/youtube';
 import { 
   Video, 
   ChevronRight, 
-  Play, 
+  Gamepad2, 
   FileText, 
   Bot, 
-  Gamepad2, 
   Clock, 
   Briefcase,
   Building2,
   Calendar,
-  Sparkles,
-  BookOpen,
-  CheckCircle2,
   GraduationCap
 } from 'lucide-react';
 import classesImg from '../../assets/images/onboarding_classes_1792606674536.jpg';
@@ -53,17 +43,13 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   onStartQuiz,
 }) => {
   const { currentUser, setActiveTab, navigateToLearn } = useAuth();
-  const { currency } = useCurrency();
   
   // Real Firestore state
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [liveOpps, setLiveOpps] = useState<Opportunity[]>([]);
   const [liveClassesList, setLiveClassesList] = useState<LiveClass[]>([]);
   const [liveCoursesList, setLiveCoursesList] = useState<Course[]>([]);
-  const [studyMaterialsList, setStudyMaterialsList] = useState<StudyMaterial[]>([]);
-  const [userCompletedClasses, setUserCompletedClasses] = useState<UserCompletedRecord[]>([]);
-  const [selectedModality, setSelectedModality] = useState<string>('All');
-  const [selectedMaterialForReader, setSelectedMaterialForReader] = useState<StudyMaterial | null>(null);
+  const [registeredClassIds, setRegisteredClassIds] = useState<string[]>([]);
 
   // Real-time subscriptions to Firestore
   useEffect(() => {
@@ -75,7 +61,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       }
     };
 
-    // Fast safety fallback ensures skeleton smoothly transitions even if Firestore snapshot takes time
     const safetyTimer = setTimeout(() => {
       setIsLoading(false);
     }, 550);
@@ -95,29 +80,25 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       markReceived();
     });
 
-    const unsubMats = subscribeStudyMaterials((mats) => {
-      setStudyMaterialsList(mats || []);
-      markReceived();
-    });
-
     return () => {
       clearTimeout(safetyTimer);
       unsubOpps?.();
       unsubCls?.();
       unsubCourses?.();
-      unsubMats?.();
     };
   }, []);
 
-  // Listen to user's real completed classes
+  // Listen strictly to authenticated user's real registered classes
   useEffect(() => {
-    if (currentUser?.id) {
-      const unsubUser = subscribeUserCompletedClasses(currentUser.id, (records) => {
-        setUserCompletedClasses(records || []);
+    if (currentUser?.id && !currentUser.isGuest) {
+      const unsubRegistered = subscribeUserRegisteredClasses(currentUser.id, (ids) => {
+        setRegisteredClassIds(ids || []);
       });
-      return () => unsubUser?.();
+      return () => unsubRegistered?.();
+    } else {
+      setRegisteredClassIds([]);
     }
-  }, [currentUser?.id]);
+  }, [currentUser?.id, currentUser?.isGuest]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -128,79 +109,16 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
   const firstName = currentUser?.fullName?.split(' ')[0] || 'Radiographer';
 
-  // Check for REAL user learning in progress:
-  // 1. If user has completed classes in Firestore
-  // 2. Or if user is registered for a live class
-  const registeredClass = liveClassesList.find((c) => c.isRegistered);
-  const latestCompletedClass = userCompletedClasses[0];
-
-  // Recommended items from real Firestore (Live Classes or Study Materials - NO fake courses)
-  const recommendedItems = useMemo(() => {
-    const items: Array<{
-      id: string;
-      title: string;
-      category: string;
-      image?: string;
-      type: 'class' | 'material';
-      subtitle: string;
-      originalData: LiveClass | StudyMaterial;
-    }> = [];
-
-    // Prioritize published upcoming classes
-    const upcoming = liveClassesList.filter((c) => c.cohortStatus !== 'completed' && c.status === 'published');
-    upcoming.slice(0, 2).forEach((cls) => {
-      items.push({
-        id: `rec_cls_${cls.id}`,
-        title: cls.title,
-        category: cls.category || 'Live Cohort',
-        image: cls.image || cls.thumbnail,
-        type: 'class',
-        subtitle: `${cls.instructor} · ${cls.date || formatTime12h(cls.time) || 'Live Class'}`,
-        originalData: cls,
-      });
-    });
-
-    // If fewer than 2 upcoming classes, fill with study materials
-    if (items.length < 2) {
-      studyMaterialsList.slice(0, 2 - items.length).forEach((mat) => {
-        items.push({
-          id: `rec_mat_${mat.id}`,
-          title: mat.title,
-          category: mat.course || 'Study Material',
-          image: mat.thumbnailUrl,
-          type: 'material',
-          subtitle: `${mat.uploader} · ${mat.type === 'video' ? 'Video Lecture' : 'Document'}`,
-          originalData: mat,
-        });
-      });
-    }
-
-    return items;
-  }, [liveClassesList, studyMaterialsList]);
-
-  // Classes filtered by selected modality
-  const modalityFilteredClasses = useMemo(() => {
-    if (selectedModality === 'All') {
-      return liveClassesList.slice(0, 4);
-    }
-    return liveClassesList.filter((cls) => {
-      const cat = (cls.category || cls.modality || '').toLowerCase();
-      return cat.includes(selectedModality.toLowerCase());
-    });
-  }, [selectedModality, liveClassesList]);
+  // Show Registered Cohort ONLY if authenticated user actually registered for a real class
+  const registeredClass = useMemo(() => {
+    if (!currentUser || currentUser.isGuest) return undefined;
+    return liveClassesList.find((c) => registeredClassIds.includes(c.id));
+  }, [currentUser, liveClassesList, registeredClassIds]);
 
   // Upcoming live classes
   const upcomingClasses = useMemo(() => {
     return liveClassesList.filter((c) => c.cohortStatus !== 'completed' && c.status === 'published').slice(0, 2);
   }, [liveClassesList]);
-
-  const handleRecommendedClick = (item: (typeof recommendedItems)[0]) => {
-    if (item.type === 'class') {
-      onSelectLiveClass(item.originalData as LiveClass);
-    } else {
-      setSelectedMaterialForReader(item.originalData as StudyMaterial);
-    }
-  };
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -217,12 +135,15 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#002147] dark:text-white tracking-tight">
               {getGreeting()}, {firstName}
             </h1>
+            <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-0.5">
+              Keep growing. Your clinical development is right on track.
+            </p>
           </div>
        
 
           {/* ================= HERO: TRANSFORM YOUR RADIOGRAPHY JOURNEY ================= */}
           <div className="relative w-full rounded-3xl overflow-hidden shadow-sm group border border-slate-200/80 dark:border-slate-800">
-            <div className="relative w-full aspect-[16/9] max-h-[540px] bg-[#002147] overflow-hidden">
+            <div className="relative h-44 sm:h-52 w-full bg-[#002147] overflow-hidden">
               <img
                 src="/transform_radiography.jpg"
                 alt="Transform your radiography journey"
@@ -231,19 +152,18 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   (e.target as HTMLImageElement).src = classesImg;
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#002147]/95 via-[#002147]/45 to-transparent flex flex-col justify-end p-4 sm:p-6 text-left">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#002147]/95 via-[#002147]/50 to-transparent flex flex-col justify-end p-5 text-left">
                 <span className="text-[11px] font-bold tracking-wider uppercase text-[#FF7F32] flex items-center gap-1.5 mb-1">
                 </span>
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white leading-tight">
+                <h2 className="text-xl sm:text-2xl font-extrabold text-white leading-tight">
                   Transform your radiography journey
                 </h2>
               </div>
             </div>
           </div>
 
-          {/* ================= CONTINUE LEARNING (BASED ON REAL DATA) ================= */}
-          {registeredClass ? (
-            // Real In-Progress / Registered Live Class
+          {/* ================= REGISTERED COHORT (ONLY IF USER ACTUALLY REGISTERED) ================= */}
+          {registeredClass && (
             <div
               onClick={() => onSelectLiveClass(registeredClass)}
               className="w-full bg-white dark:bg-[#121824] rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer hover:border-[#002147] dark:hover:border-slate-600 transition-all group"
@@ -254,7 +174,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   Your Registered Cohort
                 </span>
                 <span className="text-xs font-bold text-[#002147] dark:text-[#38BDF8]">
-                  {registeredClass.cpdCredits}
+                  {registeredClass.category || 'Live Cohort'}
                 </span>
               </div>
 
@@ -262,68 +182,13 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                 {registeredClass.title}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
-                Instructor: {registeredClass.instructor} · {registeredClass.date || formatTime12h(registeredClass.time) || 'Upcoming Session'}
+                Instructor: {registeredClass.instructor} · {registeredClass.date || registeredClass.time || 'Upcoming Session'}
               </p>
 
               <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
                 <span className="text-slate-400">Tap to access live class details</span>
                 <span className="font-bold text-[#FF7F32] flex items-center gap-1">
                   <span>Enter Cohort</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </span>
-              </div>
-            </div>
-          ) : latestCompletedClass && currentUser && !currentUser.isGuest ? (
-            // Real Completed Record from Firestore
-            <div
-              onClick={() => setActiveTab('profile')}
-              className="w-full bg-white dark:bg-[#121824] rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer hover:border-[#002147] dark:hover:border-slate-600 transition-all group"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Recent Milestone
-                </span>
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                  {latestCompletedClass.cpdCredits || '1.0 CPD'}
-                </span>
-              </div>
-
-              <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug">
-                {latestCompletedClass.title}
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Completed on {new Date(latestCompletedClass.completedAt).toLocaleDateString()} · Modality: {latestCompletedClass.modality}
-              </p>
-
-              <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                <span className="text-slate-400">Certificate auto-logged to your profile</span>
-                <span className="font-bold text-[#002147] dark:text-[#38BDF8] flex items-center gap-1">
-                  <span>View CPD Record</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </span>
-              </div>
-            </div>
-          ) : (
-            // Clean motivational prompt when user has no active sessions (NO fake placeholders)
-            <div
-              onClick={() => navigateToLearn('classes')}
-              className="w-full bg-gradient-to-r from-slate-900 to-[#002147] text-white rounded-2xl p-4 sm:p-5 shadow-xs cursor-pointer hover:opacity-95 transition-all group"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#FF7F32] flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Ready to Grow
-                </span>
-              </div>
-
-              <h3 className="text-base font-bold text-white leading-snug">
-                Join an Upcoming Live Class
-              </h3>
-              <div className="mt-3 pt-2.5 border-t border-white/15 flex items-center justify-between text-xs">
-                <span className="text-slate-300">Live classes available in Learn tab</span>
-                <span className="font-bold text-[#FF7F32] flex items-center gap-1">
-                  <span>Browse Classes</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </span>
               </div>
@@ -382,79 +247,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           </div>
         </section>
 
-        {/* ================= 2. RECOMMENDED FOR YOU (REAL DATA: LIVE CLASSES & MATERIALS) ================= */}
-        <section className="text-left space-y-3 pt-1">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-              Recommended for You
-            </h2>
-            <button
-              onClick={() => setActiveTab('learn')}
-              className="text-xs sm:text-sm font-semibold text-[#002147] dark:text-[#38BDF8] hover:text-[#FF7F32] transition-colors"
-            >
-              View all
-            </button>
-          </div>
-
-          {recommendedItems.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-              {recommendedItems.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => handleRecommendedClick(item)}
-                  className="w-full bg-white dark:bg-[#121824] rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5 hover:border-[#002147] dark:hover:border-slate-600 transition-all cursor-pointer group"
-                >
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-slate-900 relative overflow-hidden shrink-0">
-                    {item.image ? (
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : item.type === 'class' ? (
-                      <img
-                        src={classesImg}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-[#002147] flex items-center justify-center text-[#FF7F32]">
-                        <BookOpen className="w-6 h-6" />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <span className="text-xs font-semibold text-[#FF7F32] uppercase tracking-wider block truncate">
-                      {item.category}
-                    </span>
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug line-clamp-1 group-hover:text-[#002147] dark:group-hover:text-[#38BDF8] transition-colors">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
-                      {item.subtitle}
-                    </p>
-                  </div>
-
-                  <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-[#002147] dark:group-hover:text-white transition-colors shrink-0" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-6 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 text-center space-y-1.5">
-              <Calendar className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
-              <h4 className="text-sm font-bold text-slate-800 dark:text-white">
-                No recommended classes scheduled right now
-              </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Check back soon or explore study materials in the Learn tab.
-              </p>
-            </div>
-          )}
-        </section>
-
-        {/* ================= 3. TOP COURSES (REAL DATA FROM FIRESTORE) ================= */}
+        {/* ================= 2. TOP COURSES (REAL DATA FROM FIRESTORE) ================= */}
         <section className="text-left space-y-3 pt-1">
           <div className="flex items-center justify-between">
             <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
@@ -506,7 +299,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
                   <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <span className="text-[11px] font-bold text-[#002147] dark:text-[#38BDF8]">
-                      {formatPriceString(course.price, currency) || 'Free'}
+                      {course.price || 'Free'}
                     </span>
                     <span className="text-[11px] font-bold text-[#FF7F32] group-hover:underline flex items-center gap-0.5">
                       <span>View</span>
@@ -547,7 +340,9 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
           {upcomingClasses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {upcomingClasses.map((cls) => (
+              {upcomingClasses.map((cls) => {
+                const isComingSoon = cls.cohortStatus === 'coming-soon' || cls.status === 'coming-soon';
+                return (
                 <div
                   key={cls.id}
                   onClick={() => onSelectLiveClass(cls)}
@@ -556,13 +351,13 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   <div className="relative z-10 flex flex-col gap-2.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                        <span className={`w-2 h-2 rounded-full ${isComingSoon ? 'bg-blue-400' : 'bg-[#FF7F32] animate-pulse'}`}></span>
                         <span className="text-xs font-bold uppercase tracking-wider text-blue-200">
-                          Coming Soon
+                          {isComingSoon ? 'Coming Soon' : 'Upcoming Live'}
                         </span>
                       </div>
                       <span className="text-xs text-slate-300 font-medium">
-                        {cls.cpdCredits}
+                        {cls.category || cls.level || 'Cohort'}
                       </span>
                     </div>
 
@@ -578,21 +373,36 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                     <div className="pt-2.5 flex items-center justify-between border-t border-white/15 text-xs sm:text-sm">
                       <div className="flex items-center gap-1.5 text-slate-200 font-medium">
                         <Clock className="w-4 h-4 text-[#FF7F32] shrink-0" />
-                        <span>{cls.date || formatTime12h(cls.time) || 'Upcoming Cohort'}</span>
+                        <span>{cls.date || cls.time || 'Upcoming Cohort'}</span>
                       </div>
 
-                      <button
-                        type="button"
-                        disabled
-                        className="px-3.5 py-1.5 rounded-xl bg-white/15 text-slate-300 font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-xs cursor-not-allowed opacity-80"
-                      >
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>Coming Soon</span>
-                      </button>
+                      {isComingSoon ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="px-3.5 py-1.5 rounded-xl bg-white/15 text-slate-300 font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-xs cursor-not-allowed opacity-80"
+                        >
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>Coming Soon</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectLiveClass(cls);
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-xs cursor-pointer"
+                        >
+                          <span>View Class</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="p-6 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 text-center space-y-1">
@@ -652,7 +462,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs sm:text-sm">
                     <span className="font-bold text-[#002147] dark:text-[#38BDF8]">
-                      {formatPriceString(job.rate, currency)}
+                      {job.rate}
                     </span>
                     <span className="text-xs font-semibold text-[#002147] dark:text-[#38BDF8] flex items-center gap-0.5">
                       <span>Details</span>
@@ -676,13 +486,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         </section>
 
       </div>
-
-      {/* Reader / Video Modal for Study Materials clicked from Recommended */}
-      <MaterialReaderModal
-        isOpen={!!selectedMaterialForReader}
-        onClose={() => setSelectedMaterialForReader(null)}
-        material={selectedMaterialForReader}
-      />
     </div>
   );
 };

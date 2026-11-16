@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { scrollToTopInstant } from '../../utils/scrollTop';
 import { Course, LiveClass, Opportunity, Tutor, ResearchService, TutorBooking } from '../../types';
-import { MOCK_COURSES, MOCK_LIVE_CLASSES, MOCK_QUIZ } from '../../data/mockData';
+import { MOCK_QUIZ } from '../../data/mockData';
 import { AppHeader } from './AppHeader';
 import { BottomTabBar } from './BottomTabBar';
 import { NotificationCenter } from '../drawers/NotificationCenter';

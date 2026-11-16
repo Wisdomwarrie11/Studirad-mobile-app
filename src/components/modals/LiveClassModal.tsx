@@ -1,7 +1,8 @@
-import React, { useState, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { LiveClass } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useCurrency } from '../../context/CurrencyContext';
+import { registerUserForClass, subscribeUserRegisteredClasses } from '../../services/firebaseDataService';
 import { formatPriceString } from '../../utils/currency';
 import { formatTime12h } from '../../utils/timeFormat';
 import { 
@@ -32,11 +33,22 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
   liveClass,
   onClose,
 }) => {
-  const { requireAuth } = useAuth();
+  const { currentUser, requireAuth } = useAuth();
   const { currency } = useCurrency();
-  const [isRegistered, setIsRegistered] = useState(liveClass?.isRegistered || false);
+  const [isRegistered, setIsRegistered] = useState(false);
   const [calendarAdded, setCalendarAdded] = useState(false);
   const scrollBodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!liveClass || !currentUser?.id || currentUser.isGuest) {
+      setIsRegistered(false);
+      return;
+    }
+    const unsub = subscribeUserRegisteredClasses(currentUser.id, (ids) => {
+      setIsRegistered(ids.includes(liveClass.id));
+    });
+    return () => unsub?.();
+  }, [liveClass?.id, currentUser?.id, currentUser?.isGuest]);
 
   useLayoutEffect(() => {
     if (liveClass && scrollBodyRef.current) {
@@ -46,7 +58,7 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
 
   if (!liveClass) return null;
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!requireAuth({
       title: 'Sign In to Register for Classes',
       message: 'Sign in or create a free account to register for live cohorts, participate in live Q&A, and access class materials.',
@@ -55,6 +67,9 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
       return;
     }
     setIsRegistered(true);
+    if (currentUser?.id) {
+      await registerUserForClass(currentUser.id, liveClass).catch(() => {});
+    }
     const targetLink = liveClass.registrationLink || liveClass.registerLink || liveClass.meetingLink;
     if (targetLink && targetLink.startsWith('http')) {
       window.open(targetLink, '_blank');
@@ -308,7 +323,7 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
               <Video className="w-4 h-4 text-[#FF7F32]" />
               <span>Join Class Invitation</span>
             </button>
-          ) : (
+          ) : isComingSoon ? (
             <button
               type="button"
               disabled
@@ -316,6 +331,15 @@ export const LiveClassModal: React.FC<LiveClassModalProps> = ({
             >
               <Clock className="w-4 h-4 text-slate-400" />
               <span>Coming Soon</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleRegister}
+              className="flex-1 py-3 px-4 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Register Now</span>
             </button>
           )}
         </div>
