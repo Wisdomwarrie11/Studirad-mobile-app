@@ -1,6 +1,6 @@
 export type AppScreen = 'splash' | 'onboarding' | 'auth' | 'personalise' | 'completed' | 'app' | 'admin' | 'adminAuth';
 
-export type AuthMode = 'signIn' | 'signUp' | 'adminLogin' | 'forgotPassword';
+export type AuthMode = 'signIn' | 'signUp' | 'adminLogin' | 'forgotPassword' | 'verifyEmail';
 
 export type NavTab = 'home' | 'learn' | 'search' | 'aiTutor' | 'services' | 'explore' | 'profile' | 'game';
 
@@ -27,6 +27,7 @@ export type ProfessionalRole =
 export interface UserProfile {
   id: string;
   email: string;
+  emailVerified?: boolean;
   fullName: string;
   role: ProfessionalRole;
   selectedTopics: string[];

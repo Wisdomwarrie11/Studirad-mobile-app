@@ -1,24 +1,46 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { 
   onAuthStateChanged, 
   signInWithPopup, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   sendPasswordResetEmail,
+  sendEmailVerification,
+  applyActionCode,
+  updateProfile,
   signOut as fbSignOut,
+  Auth,
   User as FirebaseUser 
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
-import { auth, adminAuth, googleProvider, db, appletDb, handleFirestoreError, OperationType } from '../firebase';
+import { 
+  auth, 
+  appletAuth, 
+  adminAuth, 
+  googleProvider, 
+  appletGoogleProvider, 
+  db, 
+  appletDb 
+} from '../firebase';
 import { UserProfile, AppScreen, ProfessionalRole, NavTab, AppNotification, AuthMode } from '../types';
 import { subscribeUserNotifications } from '../services/firebaseDataService';
 import { formatClockTime12h } from '../utils/timeFormat';
+
+export interface AuthActionResult {
+  success: boolean;
+  error?: string;
+  requiresEmailVerification?: boolean;
+  email?: string;
+  verificationEmailSent?: boolean;
+  verificationError?: string;
+}
 
 interface AuthContextType {
   currentUser: UserProfile | null;
   adminUser: FirebaseUser | null;
   isAdminAuthenticated: boolean;
   authInitialTab: AuthMode;
+  pendingVerificationEmail: string | null;
   openAuthWithTab: (tab: AuthMode) => void;
   currentScreen: AppScreen;
   setScreen: (screen: AppScreen) => void;
@@ -32,10 +54,13 @@ interface AuthContextType {
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
   clearNotifications: () => void;
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signIn: (email: string, password: string) => Promise<AuthActionResult>;
   adminSignIn: (email: string, passkey: string) => Promise<{ success: boolean; error?: string }>;
   adminSignOut: () => Promise<void>;
-  signUp: (data: { email: string; password: string; fullName: string; role: ProfessionalRole }) => Promise<{ success: boolean; error?: string }>;
+  signUp: (data: { email: string; password: string; fullName: string; role: ProfessionalRole }) => Promise<AuthActionResult>;
+  resendVerificationEmail: () => Promise<{ success: boolean; alreadyVerified?: boolean; error?: string }>;
+  checkEmailVerification: () => Promise<{ success: boolean; verified: boolean; error?: string }>;
+  cancelEmailVerification: () => Promise<void>;
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   sendPasswordReset: (email: string) => Promise<{ success: boolean; error?: string }>;
   loginAsGuest: () => void;
@@ -88,6 +113,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(true);
   const [adminUser, setAdminUser] = useState<FirebaseUser | null>(adminAuth.currentUser);
   const [authInitialTab, setAuthInitialTab] = useState<AuthMode>('signIn');
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
+  const pendingAuthTargetRef = useRef<'applet' | 'client' | null>(null);
+  const lastVerificationSentAtRef = useRef<number>(0);
+  const currentScreenRef = useRef<AppScreen>(currentScreen);
+  currentScreenRef.current = currentScreen;
+  const authInitialTabRef = useRef<AuthMode>(authInitialTab);
+  authInitialTabRef.current = authInitialTab;
+
   const [authPrompt, setAuthPrompt] = useState<{
     isOpen: boolean;
     title: string;
@@ -155,76 +188,294 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubAdmin();
   }, []);
 
-  // Listen to Client Firebase Auth state (studirad-platform-new)
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
-      if (fbUser) {
-        setIsFirebaseConnected(true);
+  const buildAndHydrateUserProfile = async (fbUser: FirebaseUser): Promise<UserProfile> => {
+    const userDocRef = doc(db, 'users', fbUser.uid);
+    const appletDocRef = appletDb ? doc(appletDb, 'users', fbUser.uid) : null;
+
+    let data: any = null;
+    try {
+      const [dbSnap, appletSnap] = await Promise.allSettled([
+        getDoc(userDocRef),
+        appletDocRef ? getDoc(appletDocRef) : Promise.resolve(null),
+      ]);
+
+      const dbData = dbSnap.status === 'fulfilled' && dbSnap.value?.exists() ? dbSnap.value.data() : null;
+      const appData = appletSnap.status === 'fulfilled' && appletSnap.value && appletSnap.value.exists() ? appletSnap.value.data() : null;
+      if (dbData || appData) {
+        data = { ...(dbData || {}), ...(appData || {}) };
+      }
+    } catch (e) {
+      console.warn('Error loading user profile from Firestore:', e);
+    }
+
+    if (data) {
+      if (fbUser.emailVerified && data.emailVerified !== true) {
+        const verifiedPatch = { emailVerified: true, updatedAt: new Date().toISOString() };
+        Promise.allSettled([
+          appletDocRef ? setDoc(appletDocRef, verifiedPatch, { merge: true }) : Promise.resolve(),
+          setDoc(userDocRef, verifiedPatch, { merge: true }),
+        ]).catch(() => {});
+      }
+
+      return {
+        id: fbUser.uid,
+        email: fbUser.email || data.email || '',
+        emailVerified: fbUser.emailVerified,
+        fullName: data.fullName || fbUser.displayName || fbUser.email?.split('@')[0] || 'Radiology Scholar',
+        role: data.role || 'Qualified Radiographer',
+        selectedTopics: Array.isArray(data.selectedTopics) ? data.selectedTopics : ['general_radiography'],
+        isGuest: false,
+        isInstructor: Boolean(data.isInstructor),
+        instructorStatus: data.instructorStatus,
+        avatarUrl: data.avatarUrl || fbUser.photoURL || undefined,
+        createdAt: data.createdAt || new Date().toISOString(),
+        cpdCredits: typeof data.cpdCredits === 'number' ? data.cpdCredits : 0,
+        gameScore: typeof data.gameScore === 'number' ? data.gameScore : 0,
+        bestStreak: typeof data.bestStreak === 'number' ? data.bestStreak : 0,
+        gamesSolved: typeof data.gamesSolved === 'number' ? data.gamesSolved : 0,
+        gameStats: data.gameStats || undefined,
+      };
+    }
+
+    const newProfile: UserProfile = {
+      id: fbUser.uid,
+      email: fbUser.email || '',
+      emailVerified: fbUser.emailVerified,
+      fullName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Radiology Scholar',
+      role: 'Qualified Radiographer',
+      selectedTopics: ['general_radiography', 'radiation_protection'],
+      isGuest: false,
+      avatarUrl: fbUser.photoURL || undefined,
+      createdAt: new Date().toISOString(),
+      cpdCredits: 0,
+    };
+
+    const payload = {
+      fullName: newProfile.fullName,
+      role: newProfile.role,
+      selectedTopics: newProfile.selectedTopics,
+      cpdCredits: newProfile.cpdCredits,
+      avatarUrl: newProfile.avatarUrl || '',
+      email: newProfile.email,
+      emailVerified: fbUser.emailVerified,
+      createdAt: newProfile.createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await Promise.allSettled([
+      appletDocRef ? setDoc(appletDocRef, payload, { merge: true }) : Promise.resolve(),
+      setDoc(userDocRef, payload, { merge: true }),
+    ]);
+
+    return newProfile;
+  };
+
+  const isUnverifiedPasswordUser = (fbUser: FirebaseUser): boolean => {
+    const hasPasswordProvider = fbUser.providerData.some((p) => p.providerId === 'password');
+    const hasTrustedOAuthProvider = fbUser.providerData.some((p) => p.providerId !== 'password');
+    if (hasTrustedOAuthProvider && fbUser.emailVerified) return false;
+    return hasPasswordProvider && !fbUser.emailVerified;
+  };
+
+  const getGoogleAuthPair = (): { targetAuth: Auth; provider: typeof googleProvider } => {
+    const host = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
+    const isClientHostedDomain =
+      host === 'studirad.org' ||
+      host.endsWith('.studirad.org') ||
+      host === 'studirad-platform-new.firebaseapp.com' ||
+      host === 'studirad-platform-new.web.app';
+    if (isClientHostedDomain) {
+      return { targetAuth: auth, provider: googleProvider };
+    }
+    return { targetAuth: appletAuth, provider: appletGoogleProvider };
+  };
+
+  const getEmailActionSettings = (target: 'applet' | 'client') => {
+    if (typeof window === 'undefined') return undefined;
+    const host = window.location.hostname.toLowerCase();
+    const origin = window.location.origin;
+
+    if (target === 'applet') {
+      const allowedAppletHost =
+        host.endsWith('.run.app') ||
+        host.endsWith('.firebaseapp.com') ||
+        host.endsWith('.web.app') ||
+        host === 'localhost';
+      return allowedAppletHost ? { url: `${origin}/?verified=1`, handleCodeInApp: false } : undefined;
+    }
+
+    const allowedClientHost =
+      host === 'studirad.org' ||
+      host.endsWith('.studirad.org') ||
+      host === 'studirad-platform-new.firebaseapp.com' ||
+      host === 'studirad-platform-new.web.app';
+    return allowedClientHost ? { url: `${origin}/?verified=1`, handleCodeInApp: false } : undefined;
+  };
+
+  const sendVerificationEmailSafely = async (
+    fbUser: FirebaseUser,
+    target: 'applet' | 'client'
+  ): Promise<{ sent: boolean; error?: string }> => {
+    const actionSettings = getEmailActionSettings(target);
+    try {
+      if (actionSettings) {
+        await sendEmailVerification(fbUser, actionSettings);
+      } else {
+        await sendEmailVerification(fbUser);
+      }
+      lastVerificationSentAtRef.current = Date.now();
+      return { sent: true };
+    } catch (err: any) {
+      if (err?.code === 'auth/unauthorized-continue-uri' || err?.code === 'auth/invalid-continue-uri') {
         try {
-          const userDocRef = doc(db, 'users', fbUser.uid);
-          const userSnap = await getDoc(userDocRef);
-          
-          if (userSnap.exists()) {
-            const data = userSnap.data();
-            const profile: UserProfile = {
-              id: fbUser.uid,
-              email: fbUser.email || '',
-              fullName: data.fullName || fbUser.displayName || 'Radiology Scholar',
-              role: data.role || 'Qualified Radiographer',
-              selectedTopics: Array.isArray(data.selectedTopics) ? data.selectedTopics : ['general_radiography'],
-              isGuest: false,
-              avatarUrl: data.avatarUrl || fbUser.photoURL || undefined,
-              createdAt: data.createdAt || new Date().toISOString(),
-              cpdCredits: typeof data.cpdCredits === 'number' ? data.cpdCredits : 0,
-              gameScore: typeof data.gameScore === 'number' ? data.gameScore : 0,
-              bestStreak: typeof data.bestStreak === 'number' ? data.bestStreak : 0,
-              gamesSolved: typeof data.gamesSolved === 'number' ? data.gamesSolved : 0,
-              gameStats: data.gameStats || undefined,
-            };
-            setCurrentUser(profile);
-          } else {
-            // Document does not exist yet: create user doc in Firestore
-            const newProfile: UserProfile = {
-              id: fbUser.uid,
-              email: fbUser.email || '',
-              fullName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Radiology Scholar',
-              role: 'Qualified Radiographer',
-              selectedTopics: ['general_radiography', 'radiation_protection'],
-              isGuest: false,
-              avatarUrl: fbUser.photoURL || undefined,
-              createdAt: new Date().toISOString(),
-              cpdCredits: 0,
-            };
-            await setDoc(userDocRef, {
-              fullName: newProfile.fullName,
-              role: newProfile.role,
-              selectedTopics: newProfile.selectedTopics,
-              cpdCredits: newProfile.cpdCredits,
-              avatarUrl: newProfile.avatarUrl || '',
-              email: newProfile.email,
-              createdAt: newProfile.createdAt,
-              updatedAt: new Date().toISOString(),
-            });
-            setCurrentUser(newProfile);
-          }
-        } catch (e) {
-          console.warn('Error fetching user document from Firestore:', e);
-          // Fallback to basic Firebase user info
-          setCurrentUser((prev) => prev || {
-            id: fbUser.uid,
-            email: fbUser.email || '',
-            fullName: fbUser.displayName || 'Radiology Scholar',
-            role: 'Qualified Radiographer',
-            selectedTopics: ['general_radiography'],
-            isGuest: false,
-            createdAt: new Date().toISOString(),
-            cpdCredits: 0,
-          });
+          await sendEmailVerification(fbUser);
+          lastVerificationSentAtRef.current = Date.now();
+          return { sent: true };
+        } catch (retryErr: any) {
+          console.warn('Retry verification email error:', retryErr);
+          return {
+            sent: false,
+            error:
+              retryErr?.code === 'auth/too-many-requests'
+                ? 'Verification email was sent recently. Please wait 1 minute before requesting another link.'
+                : retryErr?.message || 'Could not send verification email right now.',
+          };
         }
       }
-    });
+      console.warn('Send verification email error:', err);
+      return {
+        sent: false,
+        error:
+          err?.code === 'auth/too-many-requests'
+            ? 'Verification email rate limit reached. Please wait a minute and check your inbox or Spam folder.'
+            : err?.message || 'Could not send verification email. Please try resending.',
+      };
+    }
+  };
 
-    return () => unsubscribe();
+  const getPendingAuthUser = (): { fbUser: FirebaseUser; target: 'applet' | 'client' } | null => {
+    if (pendingAuthTargetRef.current === 'applet' && appletAuth.currentUser) {
+      return { fbUser: appletAuth.currentUser, target: 'applet' };
+    }
+    if (pendingAuthTargetRef.current === 'client' && auth.currentUser) {
+      return { fbUser: auth.currentUser, target: 'client' };
+    }
+    if (appletAuth.currentUser) {
+      return { fbUser: appletAuth.currentUser, target: 'applet' };
+    }
+    if (auth.currentUser) {
+      return { fbUser: auth.currentUser, target: 'client' };
+    }
+    return null;
+  };
+
+  // Handle in-app Firebase verification callback (?mode=verifyEmail&oobCode=...) if returned from email link
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const oobCode = params.get('oobCode');
+    if (mode !== 'verifyEmail' || !oobCode) return;
+
+    (async () => {
+      try {
+        try {
+          await applyActionCode(appletAuth, oobCode);
+        } catch {
+          await applyActionCode(auth, oobCode);
+        }
+
+        const cleanUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, document.title, cleanUrl);
+
+        const active = getPendingAuthUser();
+        if (active) {
+          await active.fbUser.reload().catch(() => {});
+          const refreshed = (active.target === 'applet' ? appletAuth.currentUser : auth.currentUser) || active.fbUser;
+          if (refreshed.emailVerified) {
+            const profile = await buildAndHydrateUserProfile(refreshed);
+            setPendingVerificationEmail(null);
+            pendingAuthTargetRef.current = null;
+            setCurrentUser(profile);
+            setAuthInitialTab('signIn');
+            setScreen('app');
+          }
+        }
+      } catch (e) {
+        console.warn('Email verification link handling notice:', e);
+      }
+    })();
+  }, []);
+
+  // Listen to both Applet Firebase Auth (graphical-silicon-1s6r9) & Client Firebase Auth (studirad-platform-new)
+  useEffect(() => {
+    const handleFirebaseAuthChange = async (fbUser: FirebaseUser | null, source: 'applet' | 'client') => {
+      if (!fbUser) {
+        if (!appletAuth.currentUser && !auth.currentUser) {
+          setPendingVerificationEmail(null);
+          pendingAuthTargetRef.current = null;
+        }
+        return;
+      }
+
+      setIsFirebaseConnected(true);
+      try {
+        if (!fbUser.emailVerified) {
+          await fbUser.reload().catch(() => {});
+        }
+        const sourceAuth = source === 'applet' ? appletAuth : auth;
+        const freshUser = sourceAuth.currentUser || fbUser;
+
+        if (isUnverifiedPasswordUser(freshUser)) {
+          pendingAuthTargetRef.current = source;
+          setPendingVerificationEmail(freshUser.email || null);
+          setCurrentUser(null);
+          localStorage.removeItem(STORAGE_KEY_USER);
+          setAuthInitialTab('verifyEmail');
+          setCurrentScreenState((prev) =>
+            prev === 'app' || prev === 'personalise' || prev === 'completed' ? 'auth' : prev
+          );
+          return;
+        }
+
+        setPendingVerificationEmail(null);
+        pendingAuthTargetRef.current = null;
+        const profile = await buildAndHydrateUserProfile(freshUser);
+        setCurrentUser(profile);
+
+        if (currentScreenRef.current === 'auth' && authInitialTabRef.current !== 'adminLogin') {
+          setAuthInitialTab('signIn');
+          setScreen('app');
+        }
+      } catch (e) {
+        console.warn('Error fetching user document from Firestore:', e);
+        if (!fbUser.emailVerified && isUnverifiedPasswordUser(fbUser)) {
+          pendingAuthTargetRef.current = source;
+          setPendingVerificationEmail(fbUser.email || null);
+          setCurrentUser(null);
+          return;
+        }
+        setCurrentUser((prev) => prev || {
+          id: fbUser.uid,
+          email: fbUser.email || '',
+          emailVerified: fbUser.emailVerified,
+          fullName: fbUser.displayName || 'Radiology Scholar',
+          role: 'Qualified Radiographer',
+          selectedTopics: ['general_radiography'],
+          isGuest: false,
+          createdAt: new Date().toISOString(),
+          cpdCredits: 0,
+        });
+      }
+    };
+
+    const unsubApplet = onAuthStateChanged(appletAuth, (u) => handleFirebaseAuthChange(u, 'applet'));
+    const unsubClient = onAuthStateChanged(auth, (u) => handleFirebaseAuthChange(u, 'client'));
+
+    return () => {
+      unsubApplet();
+      unsubClient();
+    };
   }, []);
 
   useEffect(() => {
@@ -387,7 +638,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const unreadNotificationCount = notifications.filter((n) => !n.read).length;
 
-  const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const signIn = async (email: string, password: string): Promise<AuthActionResult> => {
     if (!email || !email.includes('@')) {
       return { success: false, error: 'Please enter a valid academic or professional email address.' };
     }
@@ -395,47 +646,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, error: 'Password must be at least 6 characters.' };
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
-      const fbUser = userCredential.user;
+      let userCredential;
+      let target: 'applet' | 'client' = 'applet';
 
-      // Fetch user profile from Firestore to confirm registered account
-      const userDocRef = doc(db, 'users', fbUser.uid);
-      const userSnap = await getDoc(userDocRef);
+      try {
+        userCredential = await signInWithEmailAndPassword(appletAuth, cleanEmail, password);
+        target = 'applet';
+      } catch (appletErr: any) {
+        const appletCode = appletErr?.code;
+        if (
+          appletCode === 'auth/operation-not-allowed' ||
+          appletCode === 'auth/user-not-found' ||
+          appletCode === 'auth/invalid-credential'
+        ) {
+          userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+          target = 'client';
+        } else {
+          throw appletErr;
+        }
+      }
 
-      let user: UserProfile;
-      if (userSnap.exists()) {
-        const data = userSnap.data();
-        user = {
-          id: fbUser.uid,
-          email: fbUser.email || email.trim(),
-          fullName: data.fullName || fbUser.displayName || email.split('@')[0],
-          role: data.role || 'Qualified Radiographer',
-          selectedTopics: Array.isArray(data.selectedTopics) ? data.selectedTopics : [],
-          isGuest: false,
-          avatarUrl: data.avatarUrl || fbUser.photoURL || undefined,
-          createdAt: data.createdAt || new Date().toISOString(),
-          cpdCredits: typeof data.cpdCredits === 'number' ? data.cpdCredits : 0,
-          gameScore: typeof data.gameScore === 'number' ? data.gameScore : 0,
-          bestStreak: typeof data.bestStreak === 'number' ? data.bestStreak : 0,
-          gamesSolved: typeof data.gamesSolved === 'number' ? data.gamesSolved : 0,
-          gameStats: data.gameStats || undefined,
-        };
-      } else {
-        user = {
-          id: fbUser.uid,
-          email: fbUser.email || email.trim(),
-          fullName: fbUser.displayName || email.split('@')[0],
-          role: 'Qualified Radiographer',
-          selectedTopics: [],
-          isGuest: false,
-          createdAt: new Date().toISOString(),
-          cpdCredits: 0,
+      await userCredential.user.reload().catch(() => {});
+      const targetAuth = target === 'applet' ? appletAuth : auth;
+      const fbUser = targetAuth.currentUser || userCredential.user;
+
+      if (isUnverifiedPasswordUser(fbUser)) {
+        const targetEmail = fbUser.email || cleanEmail;
+        pendingAuthTargetRef.current = target;
+
+        let sent = true;
+        let verificationError: string | undefined;
+        const msSinceLastSend = Date.now() - lastVerificationSentAtRef.current;
+
+        if (msSinceLastSend > 55000) {
+          const sendRes = await sendVerificationEmailSafely(fbUser, target);
+          sent = sendRes.sent;
+          verificationError = sendRes.error;
+        }
+
+        setPendingVerificationEmail(targetEmail);
+        setCurrentUser(null);
+        localStorage.removeItem(STORAGE_KEY_USER);
+        setAuthInitialTab('verifyEmail');
+        return {
+          success: true,
+          requiresEmailVerification: true,
+          email: targetEmail,
+          verificationEmailSent: sent,
+          verificationError,
         };
       }
 
+      setPendingVerificationEmail(null);
+      pendingAuthTargetRef.current = null;
+      const user = await buildAndHydrateUserProfile(fbUser);
       setCurrentUser(user);
-      setScreen('app'); // Navigate straight to home page
+      setAuthInitialTab('signIn');
+      setScreen('app');
       return { success: true };
     } catch (firebaseErr: any) {
       console.warn('Sign in notice:', firebaseErr);
@@ -443,7 +713,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
         return { 
           success: false, 
-          error: 'No registered account found for this email. Please click "User Sign Up" to register first.' 
+          error: 'Incorrect email or password. Please verify your details or click "User Sign Up" to register.' 
         };
       }
       if (code === 'auth/wrong-password') {
@@ -458,9 +728,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           error: 'Please provide a valid email format.' 
         };
       }
+      if (code === 'auth/too-many-requests') {
+        return {
+          success: false,
+          error: 'Too many sign-in attempts. Please wait a few minutes or reset your password.'
+        };
+      }
+      if (code === 'auth/operation-not-allowed') {
+        return {
+          success: false,
+          error: 'Email/password sign-in is currently disabled in Firebase Authentication settings.'
+        };
+      }
       return { 
         success: false, 
-        error: firebaseErr.message || 'Unable to sign in. Only users who have signed up can log in.' 
+        error: firebaseErr.message || 'Unable to sign in. Please verify your credentials.' 
       };
     }
   };
@@ -551,7 +833,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     password: string;
     fullName: string;
     role: ProfessionalRole;
-  }): Promise<{ success: boolean; error?: string }> => {
+  }): Promise<AuthActionResult> => {
     if (!data.fullName.trim()) {
       return { success: false, error: 'Please enter your full clinical or academic name.' };
     }
@@ -563,26 +845,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email.trim(), data.password);
+      const cleanEmail = data.email.trim().toLowerCase();
+      let userCredential;
+      let target: 'applet' | 'client' = 'applet';
+
+      try {
+        userCredential = await createUserWithEmailAndPassword(appletAuth, cleanEmail, data.password);
+        target = 'applet';
+      } catch (appletErr: any) {
+        if (appletErr?.code === 'auth/operation-not-allowed') {
+          userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, data.password);
+          target = 'client';
+        } else {
+          throw appletErr;
+        }
+      }
+
       const fbUser = userCredential.user;
-      const newUser: UserProfile = {
-        id: fbUser.uid,
-        email: data.email.trim().toLowerCase(),
+      pendingAuthTargetRef.current = target;
+
+      await updateProfile(fbUser, { displayName: data.fullName.trim() }).catch(() => {});
+
+      const profilePayload = {
         fullName: data.fullName.trim(),
         role: data.role,
         selectedTopics: [],
-        isGuest: false,
+        cpdCredits: 0,
+        email: cleanEmail,
+        emailVerified: false,
         createdAt: new Date().toISOString(),
-        cpdCredits: 0,
-      };
-
-      const profilePayload = {
-        fullName: newUser.fullName,
-        role: newUser.role,
-        selectedTopics: newUser.selectedTopics,
-        cpdCredits: 0,
-        email: newUser.email,
-        createdAt: newUser.createdAt,
         updatedAt: new Date().toISOString(),
       };
       await Promise.allSettled([
@@ -590,82 +881,155 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setDoc(doc(db, 'users', fbUser.uid), profilePayload, { merge: true }),
       ]);
 
-      setCurrentUser(newUser);
-      setScreen('app');
-      return { success: true };
+      const sendRes = await sendVerificationEmailSafely(fbUser, target);
+
+      setPendingVerificationEmail(cleanEmail);
+      setCurrentUser(null);
+      localStorage.removeItem(STORAGE_KEY_USER);
+      setAuthInitialTab('verifyEmail');
+
+      return {
+        success: true,
+        requiresEmailVerification: true,
+        email: cleanEmail,
+        verificationEmailSent: sendRes.sent,
+        verificationError: sendRes.error,
+      };
     } catch (firebaseErr: any) {
       console.warn('Email sign up notice:', firebaseErr);
       if (firebaseErr?.code === 'auth/email-already-in-use') {
         return { success: false, error: 'An account with this email already exists. Please sign in.' };
       }
+      if (firebaseErr?.code === 'auth/weak-password') {
+        return { success: false, error: 'Password is too weak. Please use at least 8 characters with letters and numbers.' };
+      }
+      if (firebaseErr?.code === 'auth/operation-not-allowed') {
+        return { success: false, error: 'Email/password registration is currently disabled in Firebase Authentication.' };
+      }
       return { success: false, error: firebaseErr.message || 'Registration failed.' };
     }
   };
 
-  const signInWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+  const resendVerificationEmail = async (): Promise<{ success: boolean; alreadyVerified?: boolean; error?: string }> => {
+    const pending = getPendingAuthUser();
+    if (!pending) {
+      return { success: false, error: 'Your session has expired. Please sign in again to resend the verification email.' };
+    }
+
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const fbUser = result.user;
-      
-      const userDocRef = doc(db, 'users', fbUser.uid);
-      const userSnap = await getDoc(userDocRef);
-      
-      let profile: UserProfile;
-      if (userSnap.exists()) {
-        const d = userSnap.data();
-        profile = {
-          id: fbUser.uid,
-          email: fbUser.email || '',
-          fullName: d.fullName || fbUser.displayName || 'Radiology Scholar',
-          role: d.role || 'Qualified Radiographer',
-          selectedTopics: Array.isArray(d.selectedTopics) ? d.selectedTopics : [],
-          isGuest: false,
-          avatarUrl: fbUser.photoURL || undefined,
-          createdAt: d.createdAt || new Date().toISOString(),
-          cpdCredits: typeof d.cpdCredits === 'number' ? d.cpdCredits : 0,
-          gameScore: typeof d.gameScore === 'number' ? d.gameScore : 0,
-          bestStreak: typeof d.bestStreak === 'number' ? d.bestStreak : 0,
-          gamesSolved: typeof d.gamesSolved === 'number' ? d.gamesSolved : 0,
-          gameStats: d.gameStats || undefined,
-        };
-      } else {
-        profile = {
-          id: fbUser.uid,
-          email: fbUser.email || '',
-          fullName: fbUser.displayName || 'Radiology Scholar',
-          role: 'Qualified Radiographer',
-          selectedTopics: [],
-          isGuest: false,
-          avatarUrl: fbUser.photoURL || undefined,
-          createdAt: new Date().toISOString(),
-          cpdCredits: 0,
-        };
-        const gPayload = {
-          fullName: profile.fullName,
-          role: profile.role,
-          selectedTopics: profile.selectedTopics,
-          cpdCredits: 0,
-          avatarUrl: profile.avatarUrl || '',
-          email: profile.email,
-          createdAt: profile.createdAt,
-          updatedAt: new Date().toISOString(),
-        };
-        await Promise.allSettled([
-          appletDb ? setDoc(doc(appletDb, 'users', fbUser.uid), gPayload, { merge: true }) : Promise.resolve(),
-          setDoc(userDocRef, gPayload, { merge: true }),
-        ]);
+      await pending.fbUser.reload();
+      const targetAuth = pending.target === 'applet' ? appletAuth : auth;
+      const refreshed = targetAuth.currentUser || pending.fbUser;
+      if (refreshed.emailVerified) {
+        const profile = await buildAndHydrateUserProfile(refreshed);
+        setPendingVerificationEmail(null);
+        pendingAuthTargetRef.current = null;
+        setCurrentUser(profile);
+        setAuthInitialTab('signIn');
+        setScreen('app');
+        return { success: true, alreadyVerified: true };
       }
 
+      const sendRes = await sendVerificationEmailSafely(refreshed, pending.target);
+      if (!sendRes.sent) {
+        return { success: false, error: sendRes.error || 'Could not resend verification email. Please try again.' };
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.warn('Resend verification notice:', err);
+      if (err?.code === 'auth/too-many-requests') {
+        return { success: false, error: 'Please wait a moment before requesting another verification email.' };
+      }
+      return { success: false, error: err?.message || 'Could not resend verification email. Please try again.' };
+    }
+  };
+
+  const checkEmailVerification = async (): Promise<{ success: boolean; verified: boolean; error?: string }> => {
+    const pending = getPendingAuthUser();
+    if (!pending) {
+      return {
+        success: false,
+        verified: false,
+        error: 'Session expired. Please sign in with your email and password to continue.',
+      };
+    }
+
+    try {
+      await pending.fbUser.reload();
+      await pending.fbUser.getIdToken(true).catch(() => {});
+      const targetAuth = pending.target === 'applet' ? appletAuth : auth;
+      const refreshed = targetAuth.currentUser || pending.fbUser;
+      if (!refreshed.emailVerified) {
+        return {
+          success: false,
+          verified: false,
+          error: 'Email is not verified yet. Please click the verification link in your inbox (or Spam folder) first.',
+        };
+      }
+
+      const profile = await buildAndHydrateUserProfile(refreshed);
+      setPendingVerificationEmail(null);
+      pendingAuthTargetRef.current = null;
       setCurrentUser(profile);
-      setScreen('app'); // Navigate straight to home page
+      setAuthInitialTab('signIn');
+      setScreen('app');
+      return { success: true, verified: true };
+    } catch (err: any) {
+      console.warn('Check verification notice:', err);
+      if (err?.code === 'auth/user-token-expired') {
+        return {
+          success: false,
+          verified: false,
+          error: 'Your email may now be verified! Please sign in again with your email and password.',
+        };
+      }
+      return {
+        success: false,
+        verified: false,
+        error: err?.message || 'Unable to check verification status right now. Please try again.',
+      };
+    }
+  };
+
+  const cancelEmailVerification = async (): Promise<void> => {
+    await Promise.allSettled([fbSignOut(appletAuth), fbSignOut(auth)]);
+    setPendingVerificationEmail(null);
+    pendingAuthTargetRef.current = null;
+    setCurrentUser(null);
+    localStorage.removeItem(STORAGE_KEY_USER);
+    setAuthInitialTab('signIn');
+  };
+
+  const signInWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { targetAuth, provider } = getGoogleAuthPair();
+      const result = await signInWithPopup(targetAuth, provider);
+      const fbUser = result.user;
+
+      setPendingVerificationEmail(null);
+      pendingAuthTargetRef.current = null;
+      const profile = await buildAndHydrateUserProfile(fbUser);
+
+      setCurrentUser(profile);
+      setAuthInitialTab('signIn');
+      setScreen('app');
       return { success: true };
     } catch (error: any) {
       console.warn('Google Sign-In notice:', error);
       if (error?.code === 'auth/popup-closed-by-user') {
-        return { success: false, error: 'Google sign-in was closed before completing.' };
+        return { success: false, error: 'Google sign-in window was closed before completing.' };
       }
       if (error?.code === 'auth/cancelled-popup-request') {
         return { success: false, error: 'Only one sign-in window can be open at a time.' };
+      }
+      if (error?.code === 'auth/popup-blocked') {
+        return { success: false, error: 'Sign-in popup was blocked by your browser. Please allow popups for this site and try again.' };
+      }
+      if (error?.code === 'auth/unauthorized-domain') {
+        return {
+          success: false,
+          error: `This domain (${window.location.hostname}) is not authorized for Google Sign-In in Firebase Console.`,
+        };
       }
       return { 
         success: false, 
@@ -678,12 +1042,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!email || !email.includes('@')) {
       return { success: false, error: 'Please enter a valid email address.' };
     }
+    const cleanEmail = email.trim();
     try {
-      await sendPasswordResetEmail(auth, email.trim());
+      try {
+        await sendPasswordResetEmail(appletAuth, cleanEmail);
+      } catch (err: any) {
+        if (err?.code === 'auth/operation-not-allowed' || err?.code === 'auth/user-not-found') {
+          await sendPasswordResetEmail(auth, cleanEmail);
+        } else {
+          throw err;
+        }
+      }
       return { success: true };
     } catch (e: any) {
       console.warn('Password reset notice:', e);
-      return { success: true }; // Return true for user experience
+      return { success: true };
     }
   };
 
@@ -724,40 +1097,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteAccount = async (): Promise<{ success: boolean; error?: string }> => {
     try {
+      if (appletAuth.currentUser) {
+        await appletAuth.currentUser.delete();
+      }
       if (auth.currentUser) {
         await auth.currentUser.delete();
       }
     } catch (e) {
       console.warn('Could not delete Firebase Auth user:', e);
     }
-    await fbSignOut(auth).catch(() => {});
+    await Promise.allSettled([fbSignOut(appletAuth), fbSignOut(auth)]);
+    setPendingVerificationEmail(null);
+    pendingAuthTargetRef.current = null;
     setCurrentUser(null);
     localStorage.removeItem(STORAGE_KEY_USER);
     localStorage.removeItem(STORAGE_KEY_SCREEN);
     localStorage.removeItem(STORAGE_KEY_NOTIFS);
     setNotifications(INITIAL_NOTIFICATIONS);
+    setAuthInitialTab('signIn');
     setScreen('auth');
     return { success: true };
   };
 
   const signOut = async () => {
-    await fbSignOut(auth).catch(() => {});
-    await fbSignOut(adminAuth).catch(() => {});
+    await Promise.allSettled([fbSignOut(appletAuth), fbSignOut(auth), fbSignOut(adminAuth)]);
+    setPendingVerificationEmail(null);
+    pendingAuthTargetRef.current = null;
     setCurrentUser(null);
     localStorage.removeItem(STORAGE_KEY_USER);
-    // Return to exploration mode in the main app
+    setAuthInitialTab('signIn');
     setScreen('app');
   };
 
   const resetToSplash = async () => {
-    await fbSignOut(auth).catch(() => {});
-    await fbSignOut(adminAuth).catch(() => {});
+    await Promise.allSettled([fbSignOut(appletAuth), fbSignOut(auth), fbSignOut(adminAuth)]);
+    setPendingVerificationEmail(null);
+    pendingAuthTargetRef.current = null;
     setCurrentUser(null);
     localStorage.removeItem(STORAGE_KEY_USER);
     localStorage.removeItem(STORAGE_KEY_SCREEN);
     localStorage.removeItem('studirad_onboarded');
     setNotifications(INITIAL_NOTIFICATIONS);
     setActiveTab('home');
+    setAuthInitialTab('signIn');
     setScreen('splash');
   };
 
@@ -768,6 +1150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         adminUser,
         isAdminAuthenticated: Boolean(adminUser || currentUser?.isAdmin),
         authInitialTab,
+        pendingVerificationEmail,
         openAuthWithTab,
         currentScreen,
         setScreen,
@@ -785,6 +1168,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         adminSignIn,
         adminSignOut,
         signUp,
+        resendVerificationEmail,
+        checkEmailVerification,
+        cancelEmailVerification,
         signInWithGoogle,
         sendPasswordReset,
         loginAsGuest,

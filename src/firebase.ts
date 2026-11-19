@@ -48,10 +48,12 @@ export const adminDb: Firestore = getFirestore(adminApp);
 export const adminAuth: Auth = getAuth(adminApp);
 export const adminStorage: FirebaseStorage = getStorage(adminApp);
 
-// Initialize Dedicated AI Studio Applet Database (ai-studio-studiradmobileap-6f5d2912-b23e-4c44-828e-081071b478b2)
+// Initialize Dedicated AI Studio Applet Database & Auth (graphical-silicon-1s6r9 / ai-studio-studiradmobileap-6f5d2912-b23e-4c44-828e-081071b478b2)
 const existingAppletApp = getApps().find((a) => a.name === 'appletApp');
 export const appletApp: FirebaseApp = existingAppletApp || initializeApp(appletConfig, 'appletApp');
 export const appletDb: Firestore = getFirestore(appletApp, appletConfig.firestoreDatabaseId);
+export const appletAuth: Auth = getAuth(appletApp);
+export const appletGoogleProvider = new GoogleAuthProvider();
 
 import { uploadFileToCloudinary } from './services/cloudinaryService';
 
@@ -67,10 +69,10 @@ export async function uploadFileToFirebaseStorage(
 }
 
 
-// Connection test
+// Connection test against primary appletDb
 async function testConnection() {
   try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
+    await getDocFromServer(doc(appletDb, 'test', 'connection'));
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {
       console.warn('Firebase connection: offline or checking network.');
@@ -106,15 +108,16 @@ export interface FirestoreErrorInfo {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): void {
+  const activeUser = appletAuth.currentUser || auth.currentUser || adminAuth.currentUser;
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: auth.currentUser?.uid || adminAuth.currentUser?.uid,
-      email: auth.currentUser?.email || adminAuth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified || adminAuth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous || adminAuth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId || adminAuth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData?.map((provider) => ({
+      userId: activeUser?.uid,
+      email: activeUser?.email,
+      emailVerified: activeUser?.emailVerified,
+      isAnonymous: activeUser?.isAnonymous,
+      tenantId: activeUser?.tenantId,
+      providerInfo: activeUser?.providerData?.map((provider) => ({
         providerId: provider.providerId,
         email: provider.email,
       })) || [],

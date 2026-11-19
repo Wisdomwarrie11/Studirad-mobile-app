@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { scrollToTopInstant } from '../../utils/scrollTop';
 import { Wordmark } from '../brand/Wordmark';
 import { 
   Mail, 
+  MailCheck,
   Lock, 
   User, 
   UserPlus,
@@ -17,6 +18,7 @@ import {
   ShieldAlert,
   KeyRound,
   FileText,
+  RefreshCw,
   X
 } from 'lucide-react';
 import { AuthMode, ProfessionalRole } from '../../types';
@@ -35,18 +37,40 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
     adminSignIn, 
     signInWithGoogle, 
     sendPasswordReset, 
+    resendVerificationEmail,
+    checkEmailVerification,
+    cancelEmailVerification,
+    pendingVerificationEmail,
     authInitialTab 
   } = useAuth();
 
-  const [mode, setMode] = useState<AuthMode>(initialMode || authInitialTab || 'signIn');
+  const [mode, setMode] = useState<AuthMode>(
+    pendingVerificationEmail ? 'verifyEmail' : (initialMode || authInitialTab || 'signIn')
+  );
 
   useEffect(() => {
+    if (initialMode === 'adminLogin' || authInitialTab === 'adminLogin') {
+      setMode('adminLogin');
+      return;
+    }
+    if (pendingVerificationEmail) {
+      setMode('verifyEmail');
+      return;
+    }
     if (initialMode) {
       setMode(initialMode);
-    } else if (authInitialTab) {
+    } else if (authInitialTab && authInitialTab !== 'verifyEmail') {
       setMode(authInitialTab);
+    } else if (mode === 'verifyEmail') {
+      setMode('signIn');
     }
-  }, [initialMode, authInitialTab]);
+  }, [initialMode, authInitialTab, pendingVerificationEmail]);
+
+  useEffect(() => {
+    if (currentUser && !currentUser.isGuest && mode === 'verifyEmail') {
+      setScreen('app');
+    }
+  }, [currentUser, mode, setScreen]);
 
   useLayoutEffect(() => {
     scrollToTopInstant();
@@ -73,6 +97,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
   const [resetEmail, setResetEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
 
+  // Email Verification State
+  const [verificationNotice, setVerificationNotice] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [isCheckingVerification, setIsCheckingVerification] = useState(false);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const isSilentCheckingRef = useRef(false);
+
   // Legal Modal (Terms of Service & Privacy Policy)
   const [showLegalModal, setShowLegalModal] = useState(false);
 
@@ -80,12 +111,65 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((prev) => Math.max(0, prev - 1)), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
+  const checkEmailVerificationRef = useRef(checkEmailVerification);
+  checkEmailVerificationRef.current = checkEmailVerification;
+
+  useEffect(() => {
+    if (mode !== 'verifyEmail') return;
+
+    const runSilentCheck = async () => {
+      if (isSilentCheckingRef.current) return;
+      isSilentCheckingRef.current = true;
+      try {
+        await checkEmailVerificationRef.current();
+      } finally {
+        isSilentCheckingRef.current = false;
+      }
+    };
+
+    const handleFocus = () => {
+      runSilentCheck();
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        runSilentCheck();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+    const interval = setInterval(runSilentCheck, 5000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      clearInterval(interval);
+    };
+  }, [mode]);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setVerificationNotice(null);
     setIsLoading(true);
     const res = await signIn(signInEmail, signInPassword);
     setIsLoading(false);
+    if (res.requiresEmailVerification) {
+      setMode('verifyEmail');
+      if (res.verificationEmailSent === false && res.verificationError) {
+        setErrorMessage(res.verificationError);
+      } else {
+        setVerificationNotice(`Your email is not verified yet. A verification link has been sent to ${res.email || signInEmail}.`);
+        setResendCooldown(60);
+      }
+      return;
+    }
     if (!res.success && res.error) {
       setErrorMessage(res.error);
     }
@@ -94,6 +178,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setVerificationNotice(null);
     if (!agreedTerms) {
       setErrorMessage('You must agree to the Terms of Service and Privacy Policy to register.');
       return;
@@ -106,9 +191,53 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
       role: signUpRole,
     });
     setIsLoading(false);
+    if (res.requiresEmailVerification) {
+      setMode('verifyEmail');
+      if (res.verificationEmailSent === false && res.verificationError) {
+        setErrorMessage(res.verificationError);
+      } else {
+        setVerificationNotice(`We sent a Firebase verification link to ${res.email || signUpEmail}. Open it to activate your account.`);
+        setResendCooldown(60);
+      }
+      return;
+    }
     if (!res.success && res.error) {
       setErrorMessage(res.error);
     }
+  };
+
+  const handleCheckVerification = async () => {
+    setErrorMessage(null);
+    setIsCheckingVerification(true);
+    const res = await checkEmailVerification();
+    setIsCheckingVerification(false);
+    if (!res.verified && res.error) {
+      setErrorMessage(res.error);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (resendCooldown > 0 || isResendingVerification) return;
+    setErrorMessage(null);
+    setIsResendingVerification(true);
+    const res = await resendVerificationEmail();
+    setIsResendingVerification(false);
+    if (res.alreadyVerified) {
+      return;
+    }
+    if (res.success) {
+      setVerificationNotice(`Verification email resent to ${pendingVerificationEmail || signUpEmail || signInEmail}. Check your inbox and Spam folder.`);
+      setResendCooldown(60);
+    } else if (res.error) {
+      setErrorMessage(res.error);
+    }
+  };
+
+  const handleBackFromVerification = async () => {
+    setErrorMessage(null);
+    setVerificationNotice(null);
+    await cancelEmailVerification();
+    setMode('signIn');
   };
 
   const handleAdminSignIn = async (e: React.FormEvent) => {
@@ -167,7 +296,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
           <Wordmark size="sm" withSubtitle={false} className="mb-3" />
 
           {/* Clean Segmented Tab Bar */}
-          {mode !== 'forgotPassword' ? (
+          {mode !== 'forgotPassword' && mode !== 'verifyEmail' ? (
             <div className="w-full p-1 bg-[var(--bg-surface-elevated)] rounded-2xl flex items-center border border-[var(--border-subtle)]">
               <button
                 type="button"
@@ -222,16 +351,22 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
               <button
                 type="button"
                 onClick={() => {
-                  setMode('signIn');
-                  setErrorMessage(null);
-                  setResetSent(false);
+                  if (mode === 'verifyEmail') {
+                    handleBackFromVerification();
+                  } else {
+                    setMode('signIn');
+                    setErrorMessage(null);
+                    setResetSent(false);
+                  }
                 }}
                 className="flex items-center gap-1.5 text-xs font-bold text-[#FF7F32] hover:underline cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
                 <span>Back to Sign In</span>
               </button>
-              <span className="text-xs font-semibold text-[var(--text-muted)]">Password Recovery</span>
+              <span className="text-xs font-semibold text-[var(--text-muted)]">
+                {mode === 'verifyEmail' ? 'Email Verification' : 'Password Recovery'}
+              </span>
             </div>
           )}
         </header>
@@ -239,8 +374,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
         {/* Form Body with Minimal Text & Optimal UI */}
         <main className="py-5 flex-1 flex flex-col justify-center">
           {errorMessage && (
-            <div className="mb-4 p-3.5 rounded-xl bg-red-950/40 border border-red-500/40 text-red-200 text-xs flex items-start gap-2.5 animate-fadeIn">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
+            <div className="mb-4 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-500/40 text-red-800 dark:text-red-200 text-xs flex items-start gap-2.5 animate-fadeIn">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-500 dark:text-red-400 mt-0.5" />
               <span className="leading-snug">{errorMessage}</span>
             </div>
           )}
@@ -679,6 +814,75 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                   </button>
                 </form>
               )}
+            </div>
+          )}
+          {/* 5. FIREBASE EMAIL VERIFICATION */}
+          {mode === 'verifyEmail' && (
+            <div className="flex flex-col gap-4 text-center">
+              <div className="p-6 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex flex-col items-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-[#FF7F32]/15 border border-[#FF7F32]/30 flex items-center justify-center">
+                  <MailCheck className="w-7 h-7 text-[#FF7F32]" />
+                </div>
+
+                <div>
+                  <h1 className="text-xl font-bold text-[var(--text-primary)]">Verify Your Email</h1>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
+                    Click the verification link sent to{' '}
+                    <strong className="text-[var(--text-primary)]">
+                      {pendingVerificationEmail || signUpEmail || signInEmail || 'your email'}
+                    </strong>
+                    .
+                  </p>
+                </div>
+
+                {verificationNotice && (
+                  <div className="w-full p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs leading-relaxed">
+                    {verificationNotice}
+                  </div>
+                )}
+
+                <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+                  Check your Spam or Junk folder if you do not see the email within a minute.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleCheckVerification}
+                  disabled={isCheckingVerification}
+                  className="w-full h-11 mt-1 rounded-xl bg-[#002147] dark:bg-[#1B447A] hover:bg-[#001733] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all disabled:opacity-60 cursor-pointer"
+                >
+                  {isCheckingVerification ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-[#FF7F32]" />
+                      <span>I&apos;ve Verified My Email</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resendCooldown > 0 || isResendingVerification}
+                  className="w-full h-10 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] hover:border-[#FF7F32]/50 text-[var(--text-primary)] font-bold text-xs flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isResendingVerification ? 'animate-spin' : ''}`} />
+                  <span>
+                    {resendCooldown > 0
+                      ? `Resend Verification Email (${resendCooldown}s)`
+                      : 'Resend Verification Email'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleBackFromVerification}
+                  className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[#FF7F32] transition-colors pt-1 cursor-pointer"
+                >
+                  Use a different email address
+                </button>
+              </div>
             </div>
           )}
         </main>
