@@ -53,14 +53,14 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   const getTypeIcon = (type: any) => {
     switch (type) {
       case 'tutor_application':
-        return <GraduationCap className="w-4 h-4 text-[#FF7F32]" />;
+        return <GraduationCap className="w-4 h-4 text-[#f59e0b]" />;
       case 'course_approval':
       case 'course':
         return <Sparkles className="w-4 h-4 text-emerald-500" />;
       case 'class':
         return <Video className="w-4 h-4 text-blue-600" />;
       case 'job':
-        return <Briefcase className="w-4 h-4 text-[#FF7F32]" />;
+        return <Briefcase className="w-4 h-4 text-[#f59e0b]" />;
       case 'quiz':
         return <HelpCircle className="w-4 h-4 text-purple-600" />;
       case 'booking':
@@ -105,14 +105,14 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
         {/* Header Bar */}
         <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/40 flex items-center justify-center text-[#FF7F32]">
+            <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center text-[#f59e0b]">
               <Bell className="w-4 h-4" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-[#002147] dark:text-white flex items-center gap-1.5">
                 <span>Notifications</span>
                 {unreadNotificationCount > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-[#FF7F32] text-white text-[10px] font-bold">
+                  <span className="px-1.5 py-0.2 rounded-full bg-[#f59e0b] text-white text-[10px] font-bold">
                     {unreadNotificationCount}
                   </span>
                 )}
@@ -187,7 +187,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
           {unreadNotificationCount > 0 && (
             <button
               onClick={markAllNotificationsAsRead}
-              className="text-[11px] font-semibold text-[#002147] dark:text-[#38BDF8] hover:text-[#FF7F32] flex items-center gap-1 transition-colors"
+              className="text-[11px] font-semibold text-[#002147] dark:text-[#38BDF8] hover:text-[#f59e0b] flex items-center gap-1 transition-colors"
             >
               <CheckCheck className="w-3.5 h-3.5" />
               <span>Mark all read</span>
@@ -240,7 +240,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 </div>
 
                 {!notif.read && (
-                  <span className="absolute top-3.5 right-3.5 w-2 h-2 rounded-full bg-[#FF7F32]"></span>
+                  <span className="absolute top-3.5 right-3.5 w-2 h-2 rounded-full bg-[#f59e0b]"></span>
                 )}
               </div>
             ))

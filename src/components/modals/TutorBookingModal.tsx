@@ -67,7 +67,7 @@ export const TutorBookingModal: React.FC<TutorBookingModalProps> = ({
         {/* Header */}
         <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between shrink-0 bg-white">
           <div className="flex items-center gap-1.5 text-xs font-bold text-[#002147]">
-            <UserCheck className="w-4 h-4 text-[#FF7F32]" />
+            <UserCheck className="w-4 h-4 text-[#f59e0b]" />
             <span>Book 1-on-1 Clinical Mentorship</span>
           </div>
           <button
@@ -119,9 +119,9 @@ export const TutorBookingModal: React.FC<TutorBookingModalProps> = ({
             </div>
 
             {/* Rate & Duration */}
-            <div className="p-3 rounded-xl bg-orange-50/60 border border-orange-200/60 flex items-center justify-between text-xs">
+            <div className="p-3 rounded-xl bg-amber-50/60 border border-amber-200/60 flex items-center justify-between text-xs">
               <span className="font-medium text-slate-700">Tuition Rate:</span>
-              <span className="font-bold text-[#FF7F32] font-mono text-sm">{tutor.hourlyRate}</span>
+              <span className="font-bold text-[#f59e0b] font-mono text-sm">{tutor.hourlyRate}</span>
             </div>
 
             {/* Session Topic Input */}
@@ -192,7 +192,7 @@ export const TutorBookingModal: React.FC<TutorBookingModalProps> = ({
               onClick={handleBook}
               className="py-2.5 px-5 rounded-xl bg-[#002147] hover:bg-[#001733] text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-[#002147]/20 active:scale-[0.98] transition-all"
             >
-              <Video className="w-3.5 h-3.5 text-[#FF7F32]" />
+              <Video className="w-3.5 h-3.5 text-[#f59e0b]" />
               <span>Confirm & Book Session</span>
             </button>
           </div>

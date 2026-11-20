@@ -257,7 +257,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({
               onClick={() => setSelectedCategory(chip.id as SearchFilterCategory)}
               className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
                 selectedCategory === chip.id
-                  ? 'bg-[#FF7F32] text-white shadow-xs'
+                  ? 'bg-[#f59e0b] text-white shadow-xs'
                   : 'bg-white/80 dark:bg-[#121824]/80 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -270,7 +270,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({
         {!cleanQuery && (
           <div className="text-left space-y-2 pt-1">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 dark:text-slate-500">
-              <TrendingUp className="w-3.5 h-3.5 text-[#FF7F32]" />
+              <TrendingUp className="w-3.5 h-3.5 text-[#f59e0b]" />
               <span>Suggested Radiography Searches</span>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -311,7 +311,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold uppercase text-[#FF7F32]">
+                        <span className="text-[10px] font-bold uppercase text-[#f59e0b]">
                           {c.modality?.toUpperCase() || c.category}
                         </span>
                         <span className="text-[10px] text-slate-400">· {c.duration || 'Self-Paced'}</span>
@@ -334,7 +334,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({
           {(selectedCategory === 'all' || selectedCategory === 'classes') && matchingClasses.length > 0 && (
             <div className="space-y-2.5">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <Video className="w-3.5 h-3.5 text-[#FF7F32]" />
+                <Video className="w-3.5 h-3.5 text-[#f59e0b]" />
                 Live Classes & Masterclasses ({matchingClasses.length})
               </span>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
@@ -344,12 +344,12 @@ export const SearchTab: React.FC<SearchTabProps> = ({
                     onClick={() => onSelectLiveClass(lc)}
                     className="p-3.5 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 hover:border-[#002147] dark:hover:border-[#38BDF8] transition-all cursor-pointer flex items-center gap-3 group"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-[#FF7F32] flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-[#f59e0b] flex items-center justify-center shrink-0">
                       <Video className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-[#FF7F32] uppercase">
+                        <span className="text-[10px] font-bold text-[#f59e0b] uppercase">
                           {lc.modality?.toUpperCase() || 'LIVE'}
                         </span>
                         <span className="text-[10px] text-slate-400">· {lc.date}</span>
@@ -391,7 +391,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({
                           {opp.type}
                         </span>
                         {opp.urgent && (
-                          <span className="px-2 py-0.5 rounded-md bg-[#FF7F32]/15 text-[#FF7F32] text-xs font-bold">
+                          <span className="px-2 py-0.5 rounded-md bg-[#f59e0b]/15 text-[#f59e0b] text-xs font-bold">
                             Urgent
                           </span>
                         )}

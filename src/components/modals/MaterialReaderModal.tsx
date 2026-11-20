@@ -709,7 +709,7 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
           {/* 1. LOADING STATE */}
           {contentKind === 'loading' && (
             <div className="w-full h-[52vh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0D131F] flex flex-col items-center justify-center gap-3">
-              <Loader2 className="w-8 h-8 text-[#FF7F32] animate-spin" />
+              <Loader2 className="w-8 h-8 text-[#f59e0b] animate-spin" />
               <p className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300">
                 Loading study material for reading...
               </p>
@@ -761,7 +761,7 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
                   href={rawLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 font-bold text-[#FF7F32] hover:underline"
+                  className="inline-flex items-center gap-1 font-bold text-[#f59e0b] hover:underline"
                 >
                   <span>Open Document</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -890,7 +890,7 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
                 <div className="space-y-3 max-h-[64vh] overflow-y-auto pr-1">
                   {extractedPdfPages.length === 0 ? (
                     <div className="p-8 text-center rounded-2xl bg-slate-50 dark:bg-[#161F30] border border-slate-200 dark:border-slate-800">
-                      <Loader2 className="w-6 h-6 text-[#FF7F32] animate-spin mx-auto mb-2" />
+                      <Loader2 className="w-6 h-6 text-[#f59e0b] animate-spin mx-auto mb-2" />
                       <p className="text-xs text-slate-500 dark:text-slate-400">Extracting readable text...</p>
                     </div>
                   ) : (
@@ -899,7 +899,7 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
                         key={index}
                         className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 space-y-2"
                       >
-                        <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#FF7F32]">
+                        <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#f59e0b]">
                           Page {index + 1}
                         </span>
                         <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed select-text">
@@ -950,7 +950,7 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
                     onClick={() => setOfficeViewerMode(officeViewerMode === 'office' ? 'gview' : 'office')}
                     className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold flex items-center gap-1 cursor-pointer"
                   >
-                    <RefreshCw className="w-3 h-3 text-[#FF7F32]" />
+                    <RefreshCw className="w-3 h-3 text-[#f59e0b]" />
                     <span>{officeViewerMode === 'office' ? 'Switch to Google Viewer' : 'Switch to Office Viewer'}</span>
                   </button>
                 </div>
@@ -987,7 +987,7 @@ export const MaterialReaderModal: React.FC<MaterialReaderModalProps> = ({
                     href={rawLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-bold text-[#FF7F32] hover:underline shrink-0"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#f59e0b] hover:underline shrink-0"
                   >
                     <span>Source</span>
                     <ExternalLink className="w-3.5 h-3.5" />

@@ -801,7 +801,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
     return (
       <div className="w-full min-h-[55vh] flex items-center justify-center p-6">
         <div className="text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF7F32] to-amber-500 mx-auto animate-bounce" />
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#f59e0b] to-amber-500 mx-auto animate-bounce" />
           <p className="text-sm font-bold text-slate-600 dark:text-slate-300">
             Loading Radiography Games...
           </p>
@@ -843,7 +843,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
         <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-[#002147] via-[#092C5C] to-[#0E1E38] text-white border border-slate-700/70 shadow-md space-y-3.5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#FF7F32]/20 border border-[#FF7F32]/40 text-[#FF7F32] flex items-center justify-center font-black text-sm shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-[#f59e0b]/20 border border-[#f59e0b]/40 text-[#f59e0b] flex items-center justify-center font-black text-sm shrink-0">
                 {currentUser?.fullName
                   ? currentUser.fullName
                       .split(' ')
@@ -870,7 +870,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
               <button
                 type="button"
                 onClick={() => openAuthWithTab('signIn')}
-                className="px-3.5 py-2 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white text-xs font-extrabold cursor-pointer transition-colors"
+                className="px-3.5 py-2 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-extrabold cursor-pointer transition-colors"
               >
                 Sign In
               </button>
@@ -890,7 +890,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
 
             <div className="p-3 rounded-2xl bg-white/10 border border-white/10">
               <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300">
-                <Flame className="w-3.5 h-3.5 text-[#FF7F32]" />
+                <Flame className="w-3.5 h-3.5 text-[#f59e0b]" />
                 <span>Streak</span>
               </div>
               <div className="text-lg font-black tabular-nums mt-0.5">
@@ -936,7 +936,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                   setSelectedGame(game.id);
                   persistProgress({ ...progress, activeMode: game.id });
                 }}
-                className="group p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 hover:border-[#FF7F32] dark:hover:border-[#FF7F32] shadow-xs text-left flex flex-col justify-between gap-3.5 transition-all cursor-pointer active:scale-[0.99]"
+                className="group p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 hover:border-[#f59e0b] dark:hover:border-[#f59e0b] shadow-xs text-left flex flex-col justify-between gap-3.5 transition-all cursor-pointer active:scale-[0.99]"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
@@ -944,7 +944,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="text-base sm:text-lg font-black text-slate-900 dark:text-white group-hover:text-[#FF7F32] transition-colors truncate">
+                      <h4 className="text-base sm:text-lg font-black text-slate-900 dark:text-white group-hover:text-[#f59e0b] transition-colors truncate">
                         {game.title}
                       </h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
@@ -961,7 +961,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-bold tabular-nums">
                     {modeScore} pts
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 group-hover:bg-[#FF7F32] group-hover:text-white text-xs font-extrabold transition-colors">
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 group-hover:bg-[#f59e0b] group-hover:text-white text-xs font-extrabold transition-colors">
                     <Play className="w-3.5 h-3.5 fill-current" />
                     <span>Play</span>
                   </span>
@@ -1004,7 +1004,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                     key={player.userId}
                     className={`p-3 rounded-2xl border flex items-center justify-between gap-3 ${
                       isSelf
-                        ? 'bg-[#FF7F32]/10 border-[#FF7F32]/40'
+                        ? 'bg-[#f59e0b]/10 border-[#f59e0b]/40'
                         : 'bg-slate-50 dark:bg-[#161F30] border-slate-100 dark:border-slate-800'
                     }`}
                   >
@@ -1028,7 +1028,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                             {player.playerName}
                           </span>
                           {isSelf && (
-                            <span className="px-1.5 py-0.5 rounded bg-[#FF7F32] text-white text-[9px] font-extrabold uppercase">
+                            <span className="px-1.5 py-0.5 rounded bg-[#f59e0b] text-white text-[9px] font-extrabold uppercase">
                               You
                             </span>
                           )}
@@ -1079,9 +1079,9 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
               rotateSeed();
               setSelectedGame(null);
             }}
-            className="min-h-[44px] px-3.5 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 flex items-center gap-1.5 text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:border-[#FF7F32] cursor-pointer transition-colors shrink-0"
+            className="min-h-[44px] px-3.5 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 flex items-center gap-1.5 text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:border-[#f59e0b] cursor-pointer transition-colors shrink-0"
           >
-            <ArrowLeft className="w-4 h-4 text-[#FF7F32]" />
+            <ArrowLeft className="w-4 h-4 text-[#f59e0b]" />
             <span>Games</span>
           </button>
           <h1 className="text-base sm:text-lg font-black text-slate-900 dark:text-white truncate">
@@ -1172,7 +1172,7 @@ export const RadiographyMarbleGame: React.FC<RadiographyMarbleGameProps> = ({
                     currentLevel: currentLevel === 'easy' ? 'medium' : 'difficult',
                   })
                 }
-                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#FF7F32] to-amber-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-md cursor-pointer"
+                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#f59e0b] to-amber-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-md cursor-pointer"
               >
                 <span>Next Tier</span>
                 <ChevronRight className="w-4 h-4" />

@@ -56,7 +56,7 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
         {/* Top Header Bar */}
         <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-[#0B0F17]">
           <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-xl bg-[#FF7F32]/10 text-[#FF7F32] flex items-center justify-center">
+            <span className="w-8 h-8 rounded-xl bg-[#f59e0b]/10 text-[#f59e0b] flex items-center justify-center">
               <Lock className="w-4 h-4" />
             </span>
             <span className="text-xs font-black uppercase tracking-wider text-[#002147] dark:text-[#38BDF8]">
@@ -85,7 +85,7 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
           </div>
 
           {actionText && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FF7F32]/10 text-[#FF7F32] text-xs font-bold border border-[#FF7F32]/25">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f59e0b]/10 text-[#f59e0b] text-xs font-bold border border-[#f59e0b]/25">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Requires free account for: {actionText}</span>
             </div>
@@ -120,7 +120,7 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
           <div className="space-y-2 pt-2">
             <button
               onClick={handleSignUp}
-              className="w-full h-12 rounded-xl bg-[#FF7F32] hover:bg-[#E86B20] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-[#FF7F32]/25 active:scale-[0.99] transition-all cursor-pointer"
+              className="w-full h-12 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-[#f59e0b]/25 active:scale-[0.99] transition-all cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
               <span>Create Free Account</span>
@@ -130,7 +130,7 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
               onClick={handleSignIn}
               className="w-full h-11 rounded-xl bg-[#002147] hover:bg-[#001733] text-white font-bold text-sm flex items-center justify-center gap-2 border border-white/10 active:scale-[0.99] transition-all cursor-pointer"
             >
-              <LogIn className="w-4 h-4 text-[#FF7F32]" />
+              <LogIn className="w-4 h-4 text-[#f59e0b]" />
               <span>Already have an account? Sign In</span>
             </button>
 

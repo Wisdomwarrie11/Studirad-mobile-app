@@ -43,7 +43,7 @@ export const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ childr
           </p>
           <button
             onClick={() => openAuthWithTab('adminLogin')}
-            className="w-full h-11 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold text-xs flex items-center justify-center transition-colors cursor-pointer"
+            className="w-full h-11 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs flex items-center justify-center transition-colors cursor-pointer"
           >
             Go to Admin Login
           </button>

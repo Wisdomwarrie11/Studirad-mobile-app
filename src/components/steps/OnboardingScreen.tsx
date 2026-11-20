@@ -155,7 +155,7 @@ export const OnboardingScreen: React.FC = () => {
                     onClick={() => setActiveIndex(idx)}
                     className={`h-2.5 rounded-full transition-all duration-300 ${
                       isActive
-                        ? 'w-8 bg-[#FF7F32]'
+                        ? 'w-8 bg-[#f59e0b]'
                         : 'w-2.5 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400'
                     }`}
                     aria-label={`Go to slide ${idx + 1}`}
@@ -184,7 +184,7 @@ export const OnboardingScreen: React.FC = () => {
             {activeIndex === SLIDES.length - 1 ? (
               <button
                 onClick={handleNext}
-                className="flex-1 h-12 rounded-xl bg-[#FF7F32] hover:bg-[#E86B20] text-white font-bold text-base flex items-center justify-center gap-2 shadow-md shadow-[#FF7F32]/20 active:scale-[0.98] transition-all cursor-pointer"
+                className="flex-1 h-12 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-base flex items-center justify-center gap-2 shadow-md shadow-[#f59e0b]/20 active:scale-[0.98] transition-all cursor-pointer"
               >
                 <span>Get Started</span>
                 <ArrowRight className="w-5 h-5 text-white" />
@@ -195,7 +195,7 @@ export const OnboardingScreen: React.FC = () => {
                 className="flex-1 h-12 rounded-xl bg-[#002147] dark:bg-[#1B447A] hover:bg-[#001733] dark:hover:bg-[#23589E] text-white font-bold text-base flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
               >
                 <span>Next</span>
-                <ChevronRight className="w-5 h-5 text-[#FF7F32]" />
+                <ChevronRight className="w-5 h-5 text-[#f59e0b]" />
               </button>
             )}
           </div>

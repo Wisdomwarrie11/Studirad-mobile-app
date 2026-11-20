@@ -71,7 +71,7 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
         {/* Header Bar */}
         <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-[#121824]">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#FF7F32]"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></span>
             <span className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Recorded Video Course
             </span>
@@ -113,7 +113,7 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent flex flex-col justify-end p-4 sm:p-5">
               <div className="flex items-center gap-2 mb-1.5">
-                <span className="px-2.5 py-0.5 rounded-lg bg-[#FF7F32] text-white text-xs font-bold">
+                <span className="px-2.5 py-0.5 rounded-lg bg-[#f59e0b] text-white text-xs font-bold">
                   {course.isFree ? 'Free Access' : formatPriceString(course.price, currency)}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-lg bg-black/60 text-white text-xs font-semibold uppercase">
@@ -160,7 +160,7 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
               <span className="text-xs text-slate-400">Lessons & Quiz</span>
             </div>
             <div className="p-3 rounded-2xl bg-white dark:bg-[#161F30] border border-slate-200 dark:border-slate-800 shadow-xs">
-              <Award className="w-4 h-4 text-[#FF7F32] mx-auto mb-1" />
+              <Award className="w-4 h-4 text-[#f59e0b] mx-auto mb-1" />
               <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs sm:text-sm">Interactive</span>
               <span className="text-xs text-slate-400">Case Quizzes</span>
             </div>
@@ -180,7 +180,7 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
             <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
               {course.learningOutcomes.map((outcome, idx) => (
                 <li key={idx} className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#FF7F32] shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-[#f59e0b] shrink-0 mt-0.5" />
                   <span>{outcome}</span>
                 </li>
               ))}
@@ -189,15 +189,15 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
 
           {/* Available to Tutor Rundown */}
           {course.tutorAvailability?.enabled && (
-            <div className="p-4 rounded-2xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/60 space-y-3">
+            <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <h4 className="text-xs sm:text-sm font-bold text-[#002147] dark:text-[#FF7F32]">
+                  <h4 className="text-xs sm:text-sm font-bold text-[#002147] dark:text-[#f59e0b]">
                     Available to Tutor
                   </h4>
                 </div>
-                <span className="text-xs font-extrabold text-[#002147] dark:text-white px-2.5 py-1 rounded-lg bg-white dark:bg-[#121824] border border-orange-200 dark:border-orange-800/60 shadow-2xs">
+                <span className="text-xs font-extrabold text-[#002147] dark:text-white px-2.5 py-1 rounded-lg bg-white dark:bg-[#121824] border border-amber-200 dark:border-amber-800/60 shadow-2xs">
                   {formatAmountInCurrency(course.tutorAvailability.ratePer30Min, course.tutorAvailability.currency || '£', currency)} / 30 min
                 </span>
               </div>
@@ -207,11 +207,11 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
               </p>
 
               <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 dark:text-slate-400">
-                <div className="p-2 rounded-xl bg-white/80 dark:bg-[#121824]/80 border border-orange-100 dark:border-orange-900/40">
+                <div className="p-2 rounded-xl bg-white/80 dark:bg-[#121824]/80 border border-amber-100 dark:border-amber-900/40">
                   <span className="font-bold text-slate-700 dark:text-slate-300 block mb-0.5">Available Days:</span>
                   <span className="truncate block">{course.tutorAvailability.days?.join(', ') || 'Flexible'}</span>
                 </div>
-                <div className="p-2 rounded-xl bg-white/80 dark:bg-[#121824]/80 border border-orange-100 dark:border-orange-900/40">
+                <div className="p-2 rounded-xl bg-white/80 dark:bg-[#121824]/80 border border-amber-100 dark:border-amber-900/40">
                   <span className="font-bold text-slate-700 dark:text-slate-300 block mb-0.5">Duration:</span>
                   <span>30 min – 1 hr</span>
                 </div>
@@ -229,7 +229,7 @@ export const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
                   }
                   setShowBookingModal(true);
                 }}
-                className="w-full py-2.5 px-3 rounded-xl bg-[#002147] hover:bg-[#001733] dark:bg-[#FF7F32] dark:hover:bg-[#ff8f4a] text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                className="w-full py-2.5 px-3 rounded-xl bg-[#002147] hover:bg-[#001733] dark:bg-[#f59e0b] dark:hover:bg-[#ff8f4a] text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
               >
                 <span>Request Private Tutorial</span>
               </button>

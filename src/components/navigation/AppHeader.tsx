@@ -58,7 +58,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 onClick={() => setActiveTab(item.id)}
                 className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap text-sm ${
                   isActive
-                    ? 'text-[#FF7F32] bg-[#FF7F32]/10 font-bold'
+                    ? 'text-[#f59e0b] bg-[#f59e0b]/10 font-bold'
                     : 'text-slate-600 dark:text-slate-300 hover:text-[#002147] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
@@ -93,7 +93,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           >
             <Bell className="w-5 h-5" />
             {unreadNotificationCount > 0 && (
-              <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-[#FF7F32] ring-2 ring-white dark:ring-[#0B0F17]"></span>
+              <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-[#f59e0b] ring-2 ring-white dark:ring-[#0B0F17]"></span>
             )}
           </button>
 
@@ -138,7 +138,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               title="Enter Admin Hub"
               className="h-10 px-2 sm:px-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 flex items-center gap-1 text-xs font-bold transition-colors shrink-0"
             >
-              <ShieldCheck className="w-4 h-4 text-[#FF7F32]" />
+              <ShieldCheck className="w-4 h-4 text-[#f59e0b]" />
               <span className="hidden md:inline">Admin</span>
             </button>
           )}

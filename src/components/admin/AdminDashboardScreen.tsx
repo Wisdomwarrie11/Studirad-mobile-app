@@ -794,7 +794,7 @@ export const AdminDashboardScreen: React.FC = () => {
   }, [materials, searchQuery]);
 
   return (
-    <div className="min-h-screen w-full bg-[#0B0F17] text-slate-100 flex flex-col font-sans selection:bg-[#FF7F32] selection:text-white">
+    <div className="min-h-screen w-full bg-[#0B0F17] text-slate-100 flex flex-col font-sans selection:bg-[#f59e0b] selection:text-white">
       {/* Top Navbar */}
       <header className="w-full bg-[#121824] border-b border-slate-800 sticky top-0 z-30 px-4 sm:px-6 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -814,7 +814,7 @@ export const AdminDashboardScreen: React.FC = () => {
             className="h-9 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-extrabold text-slate-100 flex items-center gap-1 cursor-pointer"
             title={`Switch currency (currently ${appCurrency})`}
           >
-            <span className="text-[#FF7F32] font-mono">{appCurrency === 'NGN' ? '₦' : '$'}</span>
+            <span className="text-[#f59e0b] font-mono">{appCurrency === 'NGN' ? '₦' : '$'}</span>
             <span>{appCurrency}</span>
           </button>
 
@@ -826,7 +826,7 @@ export const AdminDashboardScreen: React.FC = () => {
               className="relative p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors cursor-pointer flex items-center justify-center"
               title="Admin Notifications"
             >
-              <Bell className="w-4 h-4 text-[#FF7F32]" />
+              <Bell className="w-4 h-4 text-[#f59e0b]" />
               {adminNotifications.filter((n) => !n.read).length > 0 && (
                 <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white font-bold text-[10px] flex items-center justify-center animate-pulse">
                   {adminNotifications.filter((n) => !n.read).length}
@@ -842,7 +842,7 @@ export const AdminDashboardScreen: React.FC = () => {
               >
                 <div className="flex items-center justify-between pb-2 border-b border-slate-800 px-1">
                   <div className="flex items-center gap-1.5">
-                    <Bell className="w-3.5 h-3.5 text-[#FF7F32]" />
+                    <Bell className="w-3.5 h-3.5 text-[#f59e0b]" />
                     <span className="font-bold text-xs text-white">Admin Notifications</span>
                   </div>
                   <span className="text-[10px] font-semibold text-slate-400">
@@ -871,15 +871,15 @@ export const AdminDashboardScreen: React.FC = () => {
                         className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
                           n.read
                             ? 'bg-slate-900/60 border-slate-800 text-slate-400'
-                            : 'bg-slate-800/90 border-[#FF7F32]/40 text-slate-200'
+                            : 'bg-slate-800/90 border-[#f59e0b]/40 text-slate-200'
                         }`}
                       >
                         <div className="flex items-center justify-between font-bold text-[11px] mb-0.5">
-                          <span className={n.read ? 'text-slate-300' : 'text-[#FF7F32]'}>
+                          <span className={n.read ? 'text-slate-300' : 'text-[#f59e0b]'}>
                             {n.title}
                           </span>
                           {!n.read && (
-                            <span className="w-2 h-2 rounded-full bg-[#FF7F32] shrink-0" />
+                            <span className="w-2 h-2 rounded-full bg-[#f59e0b] shrink-0" />
                           )}
                         </div>
                         <p className="text-[11px] leading-relaxed text-slate-300 line-clamp-2">
@@ -902,7 +902,7 @@ export const AdminDashboardScreen: React.FC = () => {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors cursor-pointer"
             title="Preview app as a learner"
           >
-            <Eye className="w-4 h-4 text-[#FF7F32]" />
+            <Eye className="w-4 h-4 text-[#f59e0b]" />
             <span className="hidden sm:inline">Learner App</span>
           </button>
 
@@ -941,13 +941,13 @@ export const AdminDashboardScreen: React.FC = () => {
             onClick={() => setActiveTab('courses')}
             className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               activeTab === 'courses' 
-                ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10' 
+                ? 'bg-slate-800/90 border-[#f59e0b] shadow-lg shadow-[#f59e0b]/10' 
                 : 'bg-[#121824] border-slate-800 hover:border-slate-700'
             }`}
           >
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-semibold text-slate-400">Courses</span>
-              <BookOpen className="w-3.5 h-3.5 text-[#FF7F32]" />
+              <BookOpen className="w-3.5 h-3.5 text-[#f59e0b]" />
             </div>
             <div className="text-xl font-bold font-mono text-white flex items-center justify-between">
               <span>{courses.length}</span>
@@ -964,7 +964,7 @@ export const AdminDashboardScreen: React.FC = () => {
             onClick={() => setActiveTab('classes')}
             className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               activeTab === 'classes' 
-                ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10' 
+                ? 'bg-slate-800/90 border-[#f59e0b] shadow-lg shadow-[#f59e0b]/10' 
                 : 'bg-[#121824] border-slate-800 hover:border-slate-700'
             }`}
           >
@@ -980,7 +980,7 @@ export const AdminDashboardScreen: React.FC = () => {
             onClick={() => setActiveTab('opportunities')}
             className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               activeTab === 'opportunities' 
-                ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10' 
+                ? 'bg-slate-800/90 border-[#f59e0b] shadow-lg shadow-[#f59e0b]/10' 
                 : 'bg-[#121824] border-slate-800 hover:border-slate-700'
             }`}
           >
@@ -996,7 +996,7 @@ export const AdminDashboardScreen: React.FC = () => {
             onClick={() => setActiveTab('materials')}
             className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               activeTab === 'materials' 
-                ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10' 
+                ? 'bg-slate-800/90 border-[#f59e0b] shadow-lg shadow-[#f59e0b]/10' 
                 : 'bg-[#121824] border-slate-800 hover:border-slate-700'
             }`}
           >
@@ -1012,7 +1012,7 @@ export const AdminDashboardScreen: React.FC = () => {
             onClick={() => setActiveTab('tutors')}
             className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               activeTab === 'tutors' 
-                ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10' 
+                ? 'bg-slate-800/90 border-[#f59e0b] shadow-lg shadow-[#f59e0b]/10' 
                 : 'bg-[#121824] border-slate-800 hover:border-slate-700'
             }`}
           >
@@ -1035,7 +1035,7 @@ export const AdminDashboardScreen: React.FC = () => {
             onClick={() => setActiveTab('tutorials')}
             className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               activeTab === 'tutorials' 
-                ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10' 
+                ? 'bg-slate-800/90 border-[#f59e0b] shadow-lg shadow-[#f59e0b]/10' 
                 : 'bg-[#121824] border-slate-800 hover:border-slate-700'
             }`}
           >
@@ -1058,7 +1058,7 @@ export const AdminDashboardScreen: React.FC = () => {
             onClick={() => setActiveTab('research')}
             className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               activeTab === 'research'
-                ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10'
+                ? 'bg-slate-800/90 border-[#f59e0b] shadow-lg shadow-[#f59e0b]/10'
                 : 'bg-[#121824] border-slate-800 hover:border-slate-700'
             }`}
           >
@@ -1081,18 +1081,18 @@ export const AdminDashboardScreen: React.FC = () => {
             onClick={() => setActiveTab('private_classes')}
             className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               activeTab === 'private_classes'
-                ? 'bg-slate-800/90 border-[#FF7F32] shadow-lg shadow-[#FF7F32]/10'
+                ? 'bg-slate-800/90 border-[#f59e0b] shadow-lg shadow-[#f59e0b]/10'
                 : 'bg-[#121824] border-slate-800 hover:border-slate-700'
             }`}
           >
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-semibold text-slate-400">Private Classes</span>
-              <GraduationCap className="w-3.5 h-3.5 text-[#FF7F32]" />
+              <GraduationCap className="w-3.5 h-3.5 text-[#f59e0b]" />
             </div>
             <div className="text-xl font-bold font-mono text-white flex items-center justify-between">
               <span>{privateClasses.length}</span>
               {(privateClassBookings.filter((b) => b.status === 'New Request').length + privateClasses.filter((p) => p.status === 'pending_approval').length) > 0 && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#FF7F32]/20 text-[#FF7F32] border border-[#FF7F32]/30">
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/30">
                   {privateClassBookings.filter((b) => b.status === 'New Request').length + privateClasses.filter((p) => p.status === 'pending_approval').length} act
                 </span>
               )}
@@ -1108,7 +1108,7 @@ export const AdminDashboardScreen: React.FC = () => {
             <button
               onClick={() => setActiveTab('courses')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'courses' ? 'bg-[#FF7F32] text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                activeTab === 'courses' ? 'bg-[#f59e0b] text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
               <span>Courses</span>
@@ -1119,7 +1119,7 @@ export const AdminDashboardScreen: React.FC = () => {
             <button
               onClick={() => setActiveTab('classes')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === 'classes' ? 'bg-[#FF7F32] text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                activeTab === 'classes' ? 'bg-[#f59e0b] text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
               Live Classes
@@ -1127,7 +1127,7 @@ export const AdminDashboardScreen: React.FC = () => {
             <button
               onClick={() => setActiveTab('opportunities')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === 'opportunities' ? 'bg-[#FF7F32] text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                activeTab === 'opportunities' ? 'bg-[#f59e0b] text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
               Opportunities
@@ -1135,7 +1135,7 @@ export const AdminDashboardScreen: React.FC = () => {
             <button
               onClick={() => setActiveTab('materials')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === 'materials' ? 'bg-[#FF7F32] text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                activeTab === 'materials' ? 'bg-[#f59e0b] text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
               Materials & Videos
@@ -1143,7 +1143,7 @@ export const AdminDashboardScreen: React.FC = () => {
             <button
               onClick={() => setActiveTab('tutors')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'tutors' ? 'bg-[#FF7F32] text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                activeTab === 'tutors' ? 'bg-[#f59e0b] text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
               <span>Tutors Register</span>
@@ -1156,7 +1156,7 @@ export const AdminDashboardScreen: React.FC = () => {
             <button
               onClick={() => setActiveTab('tutorials')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'tutorials' ? 'bg-[#FF7F32] text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                activeTab === 'tutorials' ? 'bg-[#f59e0b] text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
               <span>Tutorial Inquiries</span>
@@ -1169,7 +1169,7 @@ export const AdminDashboardScreen: React.FC = () => {
             <button
               onClick={() => setActiveTab('research')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'research' ? 'bg-[#FF7F32] text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                activeTab === 'research' ? 'bg-[#f59e0b] text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
               <span>Research Requests</span>
@@ -1182,7 +1182,7 @@ export const AdminDashboardScreen: React.FC = () => {
             <button
               onClick={() => setActiveTab('private_classes')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'private_classes' ? 'bg-[#FF7F32] text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                activeTab === 'private_classes' ? 'bg-[#f59e0b] text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
               <span>Private Classes</span>
@@ -1203,7 +1203,7 @@ export const AdminDashboardScreen: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search items..."
-                className="w-full pl-9 pr-3 h-9 rounded-xl bg-[#121824] border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                className="w-full pl-9 pr-3 h-9 rounded-xl bg-[#121824] border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
               />
             </div>
 
@@ -1238,7 +1238,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   setCourseModalTab('basics');
                   setIsCourseModalOpen(true);
                 }}
-                className="flex items-center gap-2 px-4 py-2.5 h-10 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white text-xs sm:text-sm font-bold shadow-md shadow-[#FF7F32]/25 transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95"
+                className="flex items-center gap-2 px-4 py-2.5 h-10 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs sm:text-sm font-bold shadow-md shadow-[#f59e0b]/25 transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95"
               >
                 <Plus className="w-4 h-4" />
                 <span>Push Course</span>
@@ -1265,7 +1265,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     });
                     setIsClassModalOpen(true);
                   }}
-                  className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white text-xs font-bold shadow-md shadow-[#FF7F32]/20 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                  className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-bold shadow-md shadow-[#f59e0b]/20 transition-all cursor-pointer whitespace-nowrap shrink-0"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Schedule Class</span>
@@ -1298,7 +1298,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   });
                   setIsOppModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white text-xs font-bold shadow-md shadow-[#FF7F32]/20 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-bold shadow-md shadow-[#f59e0b]/20 transition-all cursor-pointer whitespace-nowrap shrink-0"
               >
                 <Plus className="w-4 h-4" />
                 <span>Post Opportunity</span>
@@ -1321,7 +1321,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   });
                   setIsMaterialModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white text-xs font-bold shadow-md shadow-[#FF7F32]/20 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-bold shadow-md shadow-[#f59e0b]/20 transition-all cursor-pointer whitespace-nowrap shrink-0"
               >
                 <Plus className="w-4 h-4" />
                 <span>Publish Content</span>
@@ -1358,7 +1358,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   setPcTermsAccepted(false);
                   setIsPrivateClassModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white text-xs font-bold shadow-md shadow-[#FF7F32]/20 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-bold shadow-md shadow-[#f59e0b]/20 transition-all cursor-pointer whitespace-nowrap shrink-0"
               >
                 <Plus className="w-4 h-4" />
                 <span>New Private Class</span>
@@ -1436,12 +1436,12 @@ export const AdminDashboardScreen: React.FC = () => {
                         </span>
 
                         <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] font-semibold text-slate-300 flex items-center gap-1">
-                          <BookOpen className="w-3 h-3 text-[#FF7F32]" />
+                          <BookOpen className="w-3 h-3 text-[#f59e0b]" />
                           <span>{c.modules?.length || 1} {c.modules?.length === 1 ? 'Section' : 'Sections'}</span>
                         </span>
 
                         {c.tutorAvailability?.enabled && (
-                          <span className="px-2 py-0.5 rounded bg-orange-500/15 text-[#FF7F32] border border-orange-500/30 text-[10px] font-semibold flex items-center gap-1">
+                          <span className="px-2 py-0.5 rounded bg-amber-500/15 text-[#f59e0b] border border-amber-500/30 text-[10px] font-semibold flex items-center gap-1">
                             <UserCheck className="w-3 h-3" />
                             <span>
                               Tutor: {formatAmountInCurrency(c.tutorAvailability.ratePer30Min || 25, c.tutorAvailability.currency || '£', appCurrency)}/30m
@@ -1555,7 +1555,7 @@ export const AdminDashboardScreen: React.FC = () => {
                           {cls.modality || 'General'}
                         </span>
                         <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400">
-                          <Clock className="w-3 h-3 text-[#FF7F32]" />
+                          <Clock className="w-3 h-3 text-[#f59e0b]" />
                           <span>{cls.duration}</span>
                         </span>
                       </div>
@@ -1566,7 +1566,7 @@ export const AdminDashboardScreen: React.FC = () => {
                       <p className="text-xs text-slate-400 mb-1.5">
                         {cls.instructor} · <span className="text-slate-500">{cls.instructorRole}</span>
                       </p>
-                      <div className="flex items-center gap-1.5 text-xs text-[#FF7F32] font-semibold mb-2">
+                      <div className="flex items-center gap-1.5 text-xs text-[#f59e0b] font-semibold mb-2">
                         <Calendar className="w-3.5 h-3.5" />
                         <span>{cls.date} at {formatTime12h(cls.time)}</span>
                       </div>
@@ -1654,7 +1654,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         <span>{opp.location}</span>
                       </div>
 
-                      <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-[#FF7F32] font-mono font-bold mb-3">
+                      <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-[#f59e0b] font-mono font-bold mb-3">
                         {opp.rate}
                       </div>
 
@@ -1784,7 +1784,7 @@ export const AdminDashboardScreen: React.FC = () => {
                             href={m.downloadUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-[#FF7F32] hover:underline font-semibold"
+                            className="flex items-center gap-1 text-[#f59e0b] hover:underline font-semibold"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                             <span>View Link</span>
@@ -2084,7 +2084,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1">
                           <div className="flex items-center justify-between text-xs font-bold text-white">
                             <span className="truncate pr-2">{req.courseTitle}</span>
-                            <span className="text-[#FF7F32] font-mono shrink-0">
+                            <span className="text-[#f59e0b] font-mono shrink-0">
                               {formatAmountInCurrency(req.calculatedRate, req.currency, appCurrency)}
                             </span>
                           </div>
@@ -2105,7 +2105,7 @@ export const AdminDashboardScreen: React.FC = () => {
                           </div>
                           <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
                             <span className="text-[10px] text-slate-500 block">Duration</span>
-                            <span className="font-bold text-[#FF7F32] text-[11px]">{req.durationMinutes} min</span>
+                            <span className="font-bold text-[#f59e0b] text-[11px]">{req.durationMinutes} min</span>
                           </div>
                         </div>
 
@@ -2297,7 +2297,7 @@ export const AdminDashboardScreen: React.FC = () => {
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-mono text-[11px] font-bold text-[#FF7F32]">
+                                <span className="font-mono text-[11px] font-bold text-[#f59e0b]">
                                   {req.referenceCode || req.id}
                                 </span>
                                 {req.academicLevel && (
@@ -2336,7 +2336,7 @@ export const AdminDashboardScreen: React.FC = () => {
                             <div className="flex items-center justify-between gap-2 text-xs font-bold text-white">
                               <span className="truncate">{req.serviceCategory || req.assistanceType || 'Research Service'}</span>
                               {req.priceDisplay && (
-                                <span className="text-[#FF7F32] font-mono shrink-0">{req.priceDisplay}</span>
+                                <span className="text-[#f59e0b] font-mono shrink-0">{req.priceDisplay}</span>
                               )}
                             </div>
                             <p className="text-xs text-slate-200 font-semibold">
@@ -2372,7 +2372,7 @@ export const AdminDashboardScreen: React.FC = () => {
                             </div>
                             <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
                               <span className="text-[10px] text-slate-500 block">Assigned Rep</span>
-                              <span className="font-bold text-[#FF7F32] text-[11px] line-clamp-1">
+                              <span className="font-bold text-[#f59e0b] text-[11px] line-clamp-1">
                                 {req.assignedRepPhone || 'Unassigned'}
                               </span>
                             </div>
@@ -2419,7 +2419,7 @@ export const AdminDashboardScreen: React.FC = () => {
                                   triggerSuccess(`Research request ${req.referenceCode || req.id} updated to "${nextStatus}".`);
                                 }
                               }}
-                              className="h-8 px-2.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32] cursor-pointer"
+                              className="h-8 px-2.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b] cursor-pointer"
                             >
                               <option value="New Request">New Request</option>
                               <option value="Under Review">Under Review</option>
@@ -2457,7 +2457,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   type="button"
                   onClick={() => setPrivateClassSubTab('bookings')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    privateClassSubTab === 'bookings' ? 'bg-[#FF7F32] text-white' : 'text-slate-400 hover:text-white'
+                    privateClassSubTab === 'bookings' ? 'bg-[#f59e0b] text-white' : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   Student Bookings ({privateClassBookings.length})
@@ -2466,7 +2466,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   type="button"
                   onClick={() => setPrivateClassSubTab('catalog')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    privateClassSubTab === 'catalog' ? 'bg-[#FF7F32] text-white' : 'text-slate-400 hover:text-white'
+                    privateClassSubTab === 'catalog' ? 'bg-[#f59e0b] text-white' : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   Classes Catalog ({privateClasses.length})
@@ -2508,7 +2508,7 @@ export const AdminDashboardScreen: React.FC = () => {
                             <div className="flex items-start justify-between gap-2">
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <span className="font-mono text-[11px] font-bold text-[#FF7F32]">
+                                  <span className="font-mono text-[11px] font-bold text-[#f59e0b]">
                                     {bk.referenceCode}
                                   </span>
                                   <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] font-semibold text-slate-300">
@@ -2543,7 +2543,7 @@ export const AdminDashboardScreen: React.FC = () => {
                             <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1">
                               <div className="flex items-center justify-between gap-2 text-xs font-bold text-white">
                                 <span className="truncate">{bk.classTitle}</span>
-                                <span className="text-[#FF7F32] font-mono shrink-0">
+                                <span className="text-[#f59e0b] font-mono shrink-0">
                                   {formatMoney(bk.amountNGN, appCurrency, bk.amountUSD)}
                                 </span>
                               </div>
@@ -2568,7 +2568,7 @@ export const AdminDashboardScreen: React.FC = () => {
                               </div>
                               <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
                                 <span className="text-[10px] text-slate-500 block">Start Date</span>
-                                <span className="font-mono font-bold text-[#FF7F32] text-[11px]">
+                                <span className="font-mono font-bold text-[#f59e0b] text-[11px]">
                                   {bk.startDate}
                                 </span>
                               </div>
@@ -2682,7 +2682,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     >
                       <div className="space-y-2.5">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] font-bold text-[#FF7F32]">
+                          <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] font-bold text-[#f59e0b]">
                             {pc.category}
                           </span>
                           <span
@@ -2722,14 +2722,14 @@ export const AdminDashboardScreen: React.FC = () => {
                               {d}
                             </span>
                           ))}
-                          <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-[#FF7F32] font-bold">
+                          <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-[#f59e0b] font-bold">
                             {pc.durationMinutes} min
                           </span>
                         </div>
 
                         <div className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs">
                           <span>
-                            <strong className="text-[#FF7F32] font-mono">
+                            <strong className="text-[#f59e0b] font-mono">
                               {formatMoney(pc.chargePerHourNGN, appCurrency, pc.chargePerHourUSD)}
                             </strong>
                             <span className="text-[10px] text-slate-500"> /hr</span>
@@ -2754,7 +2754,7 @@ export const AdminDashboardScreen: React.FC = () => {
                                 url: pc.introVideoUrl || '',
                               })
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[#FF7F32] border border-slate-700 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[#f59e0b] border border-slate-700 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
                             title="Watch tutor promise video before approving"
                           >
                             <Play className="w-3 h-3 fill-current" />
@@ -2851,7 +2851,7 @@ export const AdminDashboardScreen: React.FC = () => {
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between shrink-0 bg-[#121824]">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#FF7F32]/10 flex items-center justify-center text-[#FF7F32] shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-[#f59e0b]/10 flex items-center justify-center text-[#f59e0b] shrink-0">
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
@@ -2878,7 +2878,7 @@ export const AdminDashboardScreen: React.FC = () => {
                 onClick={() => setCourseModalTab('basics')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                   courseModalTab === 'basics'
-                    ? 'bg-[#FF7F32] text-white shadow-xs'
+                    ? 'bg-[#f59e0b] text-white shadow-xs'
                     : 'text-slate-400 hover:text-white bg-slate-900/60'
                 }`}
               >
@@ -2891,7 +2891,7 @@ export const AdminDashboardScreen: React.FC = () => {
                 onClick={() => setCourseModalTab('curriculum')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                   courseModalTab === 'curriculum'
-                    ? 'bg-[#FF7F32] text-white shadow-xs'
+                    ? 'bg-[#f59e0b] text-white shadow-xs'
                     : 'text-slate-400 hover:text-white bg-slate-900/60'
                 }`}
               >
@@ -2904,7 +2904,7 @@ export const AdminDashboardScreen: React.FC = () => {
                 onClick={() => setCourseModalTab('materials')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                   courseModalTab === 'materials'
-                    ? 'bg-[#FF7F32] text-white shadow-xs'
+                    ? 'bg-[#f59e0b] text-white shadow-xs'
                     : 'text-slate-400 hover:text-white bg-slate-900/60'
                 }`}
               >
@@ -2917,7 +2917,7 @@ export const AdminDashboardScreen: React.FC = () => {
                 onClick={() => setCourseModalTab('quiz')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                   courseModalTab === 'quiz'
-                    ? 'bg-[#FF7F32] text-white shadow-xs'
+                    ? 'bg-[#f59e0b] text-white shadow-xs'
                     : 'text-slate-400 hover:text-white bg-slate-900/60'
                 }`}
               >
@@ -2930,7 +2930,7 @@ export const AdminDashboardScreen: React.FC = () => {
                 onClick={() => setCourseModalTab('availability')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                   courseModalTab === 'availability'
-                    ? 'bg-[#FF7F32] text-white shadow-xs'
+                    ? 'bg-[#f59e0b] text-white shadow-xs'
                     : 'text-slate-400 hover:text-white bg-slate-900/60'
                 }`}
               >
@@ -2953,7 +2953,7 @@ export const AdminDashboardScreen: React.FC = () => {
                       value={courseForm.title}
                       onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
                       placeholder="e.g. Chest Radiography Mastery: Silhouette Signs & Pathology"
-                      className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                      className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                     />
                   </div>
 
@@ -2963,7 +2963,7 @@ export const AdminDashboardScreen: React.FC = () => {
                       <select
                         value={courseForm.modality}
                         onChange={(e) => setCourseForm({ ...courseForm, modality: e.target.value as ClinicalModality })}
-                        className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                        className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                       >
                         <option value="xray">X-ray / Image Critique</option>
                         <option value="ct">Computed Tomography (CT)</option>
@@ -2982,7 +2982,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         value={courseForm.duration}
                         onChange={(e) => setCourseForm({ ...courseForm, duration: e.target.value })}
                         placeholder="e.g. 4 Weeks · 2 hrs/week"
-                        className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                        className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                       />
                     </div>
                   </div>
@@ -2996,7 +2996,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         value={courseForm.instructor}
                         onChange={(e) => setCourseForm({ ...courseForm, instructor: e.target.value })}
                         placeholder="e.g. Dr. Marcus Thorne"
-                        className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                        className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                       />
                     </div>
 
@@ -3007,7 +3007,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         value={courseForm.cpdCredits}
                         onChange={(e) => setCourseForm({ ...courseForm, cpdCredits: e.target.value })}
                         placeholder="e.g. Clinical Mastery"
-                        className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                        className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                       />
                     </div>
                   </div>
@@ -3020,7 +3020,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         value={courseForm.price}
                         onChange={(e) => setCourseForm({ ...courseForm, price: e.target.value })}
                         placeholder="Free with Membership"
-                        className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                        className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                       />
                     </div>
 
@@ -3030,7 +3030,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         id="isFreeCourse"
                         checked={courseForm.isFree}
                         onChange={(e) => setCourseForm({ ...courseForm, isFree: e.target.checked })}
-                        className="w-4 h-4 rounded text-[#FF7F32] bg-slate-900 border-slate-700 focus:ring-0"
+                        className="w-4 h-4 rounded text-[#f59e0b] bg-slate-900 border-slate-700 focus:ring-0"
                       />
                       <label htmlFor="isFreeCourse" className="font-semibold text-slate-300 cursor-pointer">
                         Free for Members
@@ -3045,7 +3045,7 @@ export const AdminDashboardScreen: React.FC = () => {
                       value={courseForm.overview}
                       onChange={(e) => setCourseForm({ ...courseForm, overview: e.target.value })}
                       placeholder="Comprehensive overview of topics, anatomy, and clinical patterns covered..."
-                      className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                      className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                     />
                   </div>
 
@@ -3053,7 +3053,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
                     <div className="flex items-center justify-between">
                       <label className="font-bold text-white flex items-center gap-1.5">
-                        <ImageIcon className="w-4 h-4 text-[#FF7F32]" />
+                        <ImageIcon className="w-4 h-4 text-[#f59e0b]" />
                         <span>Course Cover Image (Custom or Default)</span>
                       </label>
                       {courseForm.image ? (
@@ -3089,11 +3089,11 @@ export const AdminDashboardScreen: React.FC = () => {
 
                       {/* Upload / Paste Options */}
                       <div className="flex-1 w-full space-y-2">
-                        <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-slate-700 hover:border-[#FF7F32] bg-slate-950/60 hover:bg-slate-950 text-slate-300 text-xs font-semibold cursor-pointer transition-colors">
+                        <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-slate-700 hover:border-[#f59e0b] bg-slate-950/60 hover:bg-slate-950 text-slate-300 text-xs font-semibold cursor-pointer transition-colors">
                           {isUploadingCourseImg ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-[#FF7F32]" />
+                            <Loader2 className="w-4 h-4 animate-spin text-[#f59e0b]" />
                           ) : (
-                            <Upload className="w-4 h-4 text-[#FF7F32]" />
+                            <Upload className="w-4 h-4 text-[#f59e0b]" />
                           )}
                           <span>{isUploadingCourseImg ? 'Uploading image from device...' : 'Upload or drop image from local device'}</span>
                           <input
@@ -3120,7 +3120,7 @@ export const AdminDashboardScreen: React.FC = () => {
                           value={courseForm.image}
                           onChange={(e) => setCourseForm({ ...courseForm, image: e.target.value })}
                           placeholder="Or paste image URL: https://..."
-                          className="w-full h-8 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                          className="w-full h-8 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                         />
                       </div>
                     </div>
@@ -3135,7 +3135,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <label className="font-bold text-white flex items-center gap-1.5">
-                        <Tv className="w-4 h-4 text-[#FF7F32]" />
+                        <Tv className="w-4 h-4 text-[#f59e0b]" />
                         <span>Primary Course Video (YouTube or Google Drive URL)</span>
                       </label>
                       {courseForm.videoUrl && (
@@ -3154,7 +3154,7 @@ export const AdminDashboardScreen: React.FC = () => {
                       value={courseForm.videoUrl}
                       onChange={(e) => setCourseForm({ ...courseForm, videoUrl: e.target.value })}
                       placeholder="Paste YouTube or Google Drive link: https://youtube.com/... or https://drive.google.com/file/d/..."
-                      className="w-full h-10 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                      className="w-full h-10 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                     />
 
                     {courseForm.videoUrl && isPlayableVideoUrl(courseForm.videoUrl) && (
@@ -3191,7 +3191,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         value={newSectionTitle}
                         onChange={(e) => setNewSectionTitle(e.target.value)}
                         placeholder="e.g. Module 1: Physics & Equipment Formation"
-                        className="flex-1 h-9 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                        className="flex-1 h-9 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                       />
                       <button
                         type="button"
@@ -3224,7 +3224,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-white text-xs flex items-center gap-2">
-                              <BookOpen className="w-3.5 h-3.5 text-[#FF7F32]" />
+                              <BookOpen className="w-3.5 h-3.5 text-[#f59e0b]" />
                               <span>{module.title}</span>
                               <span className="text-[10px] text-slate-400 font-normal">
                                 ({module.lessons.length} lessons)
@@ -3268,7 +3268,7 @@ export const AdminDashboardScreen: React.FC = () => {
                                   className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between text-[11px]"
                                 >
                                   <div className="flex items-center gap-2 truncate pr-2">
-                                    <Play className="w-3 h-3 text-[#FF7F32] shrink-0" />
+                                    <Play className="w-3 h-3 text-[#f59e0b] shrink-0" />
                                     <span className="font-semibold text-slate-200 truncate">{les.title}</span>
                                     <span className="text-slate-500 shrink-0">({les.duration})</span>
                                   </div>
@@ -3298,7 +3298,7 @@ export const AdminDashboardScreen: React.FC = () => {
                           {/* New Lesson Form for this Section */}
                           {activeSectionIdForLesson === module.id && (
                             <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                              <span className="font-bold text-[11px] text-[#FF7F32] block">
+                              <span className="font-bold text-[11px] text-[#f59e0b] block">
                                 Add New Lesson to {module.title}
                               </span>
 
@@ -3308,14 +3308,14 @@ export const AdminDashboardScreen: React.FC = () => {
                                   value={newLessonDraft.title}
                                   onChange={(e) => setNewLessonDraft({ ...newLessonDraft, title: e.target.value })}
                                   placeholder="Lesson Title *"
-                                  className="col-span-2 h-8 px-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                                  className="col-span-2 h-8 px-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                                 />
                                 <input
                                   type="text"
                                   value={newLessonDraft.duration}
                                   onChange={(e) => setNewLessonDraft({ ...newLessonDraft, duration: e.target.value })}
                                   placeholder="e.g. 25 min"
-                                  className="h-8 px-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                                  className="h-8 px-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                                 />
                               </div>
 
@@ -3324,7 +3324,7 @@ export const AdminDashboardScreen: React.FC = () => {
                                 value={newLessonDraft.videoUrl}
                                 onChange={(e) => setNewLessonDraft({ ...newLessonDraft, videoUrl: e.target.value })}
                                 placeholder="Specific YouTube or Google Drive video URL (optional, uses course video if empty)"
-                                className="w-full h-8 px-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                                className="w-full h-8 px-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                               />
 
                               <div className="flex justify-end gap-2 pt-1">
@@ -3361,7 +3361,7 @@ export const AdminDashboardScreen: React.FC = () => {
                                     setNewLessonDraft({ title: '', duration: '20 min', videoUrl: '', summary: '' });
                                     setActiveSectionIdForLesson(null);
                                   }}
-                                  className="px-3 py-1 rounded-lg bg-[#FF7F32] text-white text-[10px] font-bold cursor-pointer"
+                                  className="px-3 py-1 rounded-lg bg-[#f59e0b] text-white text-[10px] font-bold cursor-pointer"
                                 >
                                   Save Lesson
                                 </button>
@@ -3458,12 +3458,12 @@ export const AdminDashboardScreen: React.FC = () => {
                           setIsUploadingMaterialFile(false);
                         }
                       }}
-                      className="p-4 rounded-2xl border-2 border-dashed border-slate-700 hover:border-[#FF7F32] focus:border-[#FF7F32] focus:outline-none bg-slate-950/60 hover:bg-slate-950 text-center space-y-1.5 transition-all cursor-pointer"
+                      className="p-4 rounded-2xl border-2 border-dashed border-slate-700 hover:border-[#f59e0b] focus:border-[#f59e0b] focus:outline-none bg-slate-950/60 hover:bg-slate-950 text-center space-y-1.5 transition-all cursor-pointer"
                     >
                       <label className="cursor-pointer block">
                         <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center mx-auto mb-1">
                           {isUploadingMaterialFile ? (
-                            <Loader2 className="w-5 h-5 animate-spin text-[#FF7F32]" />
+                            <Loader2 className="w-5 h-5 animate-spin text-[#f59e0b]" />
                           ) : (
                             <Upload className="w-5 h-5 text-blue-400" />
                           )}
@@ -3525,12 +3525,12 @@ export const AdminDashboardScreen: React.FC = () => {
                         value={newMaterialDraft.title}
                         onChange={(e) => setNewMaterialDraft({ ...newMaterialDraft, title: e.target.value })}
                         placeholder="Material Title (e.g. Artifacts Reference Guide)"
-                        className="sm:col-span-2 h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                        className="sm:col-span-2 h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                       />
                       <select
                         value={newMaterialDraft.type}
                         onChange={(e) => setNewMaterialDraft({ ...newMaterialDraft, type: e.target.value as any })}
-                        className="h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                        className="h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                       >
                         <option value="pdf">PDF Document</option>
                         <option value="doc">Word / Doc</option>
@@ -3545,7 +3545,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         value={newMaterialDraft.url}
                         onChange={(e) => setNewMaterialDraft({ ...newMaterialDraft, url: e.target.value })}
                         placeholder="Document URL (e.g. Google Drive link, PDF URL)"
-                        className="flex-1 h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                        className="flex-1 h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                       />
                       <button
                         type="button"
@@ -3622,14 +3622,14 @@ export const AdminDashboardScreen: React.FC = () => {
                         value={newLinkDraft.title}
                         onChange={(e) => setNewLinkDraft({ ...newLinkDraft, title: e.target.value })}
                         placeholder="Link Label (e.g. Royal College Guidelines)"
-                        className="w-1/2 h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                        className="w-1/2 h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                       />
                       <input
                         type="text"
                         value={newLinkDraft.url}
                         onChange={(e) => setNewLinkDraft({ ...newLinkDraft, url: e.target.value })}
                         placeholder="https://..."
-                        className="flex-1 h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                        className="flex-1 h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                       />
                       <button
                         type="button"
@@ -3713,7 +3713,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         value={newQuizDraft.question}
                         onChange={(e) => setNewQuizDraft({ ...newQuizDraft, question: e.target.value })}
                         placeholder="e.g. Which of the following artifact types is caused by total acoustic reflection at a soft tissue-gas interface?"
-                        className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                        className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                       />
                     </div>
 
@@ -3728,7 +3728,7 @@ export const AdminDashboardScreen: React.FC = () => {
                             name="correctOpt"
                             checked={newQuizDraft.correctAnswerIndex === optIdx}
                             onChange={() => setNewQuizDraft({ ...newQuizDraft, correctAnswerIndex: optIdx })}
-                            className="w-4 h-4 text-[#FF7F32] bg-slate-900 border-slate-700 focus:ring-0 cursor-pointer"
+                            className="w-4 h-4 text-[#f59e0b] bg-slate-900 border-slate-700 focus:ring-0 cursor-pointer"
                           />
                           <span className="text-[11px] font-bold text-slate-400 w-4">
                             {String.fromCharCode(65 + optIdx)}
@@ -3742,7 +3742,7 @@ export const AdminDashboardScreen: React.FC = () => {
                               setNewQuizDraft({ ...newQuizDraft, options: updatedOpts });
                             }}
                             placeholder={`Option ${String.fromCharCode(65 + optIdx)}`}
-                            className="flex-1 h-8 px-2.5 rounded-lg bg-slate-950 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                            className="flex-1 h-8 px-2.5 rounded-lg bg-slate-950 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                           />
                         </div>
                       ))}
@@ -3757,7 +3757,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         value={newQuizDraft.explanation}
                         onChange={(e) => setNewQuizDraft({ ...newQuizDraft, explanation: e.target.value })}
                         placeholder="e.g. Reverberation occurs when acoustic impedance mismatch between soft tissue and gas creates multiple echoes..."
-                        className="w-full h-8 px-2.5 rounded-lg bg-slate-950 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                        className="w-full h-8 px-2.5 rounded-lg bg-slate-950 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                       />
                     </div>
 
@@ -3833,10 +3833,10 @@ export const AdminDashboardScreen: React.FC = () => {
               {/* SUB-TAB 5: PRIVATE TUTORING AVAILABILITY (User Requirement 2) */}
               {courseModalTab === 'availability' && (
                 <div className="space-y-4 animate-fadeIn">
-                  <div className="p-4 rounded-2xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-between">
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
                     <div>
                       <h4 className="font-bold text-white text-xs sm:text-sm flex items-center gap-2">
-                        <UserCheck className="w-4 h-4 text-[#FF7F32]" />
+                        <UserCheck className="w-4 h-4 text-[#f59e0b]" />
                         <span>Available to Tutor (Private 1-on-1 Sessions)</span>
                       </h4>
                       <p className="text-[11px] text-slate-400 mt-0.5">
@@ -3850,7 +3850,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         onChange={(e) => setCourseForm({ ...courseForm, availableToTutor: e.target.checked })}
                         className="sr-only peer"
                       />
-                      <div className="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FF7F32]"></div>
+                      <div className="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#f59e0b]"></div>
                     </label>
                   </div>
 
@@ -3876,7 +3876,7 @@ export const AdminDashboardScreen: React.FC = () => {
                                 }}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                                   isChecked
-                                    ? 'bg-[#FF7F32] text-white border-[#FF7F32]'
+                                    ? 'bg-[#f59e0b] text-white border-[#f59e0b]'
                                     : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
                                 }`}
                               >
@@ -4014,7 +4014,7 @@ export const AdminDashboardScreen: React.FC = () => {
                 <button
                   type="submit"
                   form="course-builder-form"
-                  className="px-6 py-2.5 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-[#FF7F32]/25 transition-all cursor-pointer active:scale-95"
+                  className="px-6 py-2.5 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-[#f59e0b]/25 transition-all cursor-pointer active:scale-95"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>{courseForm.id ? 'Save & Push Changes' : 'Push Live to Learners'}</span>
@@ -4055,7 +4055,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   value={classForm.title}
                   onChange={(e) => setClassForm({ ...classForm, title: e.target.value })}
                   placeholder="e.g. Acute Stroke CT Neuroimaging & ASPECTS Protocol"
-                  className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                  className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                 />
               </div>
 
@@ -4065,7 +4065,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   <select
                     value={classForm.modality}
                     onChange={(e) => setClassForm({ ...classForm, modality: e.target.value as ClinicalModality })}
-                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                   >
                     <option value="xray">X-ray / Image Interpretation</option>
                     <option value="ct">Computed Tomography (CT)</option>
@@ -4085,7 +4085,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     value={classForm.instructor}
                     onChange={(e) => setClassForm({ ...classForm, instructor: e.target.value })}
                     placeholder="Dr. David Chen"
-                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                   />
                 </div>
               </div>
@@ -4099,7 +4099,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     value={classForm.date}
                     onChange={(e) => setClassForm({ ...classForm, date: e.target.value })}
                     placeholder="e.g. Thursday, Nov 12"
-                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                   />
                 </div>
 
@@ -4111,7 +4111,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     value={classForm.time}
                     onChange={(e) => setClassForm({ ...classForm, time: e.target.value })}
                     placeholder="6:30 PM BST"
-                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                   />
                 </div>
               </div>
@@ -4124,7 +4124,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     value={classForm.duration}
                     onChange={(e) => setClassForm({ ...classForm, duration: e.target.value })}
                     placeholder="50 minutes"
-                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                   />
                 </div>
 
@@ -4135,7 +4135,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     value={classForm.cpdCredits}
                     onChange={(e) => setClassForm({ ...classForm, cpdCredits: e.target.value })}
                     placeholder="e.g. Live Clinical Review"
-                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                   />
                 </div>
               </div>
@@ -4148,7 +4148,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   value={classForm.meetingLink}
                   onChange={(e) => setClassForm({ ...classForm, meetingLink: e.target.value })}
                   placeholder="https://meet.studirad.org/room/..."
-                  className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                  className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                 />
               </div>
 
@@ -4159,7 +4159,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   value={classForm.description}
                   onChange={(e) => setClassForm({ ...classForm, description: e.target.value })}
                   placeholder="Detailed breakdown of topics covered, interactive quiz format, etc."
-                  className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                  className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                 />
               </div>
 
@@ -4167,7 +4167,7 @@ export const AdminDashboardScreen: React.FC = () => {
               <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <label className="font-bold text-white flex items-center gap-1.5 text-xs">
-                    <ImageIcon className="w-3.5 h-3.5 text-[#FF7F32]" />
+                    <ImageIcon className="w-3.5 h-3.5 text-[#f59e0b]" />
                     <span>Class Cover Image</span>
                   </label>
                   <span className="text-[10px] text-slate-400">
@@ -4184,7 +4184,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     />
                     {isUploadingClassImg && (
                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <Upload className="w-4 h-4 text-[#FF7F32] animate-bounce" />
+                        <Upload className="w-4 h-4 text-[#f59e0b] animate-bounce" />
                       </div>
                     )}
                   </div>
@@ -4192,7 +4192,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2">
                       <label className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-[11px] flex items-center gap-1.5 cursor-pointer border border-slate-700 transition-colors">
-                        <Upload className="w-3.5 h-3.5 text-[#FF7F32]" />
+                        <Upload className="w-3.5 h-3.5 text-[#f59e0b]" />
                         <span>{isUploadingClassImg ? 'Uploading...' : 'Choose from Device'}</span>
                         <input
                           type="file"
@@ -4227,7 +4227,7 @@ export const AdminDashboardScreen: React.FC = () => {
                       value={classForm.image}
                       onChange={(e) => setClassForm({ ...classForm, image: e.target.value })}
                       placeholder="Or paste image link: https://..."
-                      className="w-full h-8 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                      className="w-full h-8 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                     />
                   </div>
                 </div>
@@ -4236,7 +4236,7 @@ export const AdminDashboardScreen: React.FC = () => {
               <div className="pt-3 flex gap-2">
                 <button
                   type="submit"
-                  className="flex-1 h-11 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+                  className="flex-1 h-11 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>{classForm.id ? 'Save & Push Changes' : 'Schedule & Push Live'}</span>
@@ -4283,7 +4283,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     type="button"
                     onClick={() => setOppForm({ ...oppForm, type })}
                     className={`flex-1 py-1.5 rounded-lg font-bold capitalize transition-all ${
-                      oppForm.type === type ? 'bg-[#FF7F32] text-white shadow' : 'text-slate-400 hover:text-white'
+                      oppForm.type === type ? 'bg-[#f59e0b] text-white shadow' : 'text-slate-400 hover:text-white'
                     }`}
                   >
                     {type}s
@@ -4297,7 +4297,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   <select
                     value={oppForm.selectedRole}
                     onChange={(e) => setOppForm({ ...oppForm, selectedRole: e.target.value })}
-                    className="flex-1 h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    className="flex-1 h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                   >
                     {ROLES_OPTIONS.map((r) => (
                       <option key={r} value={r}>{r}</option>
@@ -4310,7 +4310,7 @@ export const AdminDashboardScreen: React.FC = () => {
                       value={oppForm.customRole}
                       onChange={(e) => setOppForm({ ...oppForm, customRole: e.target.value })}
                       placeholder="Specify role..."
-                      className="flex-1 h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                      className="flex-1 h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                     />
                   )}
                 </div>
@@ -4325,7 +4325,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     value={oppForm.organisation}
                     onChange={(e) => setOppForm({ ...oppForm, organisation: e.target.value })}
                     placeholder="e.g. Lagoon Hospital"
-                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                   />
                 </div>
 
@@ -4337,7 +4337,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     value={oppForm.location}
                     onChange={(e) => setOppForm({ ...oppForm, location: e.target.value })}
                     placeholder="e.g. Lagos, Nigeria"
-                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                   />
                 </div>
               </div>
@@ -4349,7 +4349,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     type="date"
                     value={oppForm.deadline}
                     onChange={(e) => setOppForm({ ...oppForm, deadline: e.target.value })}
-                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                   />
                 </div>
 
@@ -4360,7 +4360,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     value={oppForm.rate}
                     onChange={(e) => setOppForm({ ...oppForm, rate: e.target.value })}
                     placeholder="e.g. £38.50 - £44.00 / hour"
-                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                   />
                 </div>
               </div>
@@ -4413,7 +4413,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   value={oppForm.link}
                   onChange={(e) => setOppForm({ ...oppForm, link: e.target.value })}
                   placeholder="https://hospital.com/careers or hr@hospital.com"
-                  className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                  className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                 />
               </div>
 
@@ -4424,14 +4424,14 @@ export const AdminDashboardScreen: React.FC = () => {
                   value={oppForm.description}
                   onChange={(e) => setOppForm({ ...oppForm, description: e.target.value })}
                   placeholder="Details about the opportunity, shifts, clinical protocols..."
-                  className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                  className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                 />
               </div>
 
               <div className="pt-3 flex gap-2">
                 <button
                   type="submit"
-                  className="flex-1 h-11 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+                  className="flex-1 h-11 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>{oppForm.id ? 'Save & Sync Changes' : 'Post to Live Web App & Mobile'}</span>
@@ -4479,7 +4479,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     type="button"
                     onClick={() => setMaterialForm({ ...materialForm, submissionType: type })}
                     className={`flex-1 py-1.5 rounded-lg font-bold capitalize transition-all ${
-                      materialForm.submissionType === type ? 'bg-[#FF7F32] text-white shadow' : 'text-slate-400 hover:text-white'
+                      materialForm.submissionType === type ? 'bg-[#f59e0b] text-white shadow' : 'text-slate-400 hover:text-white'
                     }`}
                   >
                     {type}
@@ -4493,7 +4493,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   <select
                     value={materialForm.course}
                     onChange={(e) => setMaterialForm({ ...materialForm, course: e.target.value })}
-                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                   >
                     {COURSE_CATEGORIES.map((c) => (
                       <option key={c} value={c}>{c}</option>
@@ -4509,7 +4509,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     value={materialForm.uploader}
                     onChange={(e) => setMaterialForm({ ...materialForm, uploader: e.target.value })}
                     placeholder="e.g. Wisdom Warrie"
-                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                   />
                 </div>
               </div>
@@ -4524,7 +4524,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   value={materialForm.title}
                   onChange={(e) => setMaterialForm({ ...materialForm, title: e.target.value })}
                   placeholder="e.g. Upper Limb Positioning Protocol"
-                  className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                  className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                 />
               </div>
 
@@ -4532,7 +4532,7 @@ export const AdminDashboardScreen: React.FC = () => {
               {materialForm.submissionType === 'file' ? (
                 <div>
                   <label className="block font-semibold text-slate-300 mb-1">Select File (PDF, DOCX, PPT)</label>
-                  <label className="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed border-slate-700 hover:border-[#FF7F32] bg-slate-900/60 cursor-pointer transition-colors">
+                  <label className="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed border-slate-700 hover:border-[#f59e0b] bg-slate-900/60 cursor-pointer transition-colors">
                     <Upload className="w-6 h-6 text-slate-400 mb-1" />
                     <span className="text-xs font-semibold text-slate-300">
                       {materialForm.selectedFile ? materialForm.selectedFile.name : 'Click to choose file from device'}
@@ -4568,7 +4568,7 @@ export const AdminDashboardScreen: React.FC = () => {
                     value={materialForm.link}
                     onChange={(e) => setMaterialForm({ ...materialForm, link: e.target.value })}
                     placeholder="https://..."
-                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                   />
                   {materialForm.submissionType === 'video' && materialForm.link && getYoutubeThumbnail(materialForm.link) && (
                     <div className="mt-2 flex items-center gap-2 p-1.5 bg-slate-900 rounded-lg border border-slate-700">
@@ -4586,7 +4586,7 @@ export const AdminDashboardScreen: React.FC = () => {
                   value={materialForm.description}
                   onChange={(e) => setMaterialForm({ ...materialForm, description: e.target.value })}
                   placeholder="Outline clinical utility or instructions..."
-                  className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                  className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
                 />
               </div>
 
@@ -4594,7 +4594,7 @@ export const AdminDashboardScreen: React.FC = () => {
                 <button
                   type="submit"
                   disabled={materialForm.isUploading}
-                  className="flex-1 h-11 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer disabled:opacity-60"
+                  className="flex-1 h-11 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer disabled:opacity-60"
                 >
                   {materialForm.isUploading ? (
                     <>
@@ -4670,7 +4670,7 @@ export const AdminDashboardScreen: React.FC = () => {
           <div className="bg-[#121824] border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 text-left shadow-2xl animate-scaleIn">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-[#FF7F32]" />
+                <UserCheck className="w-4 h-4 text-[#f59e0b]" />
                 <h4 className="text-sm font-bold text-white">
                   Confirm Tutorial Session
                 </h4>
@@ -4691,7 +4691,7 @@ export const AdminDashboardScreen: React.FC = () => {
                 Course: <strong className="text-white">{selectedTutorialForMeeting.courseTitle}</strong>
               </p>
               <p>
-                Schedule: <strong className="text-[#FF7F32]">{selectedTutorialForMeeting.selectedDay} · {formatTime12h(selectedTutorialForMeeting.selectedTimeSlot)}</strong> ({selectedTutorialForMeeting.durationMinutes} min)
+                Schedule: <strong className="text-[#f59e0b]">{selectedTutorialForMeeting.selectedDay} · {formatTime12h(selectedTutorialForMeeting.selectedTimeSlot)}</strong> ({selectedTutorialForMeeting.durationMinutes} min)
               </p>
               <p>
                 Fee: <strong>{formatAmountInCurrency(selectedTutorialForMeeting.calculatedRate, selectedTutorialForMeeting.currency, appCurrency)}</strong>
@@ -4707,7 +4707,7 @@ export const AdminDashboardScreen: React.FC = () => {
                 value={meetingLinkInput}
                 onChange={(e) => setMeetingLinkInput(e.target.value)}
                 placeholder="https://meet.studirad.org/room/..."
-                className="w-full h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#FF7F32]"
+                className="w-full h-9 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
               />
             </div>
 
@@ -4867,7 +4867,7 @@ export const AdminDashboardScreen: React.FC = () => {
                 <div className="sm:col-span-2 space-y-1">
                   <label className="font-bold text-slate-300 flex items-center justify-between">
                     <span>Class Cover Image (Optional URL or Upload)</span>
-                    {isUploadingPcImg && <span className="text-[10px] text-[#FF7F32]">Uploading...</span>}
+                    {isUploadingPcImg && <span className="text-[10px] text-[#f59e0b]">Uploading...</span>}
                   </label>
                   <div className="flex items-center gap-2">
                     <input
@@ -4878,7 +4878,7 @@ export const AdminDashboardScreen: React.FC = () => {
                       className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
                     />
                     <label className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center gap-1 cursor-pointer shrink-0 border border-slate-700">
-                      <Upload className="w-3.5 h-3.5 text-[#FF7F32]" />
+                      <Upload className="w-3.5 h-3.5 text-[#f59e0b]" />
                       <span>Upload</span>
                       <input
                         type="file"
@@ -4964,7 +4964,7 @@ export const AdminDashboardScreen: React.FC = () => {
               <div className="space-y-1.5">
                 <label className="font-bold text-slate-300 flex items-center justify-between">
                   <span>Available Days (Max 3 days/week)</span>
-                  <span className="text-[#FF7F32]">{privateClassForm.daysAvailable.length}/3 selected</span>
+                  <span className="text-[#f59e0b]">{privateClassForm.daysAvailable.length}/3 selected</span>
                 </label>
                 <div className="flex flex-wrap gap-1.5">
                   {PC_DAYS_OF_WEEK.map((day) => {
@@ -4987,7 +4987,7 @@ export const AdminDashboardScreen: React.FC = () => {
                         }}
                         className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
                           isSel
-                            ? 'bg-[#FF7F32] border-[#FF7F32] text-white cursor-pointer'
+                            ? 'bg-[#f59e0b] border-[#f59e0b] text-white cursor-pointer'
                             : locked
                             ? 'bg-slate-900 border-slate-800 text-slate-600 opacity-50 cursor-not-allowed'
                             : 'bg-slate-900 border-slate-700 text-slate-300 cursor-pointer'
@@ -5176,7 +5176,7 @@ export const AdminDashboardScreen: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSavingPcAdmin || !pcTermsAccepted}
-                  className="px-5 py-2.5 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold cursor-pointer disabled:opacity-50"
                 >
                   {isSavingPcAdmin ? 'Saving...' : 'Save & Publish Private Class'}
                 </button>
@@ -5209,7 +5209,7 @@ export const AdminDashboardScreen: React.FC = () => {
               <p>Student: <strong className="text-white">{selectedPcBookingForStatus.studentName}</strong></p>
               <p>Class: <strong className="text-white">{selectedPcBookingForStatus.classTitle}</strong></p>
               <p>
-                Total: <strong className="text-[#FF7F32]">{formatMoney(selectedPcBookingForStatus.amountNGN, appCurrency, selectedPcBookingForStatus.amountUSD)}</strong>
+                Total: <strong className="text-[#f59e0b]">{formatMoney(selectedPcBookingForStatus.amountNGN, appCurrency, selectedPcBookingForStatus.amountUSD)}</strong>
               </p>
             </div>
 

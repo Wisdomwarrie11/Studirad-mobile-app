@@ -144,7 +144,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
             {/* Enrolled Courses Metric */}
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
               <span className="text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5">
-                <Award className="w-4 h-4 text-[#FF7F32]" />
+                <Award className="w-4 h-4 text-[#f59e0b]" />
                 <span>Enrolled Courses</span>
               </span>
               <span className="font-bold text-[#002147] dark:text-[#38BDF8] font-mono">
@@ -158,11 +158,11 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
             <div className="p-4 rounded-2xl bg-gradient-to-br from-[#002147] via-[#0A3266] to-[#002147] text-white border border-slate-700 shadow-sm space-y-2.5 text-left">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-orange-500/20 text-[#FF7F32] flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-[#f59e0b] flex items-center justify-center shrink-0">
                     <GraduationCap className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF7F32] block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#f59e0b] block">
                       Teaching Faculty
                     </span>
                     <h4 className="text-xs font-bold text-white">
@@ -180,7 +180,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
               <button
                 type="button"
                 onClick={() => setShowInstructorStudioModal(true)}
-                className="w-full py-2 px-3 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                className="w-full py-2 px-3 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
               >
                 <span>Open Instructor Studio</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -189,7 +189,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
           ) : currentUser?.instructorStatus === 'pending' ? (
             <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-left space-y-1.5">
               <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
-                <Clock className="w-4 h-4 text-[#FF7F32]" />
+                <Clock className="w-4 h-4 text-[#f59e0b]" />
                 <h4 className="text-xs font-bold">
                   Tutor Application Under Review
                 </h4>
@@ -202,11 +202,11 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
             <div className="p-4 rounded-2xl bg-gradient-to-br from-[#002147] via-[#0A3266] to-[#002147] text-white border border-slate-700 shadow-sm space-y-2.5 text-left">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-orange-500/20 text-[#FF7F32] flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-[#f59e0b] flex items-center justify-center shrink-0">
                     <GraduationCap className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF7F32] block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#f59e0b] block">
                       Teaching Faculty
                     </span>
                     <h4 className="text-xs font-bold text-white">
@@ -214,7 +214,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                     </h4>
                   </div>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-orange-500/20 text-[#FF7F32] text-[10px] font-bold border border-orange-500/30">
+                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-[#f59e0b] text-[10px] font-bold border border-amber-500/30">
                   Join
                 </span>
               </div>
@@ -224,7 +224,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
               <button
                 type="button"
                 onClick={() => setShowTutorAppModal(true)}
-                className="w-full py-2 px-3 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                className="w-full py-2 px-3 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
               >
                 <GraduationCap className="w-3.5 h-3.5" />
                 <span>Be a Tutor / Instructor</span>
@@ -291,7 +291,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                 className="w-full p-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-orange-50 dark:bg-orange-950/50 text-[#FF7F32] flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-[#f59e0b] flex items-center justify-center">
                     <GraduationCap className="w-4 h-4" />
                   </div>
                   <div>
@@ -476,7 +476,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                 <button
                   onClick={() => setPushEnabled(!pushEnabled)}
                   className={`w-10 h-6 rounded-full transition-colors relative p-0.5 ${
-                    pushEnabled ? 'bg-[#FF7F32]' : 'bg-slate-300'
+                    pushEnabled ? 'bg-[#f59e0b]' : 'bg-slate-300'
                   }`}
                 >
                   <div
@@ -656,7 +656,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                     activeModalInfo.onAction?.();
                     setActiveModalInfo(null);
                   }}
-                  className="flex-1 py-2 bg-[#FF7F32] hover:bg-[#e06820] text-white text-xs font-bold rounded-xl transition-colors"
+                  className="flex-1 py-2 bg-[#f59e0b] hover:bg-[#e06820] text-white text-xs font-bold rounded-xl transition-colors"
                 >
                   {activeModalInfo.actionLabel}
                 </button>

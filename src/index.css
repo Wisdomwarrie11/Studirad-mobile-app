@@ -3,13 +3,14 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --color-brand-primary: #002147;
   --color-oxford: #002147;
   --color-oxford-dark: #001630;
   --color-oxford-light: #0A3266;
   --color-oxford-accent: #1B447A;
-  --color-brand-orange: #FF7F32;
-  --color-brand-orange-hover: #E86B20;
-  --color-brand-orange-light: #FFF1E8;
+  --color-brand-accent: #f59e0b;
+  --color-brand-accent-hover: #d97706;
+  --color-brand-accent-light: #fef3c7;
   --font-sans: Helvetica, Arial, sans-serif;
 }
 
@@ -59,7 +60,7 @@
 
   /* Accessible focus ring */
   *:focus-visible {
-    outline: 2px solid #FF7F32;
+    outline: 2px solid var(--color-brand-accent);
     outline-offset: 2px;
   }
 }

@@ -68,7 +68,7 @@ export const PlayStoreModal: React.FC<PlayStoreModalProps> = ({ isOpen, onClose 
         <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-[#151D2C]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#002147] dark:bg-[#002147] border border-blue-900/40 flex items-center justify-center text-white shadow-sm">
-              <Smartphone className="w-5 h-5 text-[#FF7F32]" />
+              <Smartphone className="w-5 h-5 text-[#f59e0b]" />
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -93,10 +93,10 @@ export const PlayStoreModal: React.FC<PlayStoreModalProps> = ({ isOpen, onClose 
         {/* Modal Content */}
         <div className="p-5 overflow-y-auto space-y-5 text-left text-xs leading-relaxed text-slate-600 dark:text-slate-300">
           {/* Quick Install Action */}
-          <div className="p-4 rounded-xl bg-gradient-to-br from-[#002147]/10 via-[#002147]/5 to-[#FF7F32]/10 border border-[#002147]/20 dark:border-blue-900/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="p-4 rounded-xl bg-gradient-to-br from-[#002147]/10 via-[#002147]/5 to-[#f59e0b]/10 border border-[#002147]/20 dark:border-blue-900/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-[#FF7F32]" />
+                <Sparkles className="w-4 h-4 text-[#f59e0b]" />
                 {isInstalled ? 'App is Already Installed' : 'Direct Device Installation'}
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -108,7 +108,7 @@ export const PlayStoreModal: React.FC<PlayStoreModalProps> = ({ isOpen, onClose 
             {!isInstalled && (
               <button
                 onClick={handleInstallClick}
-                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#002147] hover:bg-[#002e63] dark:bg-[#FF7F32] dark:hover:bg-[#ff8f4a] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all shrink-0 cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#002147] hover:bg-[#002e63] dark:bg-[#f59e0b] dark:hover:bg-[#ff8f4a] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all shrink-0 cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 Install Now
@@ -172,7 +172,7 @@ export const PlayStoreModal: React.FC<PlayStoreModalProps> = ({ isOpen, onClose 
               Build Android Package for Google Play
             </h4>
             <p className="text-slate-500 dark:text-slate-400">
-              Google recommends using <strong>Bubblewrap</strong> (Google’s official TWA CLI) or <strong>PWABuilder</strong> to generate the signed <code className="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[#FF7F32]">.aab</code> file:
+              Google recommends using <strong>Bubblewrap</strong> (Google’s official TWA CLI) or <strong>PWABuilder</strong> to generate the signed <code className="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[#f59e0b]">.aab</code> file:
             </p>
 
             <div className="space-y-2 pt-1">

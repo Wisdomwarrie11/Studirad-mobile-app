@@ -272,7 +272,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
             }`}
           >
-            <Video className="w-3.5 h-3.5 text-[#FF7F32]" />
+            <Video className="w-3.5 h-3.5 text-[#f59e0b]" />
             <span>Classes</span>
           </button>
 
@@ -284,7 +284,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
             }`}
           >
-            <BookOpen className="w-3.5 h-3.5 text-[#FF7F32]" />
+            <BookOpen className="w-3.5 h-3.5 text-[#f59e0b]" />
             <span>Study Materials</span>
           </button>
 
@@ -417,7 +417,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                                 ? 'bg-slate-800 text-slate-300'
                                 : isComingSoon
                                   ? 'bg-blue-600 text-white shadow-xs'
-                                  : 'bg-[#FF7F32] text-white shadow-xs'
+                                  : 'bg-[#f59e0b] text-white shadow-xs'
                             }`}>
                               {isCompleted ? 'Completed' : isComingSoon ? 'Coming Soon' : 'Upcoming'}
                             </span>
@@ -431,7 +431,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
 
                         {/* Time & Date */}
                         <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
-                          <Clock className="w-3 h-3 text-[#FF7F32] shrink-0" />
+                          <Clock className="w-3 h-3 text-[#f59e0b] shrink-0" />
                           <span className="truncate">{cls.date || formatTime12h(cls.time) || 'Scheduled Cohort'}</span>
                         </div>
                       </div>
@@ -445,7 +445,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
                           isCompleted || isComingSoon
                             ? 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800'
-                            : 'text-[#FF7F32] bg-[#FF7F32]/10'
+                            : 'text-[#f59e0b] bg-[#f59e0b]/10'
                         }`}>
                           {isCompleted ? 'Completed' : isComingSoon ? 'Coming Soon' : 'Register'}
                         </span>
@@ -707,7 +707,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                         <div>
                           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
                             <span className="flex items-center gap-1 min-w-0 truncate">
-                              <GraduationCap className="w-3.5 h-3.5 text-[#FF7F32] shrink-0" />
+                              <GraduationCap className="w-3.5 h-3.5 text-[#f59e0b] shrink-0" />
                               <span className="truncate">{course.instructor || 'StudiRad Faculty'}</span>
                             </span>
                             <div className="flex items-center gap-2.5 shrink-0">
@@ -797,7 +797,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                     onClick={() => setActiveMainView('classes')}
                     className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#002147] hover:bg-[#001733] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
                   >
-                    <Video className="w-4 h-4 text-[#FF7F32]" />
+                    <Video className="w-4 h-4 text-[#f59e0b]" />
                     <span>Explore Live Classes</span>
                   </button>
 
@@ -805,7 +805,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                     onClick={() => setActiveMainView('materials')}
                     className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
                   >
-                    <BookOpen className="w-4 h-4 text-[#FF7F32]" />
+                    <BookOpen className="w-4 h-4 text-[#f59e0b]" />
                     <span>Browse Study Materials</span>
                   </button>
                 </div>
@@ -828,7 +828,7 @@ export const LearnTab: React.FC<LearnTabProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn text-slate-900 dark:text-slate-100 select-none">
           <div className="w-full max-w-sm bg-white dark:bg-[#121824] rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-2xl text-center space-y-4 animate-scaleUp">
             <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto">
-              <Lock className="w-6 h-6 text-[#FF7F32]" />
+              <Lock className="w-6 h-6 text-[#f59e0b]" />
             </div>
 
             <div className="space-y-1">

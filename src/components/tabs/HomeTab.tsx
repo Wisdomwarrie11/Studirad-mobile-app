@@ -153,7 +153,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#002147]/95 via-[#002147]/50 to-transparent flex flex-col justify-end p-5 text-left">
-                <span className="text-[11px] font-bold tracking-wider uppercase text-[#FF7F32] flex items-center gap-1.5 mb-1">
+                <span className="text-[11px] font-bold tracking-wider uppercase text-[#f59e0b] flex items-center gap-1.5 mb-1">
                 </span>
                 <h2 className="text-xl sm:text-2xl font-extrabold text-white leading-tight">
                   Transform your radiography journey
@@ -169,8 +169,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               className="w-full bg-white dark:bg-[#121824] rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer hover:border-[#002147] dark:hover:border-slate-600 transition-all group"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#FF7F32] flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#FF7F32] animate-pulse"></span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#f59e0b] flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#f59e0b] animate-pulse"></span>
                   Your Registered Cohort
                 </span>
                 <span className="text-xs font-bold text-[#002147] dark:text-[#38BDF8]">
@@ -187,7 +187,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
               <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
                 <span className="text-slate-400">Tap to access live class details</span>
-                <span className="font-bold text-[#FF7F32] flex items-center gap-1">
+                <span className="font-bold text-[#f59e0b] flex items-center gap-1">
                   <span>Enter Cohort</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </span>
@@ -202,7 +202,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 shadow-xs hover:border-[#002147] active:scale-95 transition-all group"
             >
               <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 text-[#002147] dark:text-[#38BDF8] flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Video className="w-5 h-5 text-[#FF7F32]" />
+                <Video className="w-5 h-5 text-[#f59e0b]" />
               </div>
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
                 Classes
@@ -238,7 +238,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 shadow-xs hover:border-[#002147] active:scale-95 transition-all group cursor-pointer"
             >
               <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 text-[#002147] dark:text-[#38BDF8] flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Gamepad2 className="w-5 h-5 text-[#FF7F32]" />
+                <Gamepad2 className="w-5 h-5 text-[#f59e0b]" />
               </div>
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
                 Game
@@ -255,7 +255,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             </h2>
             <button
               onClick={() => navigateToLearn('courses')}
-              className="text-xs sm:text-sm font-semibold text-[#002147] dark:text-[#38BDF8] hover:text-[#FF7F32] transition-colors"
+              className="text-xs sm:text-sm font-semibold text-[#002147] dark:text-[#38BDF8] hover:text-[#f59e0b] transition-colors"
             >
               Browse
             </button>
@@ -292,7 +292,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                     </h3>
 
                     <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
-                      <GraduationCap className="w-3 h-3 text-[#FF7F32] shrink-0" />
+                      <GraduationCap className="w-3 h-3 text-[#f59e0b] shrink-0" />
                       <span className="truncate">{course.instructor || 'Faculty'}</span>
                     </div>
                   </div>
@@ -301,7 +301,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                     <span className="text-[11px] font-bold text-[#002147] dark:text-[#38BDF8]">
                       {course.price || 'Free'}
                     </span>
-                    <span className="text-[11px] font-bold text-[#FF7F32] group-hover:underline flex items-center gap-0.5">
+                    <span className="text-[11px] font-bold text-[#f59e0b] group-hover:underline flex items-center gap-0.5">
                       <span>View</span>
                       <ChevronRight className="w-3 h-3" />
                     </span>
@@ -312,7 +312,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           ) : (
             <div className="p-6 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 text-center space-y-2">
               <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
-                <GraduationCap className="w-6 h-6 text-[#FF7F32]" />
+                <GraduationCap className="w-6 h-6 text-[#f59e0b]" />
               </div>
               <h4 className="text-sm font-bold text-slate-800 dark:text-white">
                 No courses for now or no course uploaded
@@ -332,7 +332,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             </h2>
             <button
               onClick={() => setActiveTab('learn')}
-              className="text-xs sm:text-sm font-semibold text-[#002147] dark:text-[#38BDF8] hover:text-[#FF7F32] transition-colors"
+              className="text-xs sm:text-sm font-semibold text-[#002147] dark:text-[#38BDF8] hover:text-[#f59e0b] transition-colors"
             >
               Schedule
             </button>
@@ -351,7 +351,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   <div className="relative z-10 flex flex-col gap-2.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${isComingSoon ? 'bg-blue-400' : 'bg-[#FF7F32] animate-pulse'}`}></span>
+                        <span className={`w-2 h-2 rounded-full ${isComingSoon ? 'bg-blue-400' : 'bg-[#f59e0b] animate-pulse'}`}></span>
                         <span className="text-xs font-bold uppercase tracking-wider text-blue-200">
                           {isComingSoon ? 'Coming Soon' : 'Upcoming Live'}
                         </span>
@@ -372,7 +372,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
                     <div className="pt-2.5 flex items-center justify-between border-t border-white/15 text-xs sm:text-sm">
                       <div className="flex items-center gap-1.5 text-slate-200 font-medium">
-                        <Clock className="w-4 h-4 text-[#FF7F32] shrink-0" />
+                        <Clock className="w-4 h-4 text-[#f59e0b] shrink-0" />
                         <span>{cls.date || cls.time || 'Upcoming Cohort'}</span>
                       </div>
 
@@ -392,7 +392,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                             e.stopPropagation();
                             onSelectLiveClass(cls);
                           }}
-                          className="px-3.5 py-1.5 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-xs cursor-pointer"
+                          className="px-3.5 py-1.5 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-xs cursor-pointer"
                         >
                           <span>View Class</span>
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -425,7 +425,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             </div>
             <button
               onClick={() => setActiveTab('explore')}
-              className="text-xs sm:text-sm font-semibold text-[#002147] dark:text-[#38BDF8] hover:text-[#FF7F32] transition-colors"
+              className="text-xs sm:text-sm font-semibold text-[#002147] dark:text-[#38BDF8] hover:text-[#f59e0b] transition-colors"
             >
               View all
             </button>

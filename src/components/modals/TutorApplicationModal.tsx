@@ -136,7 +136,7 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
         {/* Header */}
         <div className="px-5 sm:px-7 py-4 sm:py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-[#161F30]/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-[#FF7F32] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-[#f59e0b] flex items-center justify-center shrink-0">
               <GraduationCap className="w-5 h-5" />
             </div>
             <div>
@@ -172,8 +172,8 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                 <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                   Thank you for applying to join the StudiRad Instructor Team!
                 </p>
-                <div className="p-4 rounded-2xl bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/60 text-xs text-slate-700 dark:text-slate-300 leading-relaxed text-left space-y-2">
-                  <div className="flex items-center gap-2 font-bold text-[#FF7F32]">
+                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-xs text-slate-700 dark:text-slate-300 leading-relaxed text-left space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-[#f59e0b]">
                     <Sparkles className="w-4 h-4" />
                     <span>Next Steps</span>
                   </div>
@@ -189,7 +189,7 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-3 px-6 py-2.5 rounded-xl bg-[#002147] dark:bg-[#FF7F32] hover:bg-[#001733] text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
+                className="mt-3 px-6 py-2.5 rounded-xl bg-[#002147] dark:bg-[#f59e0b] hover:bg-[#001733] text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
               >
                 Close & Return
               </button>
@@ -223,7 +223,7 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="e.g. Dr. Chioma Okonkwo"
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#FF7F32]"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#f59e0b]"
                   />
                 </div>
 
@@ -238,7 +238,7 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="e.g. instructor@example.com"
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#FF7F32]"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#f59e0b]"
                   />
                 </div>
               </div>
@@ -255,7 +255,7 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+234..."
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#FF7F32]"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#f59e0b]"
                   />
                 </div>
 
@@ -270,7 +270,7 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
                     placeholder="e.g. Nigeria, United Kingdom, Ghana"
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#FF7F32]"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#f59e0b]"
                   />
                 </div>
               </div>
@@ -285,7 +285,7 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                   <select
                     value={academicQualification}
                     onChange={(e) => setAcademicQualification(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#FF7F32] cursor-pointer"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#f59e0b] cursor-pointer"
                   >
                     <option value="Undergraduate Radiography Student">Undergraduate Radiography Student</option>
                     <option value="HND / Diploma in Radiography">HND / Diploma in Radiography</option>
@@ -305,7 +305,7 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                   <select
                     value={experienceYears}
                     onChange={(e) => setExperienceYears(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#FF7F32] cursor-pointer"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#f59e0b] cursor-pointer"
                   >
                     <option value="Undergraduate / Student Tutor">Undergraduate / Peer Student</option>
                     <option value="1-2 years">1 - 2 years</option>
@@ -328,7 +328,7 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                   value={academicBackground}
                   onChange={(e) => setAcademicBackground(e.target.value)}
                   placeholder="e.g. 400L Radiography, UNN or MSc CT, University of Salford"
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#FF7F32]"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#f59e0b]"
                 />
               </div>
 
@@ -354,13 +354,13 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                         onClick={() => toggleExpertise(item)}
                         className={`px-3 py-2 rounded-xl text-left text-xs font-semibold flex items-center justify-between border transition-all cursor-pointer ${
                           isChecked
-                            ? 'bg-orange-50 dark:bg-orange-950/40 border-orange-300 dark:border-orange-700 text-[#002147] dark:text-[#FF7F32]'
+                            ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-[#002147] dark:text-[#f59e0b]'
                             : 'bg-slate-50 dark:bg-[#161F30] border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
                         }`}
                       >
                         <span className="truncate">{item}</span>
                         <span className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ml-2 ${
-                          isChecked ? 'bg-[#FF7F32] border-[#FF7F32] text-white' : 'border-slate-300 dark:border-slate-600'
+                          isChecked ? 'bg-[#f59e0b] border-[#f59e0b] text-white' : 'border-slate-300 dark:border-slate-600'
                         }`}>
                           {isChecked && <CheckCircle2 className="w-3 h-3 text-white" />}
                         </span>
@@ -382,7 +382,7 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   placeholder="Share your current clinical posting, specialty experience, and areas you love teaching..."
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#FF7F32] resize-none"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#f59e0b] resize-none"
                 />
               </div>
 
@@ -398,7 +398,7 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
                   placeholder="Brief summary of your approach to teaching, mentoring, and medical education..."
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#FF7F32] resize-none"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#f59e0b] resize-none"
                 />
               </div>
 
@@ -415,7 +415,7 @@ export const TutorApplicationModal: React.FC<TutorApplicationModalProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 rounded-xl bg-[#002147] hover:bg-[#001733] dark:bg-[#FF7F32] dark:hover:bg-[#ff8f4a] text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl bg-[#002147] hover:bg-[#001733] dark:bg-[#f59e0b] dark:hover:bg-[#ff8f4a] text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <>

@@ -21,14 +21,14 @@ export const AiTutorTab: React.FC = () => {
         {/* Top Header */}
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-[#002147] text-white flex items-center justify-center shadow-sm">
-            <Bot className="w-6 h-6 text-[#FF7F32]" />
+            <Bot className="w-6 h-6 text-[#f59e0b]" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-extrabold text-[#002147] dark:text-white">
                 StudiRad AI Tutor
               </h1>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#FF7F32]/10 text-[#FF7F32] border border-[#FF7F32]/25">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/25">
                 Coming Soon
               </span>
             </div>
@@ -37,11 +37,11 @@ export const AiTutorTab: React.FC = () => {
 
         {/* Hero Announcement Card */}
         <div className="w-full rounded-3xl bg-gradient-to-br from-[#002147] via-[#0A2E5C] to-[#001733] text-white p-6 sm:p-7 shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-[#FF7F32]/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute top-0 right-0 w-48 h-48 bg-[#f59e0b]/15 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="relative z-10 space-y-4">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-xs text-xs font-semibold text-slate-200">
-              <Sparkles className="w-3.5 h-3.5 text-[#FF7F32]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#f59e0b]" />
               <span>In Clinical Development</span>
             </div>
 
@@ -56,7 +56,7 @@ export const AiTutorTab: React.FC = () => {
                 className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
                   notified 
                     ? 'bg-emerald-500 text-white shadow-md' 
-                    : 'bg-[#FF7F32] hover:bg-[#E86B20] text-white shadow-md shadow-[#FF7F32]/25'
+                    : 'bg-[#f59e0b] hover:bg-[#d97706] text-white shadow-md shadow-[#f59e0b]/25'
                 }`}
               >
                 {notified ? (
@@ -97,7 +97,7 @@ export const AiTutorTab: React.FC = () => {
             </div>
 
             <div className="p-4 rounded-2xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 shadow-xs flex items-start gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-[#FF7F32] flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-[#f59e0b] flex items-center justify-center shrink-0 mt-0.5">
                 <BrainCircuit className="w-5 h-5" />
               </div>
               <div className="space-y-1">
@@ -131,7 +131,7 @@ export const AiTutorTab: React.FC = () => {
           <span className="text-slate-600 dark:text-slate-300">
             Need clinical assistance right now? Book a 1-on-1 private tutorial.
           </span>
-          <span className="font-bold text-[#FF7F32] flex items-center gap-0.5 shrink-0 ml-2">
+          <span className="font-bold text-[#f59e0b] flex items-center gap-0.5 shrink-0 ml-2">
             <span>Explore Services</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </span>

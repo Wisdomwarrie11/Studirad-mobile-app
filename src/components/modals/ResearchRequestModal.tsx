@@ -172,7 +172,7 @@ export const ResearchRequestModal: React.FC<ResearchRequestModalProps> = ({
                 type="submit"
                 className="w-full py-2.5 rounded-xl bg-[#002147] hover:bg-[#001733] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-[#002147]/20 active:scale-[0.98] transition-all"
               >
-                <Send className="w-3.5 h-3.5 text-[#FF7F32]" />
+                <Send className="w-3.5 h-3.5 text-[#f59e0b]" />
                 <span>Submit Research Request</span>
               </button>
             </div>

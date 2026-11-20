@@ -97,7 +97,7 @@ export const PersonaliseScreen: React.FC = () => {
   };
 
   const getTopicIcon = (iconName: string, isSelected: boolean) => {
-    const iconColor = isSelected ? 'text-[#FF7F32]' : 'text-slate-400';
+    const iconColor = isSelected ? 'text-[#f59e0b]' : 'text-slate-400';
     switch (iconName) {
       case 'general':
         return <Layers className={`w-5 h-5 ${iconColor}`} />;
@@ -137,7 +137,7 @@ export const PersonaliseScreen: React.FC = () => {
         {/* Main Content Area */}
         <main className="py-6 sm:py-8 flex-1 flex flex-col">
           <div className="text-left mb-6">
-            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FF7F32] mb-1.5 block">
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#f59e0b] mb-1.5 block">
               Tailor Your Experience
             </span>
             <h1 className="heading-section text-[var(--text-primary)] mb-2">
@@ -155,7 +155,7 @@ export const PersonaliseScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={handleSelectAll}
-                className="text-[#FF7F32] hover:underline font-bold text-sm"
+                className="text-[#f59e0b] hover:underline font-bold text-sm"
               >
                 {selectedTopicIds.length === CLINICAL_TOPICS.length ? 'Deselect All' : 'Select All Topics'}
               </button>
@@ -173,7 +173,7 @@ export const PersonaliseScreen: React.FC = () => {
                   onClick={() => toggleTopic(topic.id)}
                   className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between relative min-h-[140px] ${
                     isSelected
-                      ? 'bg-[var(--bg-surface-elevated)] border-[#FF7F32] shadow-sm ring-1 ring-[#FF7F32]/50'
+                      ? 'bg-[var(--bg-surface-elevated)] border-[#f59e0b] shadow-sm ring-1 ring-[#f59e0b]/50'
                       : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] hover:border-slate-500'
                   }`}
                 >
@@ -185,7 +185,7 @@ export const PersonaliseScreen: React.FC = () => {
                     <div
                       className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-all ${
                         isSelected
-                          ? 'bg-[#FF7F32] border-[#FF7F32] text-white'
+                          ? 'bg-[#f59e0b] border-[#f59e0b] text-white'
                           : 'border-[var(--border-subtle)] bg-[var(--bg-canvas)]'
                       }`}
                     >
@@ -223,7 +223,7 @@ export const PersonaliseScreen: React.FC = () => {
           <button
             type="button"
             onClick={handleSave}
-            className="flex-1 h-12 rounded-xl bg-[#FF7F32] hover:bg-[#E86B20] text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-[#FF7F32]/20 active:scale-[0.98] transition-all min-h-[48px]"
+            className="flex-1 h-12 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-[#f59e0b]/20 active:scale-[0.98] transition-all min-h-[48px]"
           >
             <span>Save Preferences & Start Learning</span>
             <ArrowRight className="w-5 h-5 text-white" />

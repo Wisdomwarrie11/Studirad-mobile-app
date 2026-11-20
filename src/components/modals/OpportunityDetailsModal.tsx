@@ -63,10 +63,10 @@ export const OpportunityDetailsModal: React.FC<OpportunityDetailsModalProps> = (
                 setIsSaved(!isSaved);
               }}
               className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
-                isSaved ? 'text-[#FF7F32] bg-orange-50 dark:bg-orange-950/40' : 'text-slate-400 hover:text-slate-700 bg-slate-100 dark:bg-slate-800'
+                isSaved ? 'text-[#f59e0b] bg-amber-50 dark:bg-amber-950/40' : 'text-slate-400 hover:text-slate-700 bg-slate-100 dark:bg-slate-800'
               }`}
             >
-              <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-[#FF7F32]' : ''}`} />
+              <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-[#f59e0b]' : ''}`} />
             </button>
             <button
               onClick={onClose}
@@ -85,7 +85,7 @@ export const OpportunityDetailsModal: React.FC<OpportunityDetailsModalProps> = (
                 {opportunity.type}
               </span>
               {opportunity.urgent && (
-                <span className="px-2.5 py-0.5 rounded-md bg-[#FF7F32]/15 text-[#FF7F32] text-xs font-bold">
+                <span className="px-2.5 py-0.5 rounded-md bg-[#f59e0b]/15 text-[#f59e0b] text-xs font-bold">
                   Urgent Vacancy
                 </span>
               )}
@@ -107,7 +107,7 @@ export const OpportunityDetailsModal: React.FC<OpportunityDetailsModalProps> = (
                 <span>{opportunity.location}</span>
               </span>
               <span className="flex items-center gap-1.5 text-slate-500 font-medium">
-                <Clock className="w-4 h-4 text-[#FF7F32]" />
+                <Clock className="w-4 h-4 text-[#f59e0b]" />
                 <span>{opportunity.deadline}</span>
               </span>
             </div>
@@ -157,7 +157,7 @@ export const OpportunityDetailsModal: React.FC<OpportunityDetailsModalProps> = (
           {/* Application Protocol Contact Info */}
           {(opportunity.contactInfo || opportunity.howToApply) && (
             <div className="p-4 rounded-xl bg-slate-900 text-white space-y-1.5 shadow-sm">
-              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#FF7F32]">
+              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#f59e0b]">
                 Application Protocol
               </span>
               <p className="text-xs sm:text-sm font-medium leading-relaxed">

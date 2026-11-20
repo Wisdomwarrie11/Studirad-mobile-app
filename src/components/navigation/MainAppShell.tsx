@@ -199,9 +199,9 @@ export const MainAppShell: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab('home')}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#FF7F32] transition-colors cursor-pointer"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#f59e0b] transition-colors cursor-pointer"
               >
-                <ArrowLeft className="w-4 h-4 text-[#FF7F32]" />
+                <ArrowLeft className="w-4 h-4 text-[#f59e0b]" />
                 <span>Back to Home</span>
               </button>
               <RadiographyMarbleGame onNavigateTab={(tab) => setActiveTab(tab)} />

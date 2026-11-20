@@ -59,6 +59,17 @@
             return true;
           }
         }, true);
+
+        ['error', 'warn'].forEach(function(method) {
+          var orig = console[method];
+          if (typeof orig !== 'function') return;
+          console[method] = function() {
+            for (var i = 0; i < arguments.length; i++) {
+              if (shouldSuppress(arguments[i])) return;
+            }
+            return orig.apply(console, arguments);
+          };
+        });
       })();
     </script>
     <script>
@@ -81,7 +92,7 @@
       })();
     </script>
   </head>
-  <body class="bg-slate-50 dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 antialiased selection:bg-[#FF7F32]/30 selection:text-white m-0 p-0 min-h-screen transition-colors duration-150">
+  <body class="bg-slate-50 dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 antialiased selection:bg-[#f59e0b]/30 selection:text-white m-0 p-0 min-h-screen transition-colors duration-150">
     <div id="root" class="min-h-screen w-full flex flex-col"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

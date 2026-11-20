@@ -244,7 +244,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
       <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-slate-900 via-[#002147] to-[#0A3266] text-white relative overflow-hidden shadow-md">
         <div className="relative z-10 flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#FF7F32] flex items-center gap-1.5">
+            <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#f59e0b] flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" /> Locum Network
             </span>
             {myProfile && (
@@ -301,7 +301,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
               : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
           }`}
         >
-          <Power className="w-3.5 h-3.5 text-[#FF7F32]" />
+          <Power className="w-3.5 h-3.5 text-[#f59e0b]" />
           <span>My Locum Status</span>
         </button>
 
@@ -389,7 +389,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
                 </>
               ) : (
                 <>
-                  <Search className="w-4 h-4 text-[#FF7F32]" />
+                  <Search className="w-4 h-4 text-[#f59e0b]" />
                   <span>Find Available Radiographers</span>
                 </>
               )}
@@ -538,7 +538,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
                         }}
                         className="py-2.5 rounded-xl bg-[#002147] hover:bg-[#001733] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
                       >
-                        <Mail className="w-3.5 h-3.5 text-[#FF7F32]" />
+                        <Mail className="w-3.5 h-3.5 text-[#f59e0b]" />
                         <span>Send Email</span>
                       </button>
                     ) : (
@@ -655,7 +655,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
                   <div className="flex flex-wrap gap-1.5">
                     {myProfile.specialties && myProfile.specialties.length > 0 ? (
                       myProfile.specialties.map((s) => (
-                        <span key={s} className="px-2.5 py-1 rounded-lg bg-orange-50 dark:bg-orange-950/40 text-[#FF7F32] font-bold text-xs">
+                        <span key={s} className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-[#f59e0b] font-bold text-xs">
                           {s}
                         </span>
                       ))
@@ -700,7 +700,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
           ) : (
             // Prompt to Register as Locum
             <div className="p-6 rounded-3xl bg-white dark:bg-[#121824] border border-slate-200 dark:border-slate-800 shadow-sm text-center space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-orange-50 dark:bg-orange-950/40 text-[#FF7F32] flex items-center justify-center mx-auto">
+              <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-[#f59e0b] flex items-center justify-center mx-auto">
                 <Stethoscope className="w-8 h-8" />
               </div>
 
@@ -735,7 +735,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
                 }}
                 className="w-full py-3.5 rounded-xl bg-[#002147] hover:bg-[#001733] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-98"
               >
-                <UserPlus className="w-4 h-4 text-[#FF7F32]" />
+                <UserPlus className="w-4 h-4 text-[#f59e0b]" />
                 <span>Register as Locum (Free)</span>
               </button>
             </div>
@@ -765,7 +765,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
 
           {/* Personal Details */}
           <div className="space-y-3">
-            <span className="text-xs font-bold text-[#FF7F32] uppercase tracking-wider block">
+            <span className="text-xs font-bold text-[#f59e0b] uppercase tracking-wider block">
               1. Personal Details
             </span>
 
@@ -800,7 +800,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
 
           {/* Specialties */}
           <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-xs font-bold text-[#FF7F32] uppercase tracking-wider block">
+            <span className="text-xs font-bold text-[#f59e0b] uppercase tracking-wider block">
               2. Clinical Specialties
             </span>
             <div className="flex flex-wrap gap-2">
@@ -826,7 +826,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
 
           {/* Availability Mode & Days */}
           <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-xs font-bold text-[#FF7F32] uppercase tracking-wider block">
+            <span className="text-xs font-bold text-[#f59e0b] uppercase tracking-wider block">
               3. Working Days & Availability
             </span>
 
@@ -858,7 +858,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
                       onClick={() => toggleDay(day)}
                       className={`p-2 rounded-xl text-xs font-bold border transition-all text-center ${
                         isChecked
-                          ? 'bg-[#FF7F32] text-white border-[#FF7F32]'
+                          ? 'bg-[#f59e0b] text-white border-[#f59e0b]'
                           : 'bg-slate-50 dark:bg-[#161F30] border-slate-200 dark:border-slate-700 text-slate-500'
                       }`}
                     >
@@ -872,7 +872,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
 
           {/* Rates & Shift Hours */}
           <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-xs font-bold text-[#FF7F32] uppercase tracking-wider block">
+            <span className="text-xs font-bold text-[#f59e0b] uppercase tracking-wider block">
               4. Rates & Hours
             </span>
 
@@ -907,7 +907,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
 
           {/* Coverage Areas (States & LGAs) */}
           <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-xs font-bold text-[#FF7F32] uppercase tracking-wider block">
+            <span className="text-xs font-bold text-[#f59e0b] uppercase tracking-wider block">
               5. Coverage Locations (States & LGAs)
             </span>
 
@@ -1026,7 +1026,7 @@ export const LocumFinderView: React.FC<LocumFinderViewProps> = ({ onBackToJobs }
               {isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Save className="w-4 h-4 text-[#FF7F32]" />
+                <Save className="w-4 h-4 text-[#f59e0b]" />
               )}
               <span>{myProfile ? 'Update Profile' : 'Publish Locum Profile'}</span>
             </button>

@@ -114,7 +114,7 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
         {/* Header */}
         <div className="px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-[#161F30]/50">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-[#FF7F32] flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-[#f59e0b] flex items-center justify-center shrink-0">
               <UserCheck className="w-5 h-5" />
             </div>
             <div>
@@ -151,15 +151,15 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
                   Your private tutorial booking for <strong>{course.title}</strong> with <strong>{course.instructor}</strong> has been logged.
                 </p>
 
-                <div className="p-4 rounded-2xl bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/60 text-xs text-slate-700 dark:text-slate-300 text-left space-y-2">
-                  <div className="flex items-center gap-2 font-bold text-[#FF7F32]">
+                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-xs text-slate-700 dark:text-slate-300 text-left space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-[#f59e0b]">
                     <Clock className="w-4 h-4" />
                     <span>Check Back in 24 to 48 Hours</span>
                   </div>
                   <p>
                     Please check back in <strong>24–48 hours</strong>. Once the instructor and admin confirm the schedule and meeting link, you will see it in your dashboard profile and receive confirmation at <strong>{currentUser?.email}</strong>.
                   </p>
-                  <div className="pt-1 border-t border-orange-200/50 dark:border-orange-800/40 text-[11px] text-slate-500 dark:text-slate-400 flex justify-between">
+                  <div className="pt-1 border-t border-amber-200/50 dark:border-amber-800/40 text-[11px] text-slate-500 dark:text-slate-400 flex justify-between">
                     <span>Requested: {selectedDay} ({formatTime12h(selectedTimeSlot)})</span>
                     <span className="font-bold text-[#002147] dark:text-[#38BDF8]">{formatAmountInCurrency(calculatedRate, currency, activeCurrency)}</span>
                   </div>
@@ -169,7 +169,7 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-2 px-6 py-2.5 rounded-xl bg-[#002147] dark:bg-[#FF7F32] hover:bg-[#001733] text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
+                className="mt-2 px-6 py-2.5 rounded-xl bg-[#002147] dark:bg-[#f59e0b] hover:bg-[#001733] text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
               >
                 Close & Return
               </button>
@@ -197,7 +197,7 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] text-slate-400 block">Base Rate</span>
-                  <span className="text-xs font-bold text-[#FF7F32]">
+                  <span className="text-xs font-bold text-[#f59e0b]">
                     {formatAmountInCurrency(baseRate, currency, activeCurrency)} / 30 min
                   </span>
                 </div>
@@ -217,7 +217,7 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
                       onClick={() => setSelectedDay(day)}
                       className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer ${
                         selectedDay === day
-                          ? 'bg-[#002147] text-white border-[#002147] dark:bg-[#FF7F32] dark:border-[#FF7F32]'
+                          ? 'bg-[#002147] text-white border-[#002147] dark:bg-[#f59e0b] dark:border-[#f59e0b]'
                           : 'bg-slate-50 dark:bg-[#1A2234] border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
                       }`}
                     >
@@ -241,7 +241,7 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
                       onClick={() => setSelectedTimeSlot(slot)}
                       className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer ${
                         selectedTimeSlot === slot
-                          ? 'bg-orange-50 dark:bg-orange-950/40 border-[#FF7F32] text-[#002147] dark:text-[#FF7F32] font-bold'
+                          ? 'bg-amber-50 dark:bg-amber-950/40 border-[#f59e0b] text-[#002147] dark:text-[#f59e0b] font-bold'
                           : 'bg-slate-50 dark:bg-[#1A2234] border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
                       }`}
                     >
@@ -269,7 +269,7 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
                       onClick={() => setDurationMinutes(item.mins)}
                       className={`py-2 px-2.5 rounded-xl border text-center text-xs font-semibold transition-all cursor-pointer ${
                         durationMinutes === item.mins
-                          ? 'bg-[#002147] text-white border-[#002147] dark:bg-[#FF7F32] dark:border-[#FF7F32]'
+                          ? 'bg-[#002147] text-white border-[#002147] dark:bg-[#f59e0b] dark:border-[#f59e0b]'
                           : 'bg-slate-50 dark:bg-[#1A2234] border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
                       }`}
                     >
@@ -280,9 +280,9 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
               </div>
 
               {/* Dynamic Price Summary Card */}
-              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-800/50 flex items-center justify-between">
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-amber-50 dark:from-amber-950/30 dark:to-amber-950/20 border border-amber-200 dark:border-amber-800/50 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                     Total Estimated Tuition Fee
                   </span>
                   <p className="text-xs text-slate-600 dark:text-slate-300">
@@ -290,7 +290,7 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-lg font-extrabold text-[#002147] dark:text-[#FF7F32]">
+                  <span className="text-lg font-extrabold text-[#002147] dark:text-[#f59e0b]">
                     {formatAmountInCurrency(calculatedRate, currency, activeCurrency)}
                   </span>
                 </div>
@@ -308,7 +308,7 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
                   value={specificFocusTopic}
                   onChange={(e) => setSpecificFocusTopic(e.target.value)}
                   placeholder="e.g. Please help me review CT brain stroke protocol interpretation, posterior fossa artifacts, or exam viva questions..."
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#FF7F32] resize-none"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#002147] dark:focus:ring-[#f59e0b] resize-none"
                 />
               </div>
 
@@ -325,7 +325,7 @@ export const PrivateTutorialBookingModal: React.FC<PrivateTutorialBookingModalPr
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 rounded-xl bg-[#002147] hover:bg-[#001733] dark:bg-[#FF7F32] dark:hover:bg-[#ff8f4a] text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl bg-[#002147] hover:bg-[#001733] dark:bg-[#f59e0b] dark:hover:bg-[#ff8f4a] text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <>

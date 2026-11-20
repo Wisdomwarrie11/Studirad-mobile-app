@@ -110,7 +110,7 @@ export const QuizRunnerModal: React.FC<QuizRunnerModalProps> = ({
 
           <div className="flex items-center gap-2">
             {stage === 'active' && (
-              <div className="flex items-center gap-1 font-mono text-xs font-bold text-[#FF7F32] bg-orange-50 px-2 py-1 rounded-lg">
+              <div className="flex items-center gap-1 font-mono text-xs font-bold text-[#f59e0b] bg-amber-50 px-2 py-1 rounded-lg">
                 <Clock className="w-3.5 h-3.5" />
                 <span>{formatTimer(timeLeftSec)}</span>
               </div>
@@ -165,7 +165,7 @@ export const QuizRunnerModal: React.FC<QuizRunnerModalProps> = ({
               className="w-full mt-6 py-3 rounded-xl bg-[#002147] hover:bg-[#001733] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-[#002147]/20 transition-all active:scale-[0.98]"
             >
               <span>Start Timed Quiz</span>
-              <ChevronRight className="w-4 h-4 text-[#FF7F32]" />
+              <ChevronRight className="w-4 h-4 text-[#f59e0b]" />
             </button>
           </div>
         )}
@@ -241,7 +241,7 @@ export const QuizRunnerModal: React.FC<QuizRunnerModalProps> = ({
               ) : (
                 <button
                   onClick={() => setShowSubmitConfirm(true)}
-                  className="px-4 py-2 rounded-xl bg-[#FF7F32] hover:bg-[#E86B20] text-white text-xs font-bold flex items-center gap-1 shadow-xs transition-colors"
+                  className="px-4 py-2 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-bold flex items-center gap-1 shadow-xs transition-colors"
                 >
                   <span>Submit Quiz</span>
                   <CheckCircle2 className="w-4 h-4" />
@@ -257,7 +257,7 @@ export const QuizRunnerModal: React.FC<QuizRunnerModalProps> = ({
             <div className="p-5 space-y-4 overflow-y-auto flex-1 no-scrollbar">
               {/* Score Summary Banner */}
               <div className="p-4 rounded-2xl bg-gradient-to-br from-[#002147] to-[#0A3060] text-white text-center space-y-1 shadow-md">
-                <span className="text-[10px] uppercase font-bold text-[#FF7F32] tracking-wider">
+                <span className="text-[10px] uppercase font-bold text-[#f59e0b] tracking-wider">
                   Quiz Completed
                 </span>
                 <div className="text-3xl font-black font-mono">
@@ -327,7 +327,7 @@ export const QuizRunnerModal: React.FC<QuizRunnerModalProps> = ({
                 onClick={handleRetry}
                 className="py-2.5 px-4 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors"
               >
-                <RotateCcw className="w-4 h-4 text-[#FF7F32]" />
+                <RotateCcw className="w-4 h-4 text-[#f59e0b]" />
                 <span>Retry Quiz</span>
               </button>
 

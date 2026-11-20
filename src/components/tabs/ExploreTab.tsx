@@ -145,7 +145,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
             }`}
           >
-            <Briefcase className="w-4 h-4 text-[#FF7F32]" />
+            <Briefcase className="w-4 h-4 text-[#f59e0b]" />
             <span>Jobs</span>
           </button>
 
@@ -288,7 +288,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                             {status.label}
                           </span>
                           {job.urgent && (
-                            <span className="px-2 py-0.5 rounded-md bg-[#FF7F32]/15 text-[#FF7F32] text-xs font-bold">
+                            <span className="px-2 py-0.5 rounded-md bg-[#f59e0b]/15 text-[#f59e0b] text-xs font-bold">
                               Urgent
                             </span>
                           )}
@@ -297,9 +297,9 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                         <button
                           onClick={(e) => toggleSave(job.id, e)}
                           aria-label={isSaved ? 'Unbookmark' : 'Bookmark'}
-                          className="p-1 text-slate-400 hover:text-[#FF7F32] transition-colors"
+                          className="p-1 text-slate-400 hover:text-[#f59e0b] transition-colors"
                         >
-                          <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-[#FF7F32] text-[#FF7F32]' : ''}`} />
+                          <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-[#f59e0b] text-[#f59e0b]' : ''}`} />
                         </button>
                       </div>
 
@@ -325,7 +325,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
                       <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
                         <span className="text-slate-500 flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-[#FF7F32]" />
+                          <Clock className="w-3.5 h-3.5 text-[#f59e0b]" />
                           <span>{job.deadline}</span>
                         </span>
                         <span className="font-bold text-[#002147] dark:text-[#38BDF8] flex items-center gap-0.5">

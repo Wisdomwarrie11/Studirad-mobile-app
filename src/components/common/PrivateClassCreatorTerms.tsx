@@ -26,15 +26,15 @@ export const PrivateClassCreatorTerms: React.FC<PrivateClassCreatorTermsProps> =
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-[#FF7F32] shrink-0" />
-          <h5 className="text-xs font-extrabold uppercase tracking-wider text-[#FF7F32]">
+          <ShieldCheck className="w-4 h-4 text-[#f59e0b] shrink-0" />
+          <h5 className="text-xs font-extrabold uppercase tracking-wider text-[#f59e0b]">
             Private Class Creator Terms &amp; Legal Undertaking
           </h5>
         </div>
         <button
           type="button"
           onClick={() => setExpanded((prev) => !prev)}
-          className="text-[11px] font-bold text-slate-400 hover:text-[#FF7F32] flex items-center gap-1 cursor-pointer"
+          className="text-[11px] font-bold text-slate-400 hover:text-[#f59e0b] flex items-center gap-1 cursor-pointer"
         >
           <span>{expanded ? 'Hide Terms' : 'Read Terms'}</span>
           {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -78,7 +78,7 @@ export const PrivateClassCreatorTerms: React.FC<PrivateClassCreatorTermsProps> =
             type="checkbox"
             checked={accepted}
             onChange={(e) => onChange(e.target.checked)}
-            className="w-4 h-4 rounded accent-[#FF7F32] cursor-pointer"
+            className="w-4 h-4 rounded accent-[#f59e0b] cursor-pointer"
           />
         </div>
         <span className="text-[11px] font-semibold leading-snug">
@@ -87,7 +87,7 @@ export const PrivateClassCreatorTerms: React.FC<PrivateClassCreatorTermsProps> =
       </label>
 
       {!accepted && (
-        <p className="text-[10px] font-bold text-[#FF7F32] flex items-center gap-1">
+        <p className="text-[10px] font-bold text-[#f59e0b] flex items-center gap-1">
           <CheckSquare className="w-3 h-3" />
           <span>Acceptance is required before creating or publishing a private class.</span>
         </p>

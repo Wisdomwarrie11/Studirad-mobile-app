@@ -354,7 +354,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                     <span
                       className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
                         isCurrent
-                          ? 'bg-[#FF7F32] text-white'
+                          ? 'bg-[#f59e0b] text-white'
                           : isCompleted
                           ? 'bg-emerald-500 text-white'
                           : 'bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[var(--text-muted)]'
@@ -381,11 +381,11 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
             <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#002147]/10 dark:bg-white/10 text-[var(--text-primary)] font-semibold">
-                  <GraduationCap className="w-3.5 h-3.5 text-[#FF7F32]" />
+                  <GraduationCap className="w-3.5 h-3.5 text-[#f59e0b]" />
                   <span>Level: {academicLevel}</span>
                 </span>
                 {step >= 3 && selectedCategory && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FF7F32]/15 text-[#FF7F32] font-semibold">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#f59e0b]/15 text-[#f59e0b] font-semibold">
                     <span>Package: {selectedCategory}</span>
                   </span>
                 )}
@@ -397,7 +397,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                   setErrorMessage(null);
                   setStep(1);
                 }}
-                className="text-xs font-bold text-[#FF7F32] hover:underline min-h-[32px] px-2 cursor-pointer"
+                className="text-xs font-bold text-[#f59e0b] hover:underline min-h-[32px] px-2 cursor-pointer"
               >
                 Change Level
               </button>
@@ -420,7 +420,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
       {step === 1 && (
         <div className="space-y-6">
           <div className="space-y-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#FF7F32]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#f59e0b]">
               Step 1 of 5
             </span>
             <h2 className="heading-section text-[var(--text-primary)]">
@@ -438,8 +438,8 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                   onClick={() => handleSelectAcademicLevel(opt.level)}
                   className={`group relative text-left p-5 sm:p-6 rounded-2xl border transition-all min-h-[112px] flex items-start justify-between gap-4 cursor-pointer active:scale-[0.99] ${
                     isSelected
-                      ? 'bg-[#002147]/5 dark:bg-[#1B447A]/25 border-[#FF7F32] ring-2 ring-[#FF7F32]/25'
-                      : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)] hover:border-[#FF7F32]/70 hover:bg-[var(--bg-surface-elevated)]'
+                      ? 'bg-[#002147]/5 dark:bg-[#1B447A]/25 border-[#f59e0b] ring-2 ring-[#f59e0b]/25'
+                      : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)] hover:border-[#f59e0b]/70 hover:bg-[var(--bg-surface-elevated)]'
                   }`}
                 >
                   <div className="space-y-2">
@@ -447,8 +447,8 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                       <div
                         className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                           isSelected
-                            ? 'bg-[#FF7F32] text-white'
-                            : 'bg-[#002147]/10 dark:bg-white/10 text-[#002147] dark:text-[#FF7F32] group-hover:bg-[#FF7F32] group-hover:text-white'
+                            ? 'bg-[#f59e0b] text-white'
+                            : 'bg-[#002147]/10 dark:bg-white/10 text-[#002147] dark:text-[#f59e0b] group-hover:bg-[#f59e0b] group-hover:text-white'
                         }`}
                       >
                         <GraduationCap className="w-5 h-5" />
@@ -465,8 +465,8 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                   <div
                     className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-1 transition-all ${
                       isSelected
-                        ? 'bg-[#FF7F32] text-white'
-                        : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-muted)] group-hover:border-[#FF7F32] group-hover:text-[#FF7F32]'
+                        ? 'bg-[#f59e0b] text-white'
+                        : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-muted)] group-hover:border-[#f59e0b] group-hover:text-[#f59e0b]'
                     }`}
                   >
                     {isSelected ? <Check className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
@@ -484,7 +484,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
       {step === 2 && academicLevel && (
         <div className="space-y-6">
           <div className="space-y-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#FF7F32]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#f59e0b]">
               Step 2 of 5 · {academicLevel} Research Support
             </span>
             <h2 className="heading-section text-[var(--text-primary)]">
@@ -502,8 +502,8 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                   onClick={() => handleSelectCategory(cat.id)}
                   className={`group text-left p-5 rounded-2xl border transition-all flex flex-col justify-between gap-4 min-h-[152px] cursor-pointer active:scale-[0.99] ${
                     isSelected
-                      ? 'bg-[#002147]/5 dark:bg-[#1B447A]/25 border-[#FF7F32] ring-2 ring-[#FF7F32]/25'
-                      : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)] hover:border-[#FF7F32]/70 hover:bg-[var(--bg-surface-elevated)]'
+                      ? 'bg-[#002147]/5 dark:bg-[#1B447A]/25 border-[#f59e0b] ring-2 ring-[#f59e0b]/25'
+                      : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)] hover:border-[#f59e0b]/70 hover:bg-[var(--bg-surface-elevated)]'
                   }`}
                 >
                   <div className="space-y-3">
@@ -511,14 +511,14 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                       <div
                         className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
                           isSelected
-                            ? 'bg-[#FF7F32] text-white'
-                            : 'bg-[#002147]/10 dark:bg-white/10 text-[#002147] dark:text-[#FF7F32] group-hover:bg-[#FF7F32] group-hover:text-white'
+                            ? 'bg-[#f59e0b] text-white'
+                            : 'bg-[#002147]/10 dark:bg-white/10 text-[#002147] dark:text-[#f59e0b] group-hover:bg-[#f59e0b] group-hover:text-white'
                         }`}
                       >
                         {CATEGORY_ICONS[cat.id]}
                       </div>
 
-                      <span className="w-8 h-8 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] group-hover:border-[#FF7F32] group-hover:text-[#FF7F32] transition-colors shrink-0">
+                      <span className="w-8 h-8 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] group-hover:border-[#f59e0b] group-hover:text-[#f59e0b] transition-colors shrink-0">
                         <ArrowRight className="w-4 h-4" />
                       </span>
                     </div>
@@ -560,7 +560,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div className="space-y-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#FF7F32]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#f59e0b]">
                 Step 3 of 5 · Package Overview
               </span>
               <h2 className="heading-section text-[var(--text-primary)]">
@@ -578,7 +578,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                     onClick={() => setCurrency(curr)}
                     className={`min-h-[36px] px-2.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                       currency === curr
-                        ? 'bg-[#FF7F32] text-white shadow-xs'
+                        ? 'bg-[#f59e0b] text-white shadow-xs'
                         : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
@@ -608,7 +608,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
 
           {/* Guide Copy */}
           <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-[#FF7F32] shrink-0 mt-0.5" />
+            <Sparkles className="w-5 h-5 text-[#f59e0b] shrink-0 mt-0.5" />
             <p className="text-sm text-[var(--text-secondary)] italic leading-relaxed">
               "{activeCategoryDef.guideText}"
             </p>
@@ -629,7 +629,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                     key={serviceItem}
                     className="p-4 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] flex items-center gap-3 text-[var(--text-primary)]"
                   >
-                    <CheckCircle2 className="w-5 h-5 text-[#FF7F32] shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 text-[#f59e0b] shrink-0" />
                     <span className="text-sm font-semibold">{serviceItem}</span>
                   </div>
                 ))}
@@ -641,13 +641,13 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
           {activeCategoryDef.id === 'Data Collection' && (
             <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] space-y-3">
               <div className="flex items-center gap-2.5 text-[var(--text-primary)] font-bold text-base">
-                <ClipboardCheck className="w-5 h-5 text-[#FF7F32]" />
+                <ClipboardCheck className="w-5 h-5 text-[#f59e0b]" />
                 <span>Customized Fieldwork & Data Gathering Quotation</span>
               </div>
               <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
                 Whether you require clinical hospital data extraction, questionnaire distribution, or multi-centre sampling across Nigeria or abroad, our research team coordinates ethics-aligned data gathering tailored to your study protocol.
               </p>
-              <p className="text-xs sm:text-sm font-semibold text-[#FF7F32]">
+              <p className="text-xs sm:text-sm font-semibold text-[#f59e0b]">
                 {activeCategoryDef.reassuranceNote}
               </p>
             </div>
@@ -667,7 +667,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                   if (errorMessage) setErrorMessage(null);
                 }}
                 placeholder="Describe your research request (e.g., systematic review screening, manuscript preparation, Turnitin similarity reduction, or poster design)..."
-                className="w-full p-4 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
+                className="w-full p-4 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#f59e0b]"
               />
             </div>
           )}
@@ -676,7 +676,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
           {activeCategoryDef.hasFixedPricing && activePriceDisplay && (
             <div className="p-5 sm:p-6 rounded-2xl bg-[#002147] dark:bg-[#0B1C36] text-white border border-[#1B447A] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#FF7F32] block">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#f59e0b] block">
                   {activeCategoryDef.priceLabel} · {academicLevel} Level
                 </span>
                 <p className="text-xs text-slate-300">
@@ -714,7 +714,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
               <button
                 type="button"
                 onClick={handleProceedFromPackage}
-                className="min-h-[48px] px-7 py-3.5 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold text-sm inline-flex items-center justify-center gap-2 shadow-md shadow-[#FF7F32]/20 active:scale-[0.98] transition-all cursor-pointer"
+                className="min-h-[48px] px-7 py-3.5 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-sm inline-flex items-center justify-center gap-2 shadow-md shadow-[#f59e0b]/20 active:scale-[0.98] transition-all cursor-pointer"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span>Talk to us first</span>
@@ -737,7 +737,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
       {step === 4 && academicLevel && selectedCategory && (
         <form onSubmit={handleProceedToReview} className="space-y-6">
           <div className="space-y-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#FF7F32]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#f59e0b]">
               Step 4 of 5 · Request Details
             </span>
             <h2 className="heading-section text-[var(--text-primary)]">
@@ -749,7 +749,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
             {/* Full Name */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs sm:text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-[#FF7F32]" />
+                <User className="w-3.5 h-3.5 text-[#f59e0b]" />
                 <span>Full Name <span className="text-red-500">*</span></span>
               </label>
               <input
@@ -758,14 +758,14 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Enter your full name"
-                className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
+                className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#f59e0b]"
               />
             </div>
 
             {/* Email Address */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs sm:text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-[#FF7F32]" />
+                <Mail className="w-3.5 h-3.5 text-[#f59e0b]" />
                 <span>Email Address <span className="text-red-500">*</span></span>
               </label>
               <input
@@ -774,7 +774,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
+                className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#f59e0b]"
               />
             </div>
           </div>
@@ -788,7 +788,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
               <button
                 type="button"
                 onClick={() => setResearchTopic('No topic yet')}
-                className="text-xs font-semibold text-[#FF7F32] hover:underline cursor-pointer"
+                className="text-xs font-semibold text-[#f59e0b] hover:underline cursor-pointer"
               >
                 Use &ldquo;No topic yet&rdquo;
               </button>
@@ -802,7 +802,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
               value={researchTopic}
               onChange={(e) => setResearchTopic(e.target.value)}
               placeholder='Enter your working research topic or "No topic yet"'
-              className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
+              className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#f59e0b]"
             />
           </div>
 
@@ -824,12 +824,12 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                     }}
                     className={`min-h-[44px] px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold text-left flex items-center justify-between gap-2 transition-all cursor-pointer ${
                       active
-                        ? 'bg-[#002147] dark:bg-[#1B447A] text-white border-[#FF7F32]'
-                        : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)] text-[var(--text-primary)] hover:border-[#FF7F32]/60'
+                        ? 'bg-[#002147] dark:bg-[#1B447A] text-white border-[#f59e0b]'
+                        : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)] text-[var(--text-primary)] hover:border-[#f59e0b]/60'
                     }`}
                   >
                     <span>{stage}</span>
-                    {active && <Check className="w-4 h-4 text-[#FF7F32] shrink-0" />}
+                    {active && <Check className="w-4 h-4 text-[#f59e0b] shrink-0" />}
                   </button>
                 );
               })}
@@ -843,7 +843,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                   value={customStage}
                   onChange={(e) => setCustomStage(e.target.value)}
                   placeholder="Specify your current research stage"
-                  className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[#FF7F32]/60 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
+                  className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[#f59e0b]/60 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#f59e0b]"
                 />
               </div>
             )}
@@ -852,7 +852,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
           {/* Target Deadline (Date Picker) */}
           <div className="flex flex-col gap-1.5 max-w-sm">
             <label className="text-xs sm:text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-[#FF7F32]" />
+              <Calendar className="w-3.5 h-3.5 text-[#f59e0b]" />
               <span>Target Deadline <span className="text-red-500">*</span></span>
             </label>
             <input
@@ -861,7 +861,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
               min={todayIso}
               value={targetDeadline}
               onChange={(e) => setTargetDeadline(e.target.value)}
-              className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
+              className="w-full px-4 h-12 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#f59e0b]"
             />
           </div>
 
@@ -884,7 +884,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
               className="min-h-[48px] px-7 py-3.5 rounded-xl bg-[#002147] dark:bg-[#1B447A] hover:bg-[#001733] text-white font-bold text-sm inline-flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all cursor-pointer"
             >
               <span>Review Request Summary</span>
-              <ArrowRight className="w-4 h-4 text-[#FF7F32]" />
+              <ArrowRight className="w-4 h-4 text-[#f59e0b]" />
             </button>
           </div>
         </form>
@@ -896,7 +896,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
       {step === 5 && academicLevel && selectedCategory && (
         <div className="space-y-6">
           <div className="space-y-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#FF7F32]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#f59e0b]">
               Step 5 of 5 · Review & Confirm
             </span>
             <h2 className="heading-section text-[var(--text-primary)]">
@@ -919,7 +919,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
             <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-xs font-bold text-[var(--text-muted)] block">Academic Level</span>
-                <span className="font-bold text-[#FF7F32]">{academicLevel}</span>
+                <span className="font-bold text-[#f59e0b]">{academicLevel}</span>
               </div>
               <div>
                 <span className="text-xs font-bold text-[var(--text-muted)] block">Service Category</span>
@@ -979,7 +979,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                   ? 'Estimated Price Range'
                   : 'Quotation'}
               </span>
-              <span className="font-extrabold font-mono text-base text-[#FF7F32]">
+              <span className="font-extrabold font-mono text-base text-[#f59e0b]">
                 {activePriceDisplay || 'Provided by Representative'}
               </span>
             </div>
@@ -1053,7 +1053,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
           <div className="p-4 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-left text-xs sm:text-sm space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[var(--text-muted)]">Reference ID</span>
-              <span className="font-mono font-bold text-[#FF7F32]">{submittedRecord.referenceCode}</span>
+              <span className="font-mono font-bold text-[#f59e0b]">{submittedRecord.referenceCode}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[var(--text-muted)]">Assigned Representative</span>
@@ -1092,7 +1092,7 @@ export const ResearchAssistanceWizard: React.FC<ResearchAssistanceWizardProps> =
                 onClick={onViewMyRequests}
                 className="min-h-[44px] px-4 py-2.5 rounded-xl bg-[#002147] dark:bg-[#1B447A] text-white font-semibold text-sm inline-flex items-center justify-center gap-2 cursor-pointer"
               >
-                <ShieldCheck className="w-4 h-4 text-[#FF7F32]" />
+                <ShieldCheck className="w-4 h-4 text-[#f59e0b]" />
                 <span>Track in My Requests</span>
               </button>
 

@@ -285,9 +285,9 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
         <button
           type="button"
           onClick={step === 'video_gate' ? () => setStep('details') : step === 'summary' ? () => setStep('details') : onBack}
-          className="inline-flex items-center gap-2 min-h-[42px] px-4 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs sm:text-sm font-bold text-[var(--text-primary)] hover:border-[#FF7F32] transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 min-h-[42px] px-4 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs sm:text-sm font-bold text-[var(--text-primary)] hover:border-[#f59e0b] transition-colors cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4 text-[#FF7F32]" />
+          <ArrowLeft className="w-4 h-4 text-[#f59e0b]" />
           <span>
             {step === 'details' || step === 'success'
               ? 'Back to Private Classes'
@@ -295,7 +295,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
           </span>
         </button>
 
-        <div className="text-xs font-bold text-[#FF7F32] tracking-wide uppercase">
+        <div className="text-xs font-bold text-[#f59e0b] tracking-wide uppercase">
           {privateClass.category} · {privateClass.level}
         </div>
       </div>
@@ -333,7 +333,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
         {/* Sub-page Header for subsequent steps */}
         {step !== 'details' && (
           <div className="px-5 sm:px-7 py-5 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#FF7F32] block mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#f59e0b] block mb-1">
               {privateClass.title}
             </span>
             <h2 className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)]">
@@ -364,7 +364,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
               <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] space-y-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="space-y-0.5">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#FF7F32]">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#f59e0b]">
                       Class Instructor
                     </span>
                     <h3 className="text-base font-extrabold text-[var(--text-primary)]">
@@ -424,15 +424,15 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                     }}
                     className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                       planType === 'per_day'
-                        ? 'bg-[#002147]/10 dark:bg-[#1B447A]/30 border-[#FF7F32] ring-2 ring-[#FF7F32]/20'
-                        : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)] hover:border-[#FF7F32]/60'
+                        ? 'bg-[#002147]/10 dark:bg-[#1B447A]/30 border-[#f59e0b] ring-2 ring-[#f59e0b]/20'
+                        : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)] hover:border-[#f59e0b]/60'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-extrabold text-[var(--text-primary)]">
                         Pick Preferred Days
                       </span>
-                      {planType === 'per_day' && <CheckCircle2 className="w-4 h-4 text-[#FF7F32] shrink-0" />}
+                      {planType === 'per_day' && <CheckCircle2 className="w-4 h-4 text-[#f59e0b] shrink-0" />}
                     </div>
                     <p className="text-xs text-[var(--text-secondary)] mt-1">
                       Select 1 to {effectiveAvailableDays.length} weekly day(s) suited to your timetable.
@@ -447,8 +447,8 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                     }}
                     className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                       planType === 'monthly'
-                        ? 'bg-[#002147]/10 dark:bg-[#1B447A]/30 border-[#FF7F32] ring-2 ring-[#FF7F32]/20'
-                        : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)] hover:border-[#FF7F32]/60'
+                        ? 'bg-[#002147]/10 dark:bg-[#1B447A]/30 border-[#f59e0b] ring-2 ring-[#f59e0b]/20'
+                        : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)] hover:border-[#f59e0b]/60'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -456,7 +456,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                         Monthly Subscription
                       </span>
                       {planType === 'monthly' ? (
-                        <CheckCircle2 className="w-4 h-4 text-[#FF7F32] shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-[#f59e0b] shrink-0" />
                       ) : (
                         <span className="text-[11px] font-bold text-emerald-500">Subsidized Plan</span>
                       )}
@@ -473,7 +473,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs sm:text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 text-[#FF7F32]" />
+                      <Calendar className="w-4 h-4 text-[#f59e0b]" />
                       <span>2. Select Preferred Day(s) ({selectedDays.length} selected)</span>
                     </label>
                     <span className="text-[11px] text-[var(--text-muted)]">
@@ -491,12 +491,12 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                           onClick={() => toggleDay(day)}
                           className={`min-h-[44px] px-4 py-2 rounded-xl border text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
                             active
-                              ? 'bg-[#002147] dark:bg-[#1B447A] text-white border-[#FF7F32]'
-                              : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[#FF7F32]/60'
+                              ? 'bg-[#002147] dark:bg-[#1B447A] text-white border-[#f59e0b]'
+                              : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[#f59e0b]/60'
                           }`}
                         >
                           <CheckCircle2
-                            className={`w-4 h-4 ${active ? 'text-[#FF7F32]' : 'text-[var(--text-muted)]'}`}
+                            className={`w-4 h-4 ${active ? 'text-[#f59e0b]' : 'text-[var(--text-muted)]'}`}
                           />
                           <span>{day}</span>
                         </button>
@@ -520,7 +520,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-[#FF7F32]" />
+                    <Clock className="w-3.5 h-3.5 text-[#f59e0b]" />
                     <span>Preferred Time Window (12-hr)</span>
                   </label>
                   <select
@@ -529,7 +529,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                       setSelectedTimeSlot(e.target.value);
                       setErrorMessage(null);
                     }}
-                    className="w-full px-3.5 h-11 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-xs sm:text-sm text-[var(--text-primary)] font-semibold focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
+                    className="w-full px-3.5 h-11 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-xs sm:text-sm text-[var(--text-primary)] font-semibold focus:outline-none focus:ring-2 focus:ring-[#f59e0b]"
                   >
                     <option value="">Select a time window...</option>
                     {availableSlots.map((slot) => (
@@ -542,7 +542,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-[#FF7F32]" />
+                    <Calendar className="w-3.5 h-3.5 text-[#f59e0b]" />
                     <span>Preferred Start Date</span>
                   </label>
                   <input
@@ -553,11 +553,11 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                       setStartDate(e.target.value);
                       setErrorMessage(null);
                     }}
-                    className="w-full px-3.5 h-11 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-xs sm:text-sm text-[var(--text-primary)] font-semibold focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
+                    className="w-full px-3.5 h-11 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-xs sm:text-sm text-[var(--text-primary)] font-semibold focus:outline-none focus:ring-2 focus:ring-[#f59e0b]"
                   />
                   <p className="text-[11px] text-[var(--text-muted)]">
                     Earliest: <strong className="text-[var(--text-primary)]">{minStartDate}</strong> (2+ days notice) · Matches:{' '}
-                    <strong className="text-[#FF7F32]">{allowedStartDays.join(', ')}</strong>
+                    <strong className="text-[#f59e0b]">{allowedStartDays.join(', ')}</strong>
                   </p>
                   {startDate && startDate >= minStartDate && !startDateMatchesDay && (
                     <p className="text-[11px] font-bold text-rose-500">
@@ -577,7 +577,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Share specific topics, exam dates, or case areas you want prioritized..."
-                  className="w-full p-3.5 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-xs sm:text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32] resize-none"
+                  className="w-full p-3.5 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-xs sm:text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#f59e0b] resize-none"
                 />
               </div>
 
@@ -585,7 +585,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
               {isSelectionComplete ? (
                 <div className="p-4 sm:p-5 rounded-2xl bg-[#002147] dark:bg-[#0B1C36] text-white border border-[#1B447A] space-y-3 animate-fadeIn">
                   <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-white/10">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#FF7F32]">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#f59e0b]">
                       Calculated Tuition Summary
                     </span>
                     <div className="flex items-center gap-1 p-0.5 rounded-lg bg-white/10">
@@ -596,7 +596,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                           onClick={() => setCurrency(curr)}
                           className={`px-2.5 py-1 rounded-md text-[11px] font-extrabold transition-colors cursor-pointer ${
                             currency === curr
-                              ? 'bg-[#FF7F32] text-white'
+                              ? 'bg-[#f59e0b] text-white'
                               : 'text-slate-200 hover:text-white'
                           }`}
                         >
@@ -653,7 +653,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                 <button
                   type="button"
                   onClick={handleProceedToVideoGate}
-                  className="w-full sm:w-auto min-h-[44px] px-8 py-2.5 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                  className="w-full sm:w-auto min-h-[44px] px-8 py-2.5 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer"
                 >
                   <span>Watch this first</span>
                   <ArrowRight className="w-4 h-4" />
@@ -667,8 +667,8 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
           {/* ================================================================= */}
           {step === 'video_gate' && (
             <div className="space-y-5">
-              <div className="p-4 rounded-2xl bg-[#FF7F32]/10 border border-[#FF7F32]/30 flex items-start gap-3">
-                <Play className="w-5 h-5 text-[#FF7F32] shrink-0 mt-0.5" />
+              <div className="p-4 rounded-2xl bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-start gap-3">
+                <Play className="w-5 h-5 text-[#f59e0b] shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
                     Watch Before Submitting Request
@@ -698,7 +698,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                   />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-white space-y-2">
-                    <GraduationCap className="w-10 h-10 text-[#FF7F32]" />
+                    <GraduationCap className="w-10 h-10 text-[#f59e0b]" />
                     <h4 className="text-sm font-bold">{privateClass.instructorName}’s Class Commitment</h4>
                     <p className="text-xs text-slate-300 max-w-md">
                       {privateClass.instructorBio || privateClass.overview}
@@ -715,10 +715,10 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                   </span>
                 ) : (
                   <span className="flex items-center gap-2 font-semibold text-[var(--text-secondary)]">
-                    <Lock className="w-4 h-4 text-[#FF7F32]" />
+                    <Lock className="w-4 h-4 text-[#f59e0b]" />
                     <span>
                       Watching instructor commitment... unlocks in{' '}
-                      <strong className="font-mono text-[#FF7F32]">
+                      <strong className="font-mono text-[#f59e0b]">
                         {Math.max(0, 5 - videoWatchSeconds)}s
                       </strong>
                     </span>
@@ -742,7 +742,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                   className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl bg-[#002147] dark:bg-[#1B447A] hover:bg-[#001733] disabled:opacity-45 disabled:cursor-not-allowed text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer"
                 >
                   <span>Continue to Final Review</span>
-                  <ArrowRight className="w-4 h-4 text-[#FF7F32]" />
+                  <ArrowRight className="w-4 h-4 text-[#f59e0b]" />
                 </button>
               </div>
             </div>
@@ -754,12 +754,12 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
           {step === 'summary' && (
             <div className="space-y-5">
               <div className="p-4 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] space-y-2.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#FF7F32] block">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#f59e0b] block">
                   Your Account Details
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
                   <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-[#FF7F32] shrink-0" />
+                    <User className="w-4 h-4 text-[#f59e0b] shrink-0" />
                     <div>
                       <span className="text-[11px] text-[var(--text-muted)] block">Full Name</span>
                       <span className="font-bold text-[var(--text-primary)]">
@@ -768,7 +768,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-[#FF7F32] shrink-0" />
+                    <Mail className="w-4 h-4 text-[#f59e0b] shrink-0" />
                     <div className="min-w-0">
                       <span className="text-[11px] text-[var(--text-muted)] block">Email Address</span>
                       <span className="font-bold text-[var(--text-primary)] truncate block">
@@ -831,7 +831,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                           onClick={() => setCurrency(curr)}
                           className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold cursor-pointer ${
                             currency === curr
-                              ? 'bg-[#FF7F32] text-white'
+                              ? 'bg-[#f59e0b] text-white'
                               : 'bg-[var(--bg-surface)] text-[var(--text-secondary)]'
                           }`}
                         >
@@ -841,7 +841,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="font-extrabold font-mono text-base text-[#FF7F32] block">
+                    <span className="font-extrabold font-mono text-base text-[#f59e0b] block">
                       {formatMoney(calculatedAmountNGN, currency, calculatedAmountUSD)}
                     </span>
                     <span className="text-[11px] font-mono text-[var(--text-muted)]">
@@ -857,7 +857,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
               </div>
 
               <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-xs text-[var(--text-secondary)] flex items-start gap-2.5">
-                <ShieldCheck className="w-4 h-4 text-[#FF7F32] shrink-0 mt-0.5" />
+                <ShieldCheck className="w-4 h-4 text-[#f59e0b] shrink-0 mt-0.5" />
                 <span>
                   Once submitted, our admin team will notify your instructor and get back to you within <strong>24–48 hours</strong> with payment and classroom confirmation.
                 </span>
@@ -924,7 +924,7 @@ export const PrivateClassDetailPage: React.FC<PrivateClassDetailPageProps> = ({
                       onBack();
                       onViewMyRequests();
                     }}
-                    className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold text-sm cursor-pointer"
+                    className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-sm cursor-pointer"
                   >
                     Track in My Requests
                   </button>

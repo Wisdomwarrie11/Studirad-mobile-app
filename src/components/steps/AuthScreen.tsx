@@ -284,7 +284,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
             <button
               type="button"
               onClick={() => setScreen('app')}
-              className="absolute left-0 top-1 text-xs font-semibold text-[var(--text-secondary)] hover:text-[#FF7F32] flex items-center gap-1 cursor-pointer"
+              className="absolute left-0 top-1 text-xs font-semibold text-[var(--text-secondary)] hover:text-[#f59e0b] flex items-center gap-1 cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Back</span>
@@ -338,8 +338,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                 }}
                 className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   mode === 'adminLogin'
-                    ? 'bg-[#FF7F32] text-white shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-[#FF7F32]'
+                    ? 'bg-[#f59e0b] text-white shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-[#f59e0b]'
                 }`}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -359,7 +359,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                     setResetSent(false);
                   }
                 }}
-                className="flex items-center gap-1.5 text-xs font-bold text-[#FF7F32] hover:underline cursor-pointer"
+                className="flex items-center gap-1.5 text-xs font-bold text-[#f59e0b] hover:underline cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
                 <span>Back to Sign In</span>
@@ -420,7 +420,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                       setMode('forgotPassword');
                       setErrorMessage(null);
                     }}
-                    className="text-[11px] font-bold text-[#FF7F32] hover:underline cursor-pointer"
+                    className="text-[11px] font-bold text-[#f59e0b] hover:underline cursor-pointer"
                   >
                     Forgot?
                   </button>
@@ -457,7 +457,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                 ) : (
                   <>
                     <span>Sign In</span>
-                    <ArrowRight className="w-4 h-4 text-[#FF7F32]" />
+                    <ArrowRight className="w-4 h-4 text-[#f59e0b]" />
                   </>
                 )}
               </button>
@@ -595,7 +595,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                       e.preventDefault();
                       setShowLegalModal(true);
                     }}
-                    className="text-[#FF7F32] font-semibold hover:underline"
+                    className="text-[#f59e0b] font-semibold hover:underline"
                   >
                     Terms of Service & Privacy Policy
                   </button>{' '}
@@ -614,7 +614,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                 ) : (
                   <>
                     <span>Create Account</span>
-                    <ArrowRight className="w-4 h-4 text-[#FF7F32]" />
+                    <ArrowRight className="w-4 h-4 text-[#f59e0b]" />
                   </>
                 )}
               </button>
@@ -649,7 +649,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
           {mode === 'adminLogin' && (
             <form onSubmit={handleAdminSignIn} className="flex flex-col gap-3.5 text-left">
               <div>
-                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FF7F32]/10 text-[#FF7F32] border border-[#FF7F32]/20 text-[10px] font-bold uppercase tracking-wider mb-1">
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/20 text-[10px] font-bold uppercase tracking-wider mb-1">
                   <KeyRound className="w-3 h-3" />
                   <span>Admin Access Only</span>
                 </div>
@@ -661,7 +661,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
 
               {/* Informational callout: Admin sign-up is disabled */}
               <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-200 text-xs flex items-start gap-2">
-                <ShieldAlert className="w-4 h-4 shrink-0 text-[#FF7F32] mt-0.5" />
+                <ShieldAlert className="w-4 h-4 shrink-0 text-[#f59e0b] mt-0.5" />
                 <span className="leading-relaxed">
                   Signing up as an admin is not possible. Only administrators with existing credentials in the portal can log in.
                 </span>
@@ -680,7 +680,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                     onChange={(e) => setAdminEmail(e.target.value)}
                     placeholder="admin@studirad.org"
                     required
-                    className="w-full pl-10 pr-3 h-11 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#FF7F32] transition-all font-mono text-xs"
+                    className="w-full pl-10 pr-3 h-11 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#f59e0b] transition-all font-mono text-xs"
                   />
                 </div>
               </div>
@@ -698,7 +698,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                     onChange={(e) => setAdminPasskey(e.target.value)}
                     placeholder="Enter passkey"
                     required
-                    className="w-full pl-10 pr-10 h-11 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#FF7F32] transition-all"
+                    className="w-full pl-10 pr-10 h-11 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#f59e0b] transition-all"
                   />
                   <button
                     type="button"
@@ -715,7 +715,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-11 mt-1 rounded-xl bg-[#FF7F32] hover:bg-[#E86B20] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-[#FF7F32]/25 active:scale-[0.98] transition-all disabled:opacity-60 cursor-pointer"
+                className="w-full h-11 mt-1 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-[#f59e0b]/25 active:scale-[0.98] transition-all disabled:opacity-60 cursor-pointer"
               >
                 {isLoading ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -735,7 +735,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                     setMode('signIn');
                     setErrorMessage(null);
                   }}
-                  className="flex items-center gap-1.5 text-xs font-bold text-[#FF7F32] hover:underline cursor-pointer"
+                  className="flex items-center gap-1.5 text-xs font-bold text-[#f59e0b] hover:underline cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span>Back to Main Login</span>
@@ -808,7 +808,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                     ) : (
                       <>
                         <span>Send Reset Link</span>
-                        <ArrowRight className="w-4 h-4 text-[#FF7F32]" />
+                        <ArrowRight className="w-4 h-4 text-[#f59e0b]" />
                       </>
                     )}
                   </button>
@@ -820,8 +820,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
           {mode === 'verifyEmail' && (
             <div className="flex flex-col gap-4 text-center">
               <div className="p-6 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex flex-col items-center gap-3">
-                <div className="w-14 h-14 rounded-2xl bg-[#FF7F32]/15 border border-[#FF7F32]/30 flex items-center justify-center">
-                  <MailCheck className="w-7 h-7 text-[#FF7F32]" />
+                <div className="w-14 h-14 rounded-2xl bg-[#f59e0b]/15 border border-[#f59e0b]/30 flex items-center justify-center">
+                  <MailCheck className="w-7 h-7 text-[#f59e0b]" />
                 </div>
 
                 <div>
@@ -855,7 +855,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     <>
-                      <CheckCircle2 className="w-4 h-4 text-[#FF7F32]" />
+                      <CheckCircle2 className="w-4 h-4 text-[#f59e0b]" />
                       <span>I&apos;ve Verified My Email</span>
                     </>
                   )}
@@ -865,7 +865,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                   type="button"
                   onClick={handleResendVerification}
                   disabled={resendCooldown > 0 || isResendingVerification}
-                  className="w-full h-10 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] hover:border-[#FF7F32]/50 text-[var(--text-primary)] font-bold text-xs flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                  className="w-full h-10 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] hover:border-[#f59e0b]/50 text-[var(--text-primary)] font-bold text-xs flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isResendingVerification ? 'animate-spin' : ''}`} />
                   <span>
@@ -878,7 +878,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
                 <button
                   type="button"
                   onClick={handleBackFromVerification}
-                  className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[#FF7F32] transition-colors pt-1 cursor-pointer"
+                  className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[#f59e0b] transition-colors pt-1 cursor-pointer"
                 >
                   Use a different email address
                 </button>
@@ -919,7 +919,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode }) => {
             {/* Modal Header */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-[#FF7F32]" />
+                <FileText className="w-5 h-5 text-[#f59e0b]" />
                 <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
                   Terms of Service & Privacy Policy
                 </h3>

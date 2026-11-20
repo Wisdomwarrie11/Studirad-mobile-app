@@ -17,7 +17,7 @@ import { ThemeToggle } from '../common/ThemeToggle';
 export const AdminAuthScreen: React.FC = () => {
   const { adminSignIn, setScreen } = useAuth();
   const [email, setEmail] = useState('studiradinfo@studirad.org');
-  const [passkey, setPasskey] = useState('MasterKey2026!');
+  const [passkey, setPasskey] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -35,14 +35,8 @@ export const AdminAuthScreen: React.FC = () => {
     }
   };
 
-  const handleQuickFill = () => {
-    setEmail('studiradinfo@studirad.org');
-    setPasskey('MasterKey2026!');
-    setErrorMessage(null);
-  };
-
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-[#0B0F17] text-slate-100 relative selection:bg-[#FF7F32] selection:text-white">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-[#0B0F17] text-slate-100 relative selection:bg-[#f59e0b] selection:text-white">
       {/* Top Controls */}
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between max-w-md mx-auto">
         <button
@@ -58,7 +52,7 @@ export const AdminAuthScreen: React.FC = () => {
 
       <div className="w-full max-w-md bg-[#121824] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
         {/* Subtle accent glow */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FF7F32]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#f59e0b]/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Header */}
         <div className="flex flex-col items-center text-center mb-6">
@@ -102,7 +96,7 @@ export const AdminAuthScreen: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="studiradinfo@studirad.org"
                 required
-                className="w-full pl-10 pr-4 h-11 rounded-xl bg-slate-900/90 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#FF7F32] focus:border-transparent transition-all"
+                className="w-full pl-10 pr-4 h-11 rounded-xl bg-slate-900/90 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#f59e0b] focus:border-transparent transition-all"
               />
             </div>
           </div>
@@ -119,7 +113,7 @@ export const AdminAuthScreen: React.FC = () => {
                 onChange={(e) => setPasskey(e.target.value)}
                 placeholder="••••••••••••"
                 required
-                className="w-full pl-10 pr-10 h-11 rounded-xl bg-slate-900/90 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#FF7F32] focus:border-transparent transition-all"
+                className="w-full pl-10 pr-10 h-11 rounded-xl bg-slate-900/90 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#f59e0b] focus:border-transparent transition-all"
               />
               <button
                 type="button"
@@ -132,22 +126,10 @@ export const AdminAuthScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick fill suggestion for rapid login */}
-          <div className="flex items-center justify-between text-[11px] pt-1">
-            <span className="text-slate-500">Official Admin:</span>
-            <button
-              type="button"
-              onClick={handleQuickFill}
-              className="text-[#FF7F32] hover:underline font-medium"
-            >
-              Fill official credentials
-            </button>
-          </div>
-
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full h-11 rounded-xl bg-[#FF7F32] hover:bg-[#e86f26] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#FF7F32]/20 transition-all disabled:opacity-60 cursor-pointer mt-2"
+            className="w-full h-11 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#f59e0b]/20 transition-all disabled:opacity-60 cursor-pointer mt-2"
           >
             {isLoading ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -55,7 +55,7 @@ export const SplashScreen: React.FC = () => {
       {/* Subtle background glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#002147]/60 rounded-full blur-3xl opacity-50"></div>
-        <div className="absolute bottom-1/3 left-1/2 -translate-x-1/2 w-64 h-64 bg-[#FF7F32]/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/3 left-1/2 -translate-x-1/2 w-64 h-64 bg-[#f59e0b]/10 rounded-full blur-3xl"></div>
       </div>
 
       {/* Pure StudiRad Brand with Fancy Brand Loader */}
@@ -65,14 +65,14 @@ export const SplashScreen: React.FC = () => {
         {/* Fancy Clinical Brand Spinner */}
         <div className="relative flex items-center justify-center">
           {/* Subtle ambient glow */}
-          <div className="absolute w-16 h-16 bg-[#FF7F32]/25 rounded-full blur-md animate-pulse"></div>
+          <div className="absolute w-16 h-16 bg-[#f59e0b]/25 rounded-full blur-md animate-pulse"></div>
 
           {/* Outer Rotating Gradient Ring */}
-          <div className="w-12 h-12 rounded-full border-2 border-slate-800/80 border-t-[#FF7F32] border-r-[#FF7F32]/70 animate-spin"></div>
+          <div className="w-12 h-12 rounded-full border-2 border-slate-800/80 border-t-[#f59e0b] border-r-[#f59e0b]/70 animate-spin"></div>
 
           {/* Inner Counter-Pulsing Orbit */}
-          <div className="absolute w-6 h-6 rounded-full bg-[#002147]/90 border border-[#FF7F32]/50 flex items-center justify-center shadow-inner">
-            <div className="w-2 h-2 rounded-full bg-[#FF7F32] animate-ping"></div>
+          <div className="absolute w-6 h-6 rounded-full bg-[#002147]/90 border border-[#f59e0b]/50 flex items-center justify-center shadow-inner">
+            <div className="w-2 h-2 rounded-full bg-[#f59e0b] animate-ping"></div>
           </div>
         </div>
       </div>

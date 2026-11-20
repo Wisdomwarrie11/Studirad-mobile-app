@@ -153,7 +153,7 @@ export const Step1CompletionScreen: React.FC = () => {
         {/* Step 2 Launch Banner */}
         <div className="p-4 rounded-2xl bg-gradient-to-br from-[#002147] to-[#0A3266] text-white flex flex-col gap-2.5 shadow-md">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#FF7F32]">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#f59e0b]">
               <Sparkles className="w-3.5 h-3.5" />
               <span>STEP 2 ACTIVE</span>
             </div>
@@ -166,7 +166,7 @@ export const Step1CompletionScreen: React.FC = () => {
           </p>
           <button
             onClick={() => setScreen('app')}
-            className="w-full mt-1 py-2.5 px-4 rounded-xl bg-[#FF7F32] hover:bg-[#E86B20] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all"
+            className="w-full mt-1 py-2.5 px-4 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all"
           >
             <span>Enter StudiRad App Shell</span>
             <ArrowRight className="w-4 h-4" />
@@ -186,7 +186,7 @@ export const Step1CompletionScreen: React.FC = () => {
 
         <button
           onClick={() => setScreen('personalise')}
-          className="flex items-center gap-1.5 text-xs font-semibold text-[#002147] hover:text-[#FF7F32] py-2 px-3 rounded-xl hover:bg-blue-50 transition-colors"
+          className="flex items-center gap-1.5 text-xs font-semibold text-[#002147] hover:text-[#f59e0b] py-2 px-3 rounded-xl hover:bg-blue-50 transition-colors"
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
           <span>Edit Topics</span>

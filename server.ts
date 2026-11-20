@@ -22,14 +22,22 @@ if (!fs.existsSync(uploadsDir)) {
 }
 app.use('/uploads', express.static(uploadsDir));
 
-// Configure Cloudinary with environment variables or user provided settings
-const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'du87lncx2';
-const API_KEY = process.env.CLOUDINARY_API_KEY || '752912421192271';
-const API_SECRET = process.env.CLOUDINARY_API_SECRET || 'hYQULIZP5XJNiCsjAIGVuN32eA8';
+// Serve Digital Asset Links for Google Play Store TWA verification
+app.get('/.well-known/assetlinks.json', (_req, res) => {
+  const assetLinksPath = path.resolve('public', '.well-known', 'assetlinks.json');
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  return res.sendFile(assetLinksPath);
+});
+
+// Configure Cloudinary strictly from environment variables (no hardcoded fallback secrets)
+const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME;
+const API_KEY = process.env.CLOUDINARY_API_KEY;
+const API_SECRET = process.env.CLOUDINARY_API_SECRET;
 
 if (process.env.CLOUDINARY_URL) {
   cloudinary.config();
-} else if (CLOUD_NAME && API_KEY) {
+} else if (CLOUD_NAME && API_KEY && API_SECRET) {
   cloudinary.config({
     cloud_name: CLOUD_NAME,
     api_key: API_KEY,
@@ -47,8 +55,8 @@ app.post('/api/upload', async (req, res) => {
     }
 
     const hasCloudinary = Boolean(
-      process.env.CLOUDINARY_URL || 
-      (CLOUD_NAME && API_KEY)
+      process.env.CLOUDINARY_URL ||
+      (CLOUD_NAME && API_KEY && API_SECRET)
     );
 
     // Try Cloudinary first if configured

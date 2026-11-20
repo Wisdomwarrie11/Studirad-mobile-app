@@ -67,7 +67,7 @@ export const PrivateClassesView: React.FC<PrivateClassesViewProps> = ({
       {/* Section Header */}
       <div className="bg-[var(--bg-surface)] rounded-3xl p-5 sm:p-6 border border-[var(--border-subtle)] shadow-xs space-y-4">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-[#FF7F32]">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#f59e0b]">
             1-on-1 Coaching
           </span>
           <h2 className="heading-section text-[var(--text-primary)]">
@@ -85,7 +85,7 @@ export const PrivateClassesView: React.FC<PrivateClassesViewProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by class title or instructor..."
-                className="w-full pl-10 pr-4 h-11 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-xs sm:text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#FF7F32]"
+                className="w-full pl-10 pr-4 h-11 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-xs sm:text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#f59e0b]"
               />
             </div>
 
@@ -99,7 +99,7 @@ export const PrivateClassesView: React.FC<PrivateClassesViewProps> = ({
                     onClick={() => setSelectedCategory(cat)}
                     className={`min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
                       active
-                        ? 'bg-[#002147] dark:bg-[#1B447A] text-white border-[#FF7F32]'
+                        ? 'bg-[#002147] dark:bg-[#1B447A] text-white border-[#f59e0b]'
                         : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
@@ -115,7 +115,7 @@ export const PrivateClassesView: React.FC<PrivateClassesViewProps> = ({
       {/* Real-Data States */}
       {classes.length === 0 ? (
         <div className="p-10 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center space-y-2.5">
-          <GraduationCap className="w-11 h-11 text-[#FF7F32] mx-auto" />
+          <GraduationCap className="w-11 h-11 text-[#f59e0b] mx-auto" />
           <h3 className="heading-card text-[var(--text-primary)]">
             No private class sessions right now
           </h3>
@@ -125,7 +125,7 @@ export const PrivateClassesView: React.FC<PrivateClassesViewProps> = ({
         </div>
       ) : filteredClasses.length === 0 ? (
         <div className="p-10 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center space-y-3">
-          <GraduationCap className="w-10 h-10 text-[#FF7F32] mx-auto" />
+          <GraduationCap className="w-10 h-10 text-[#f59e0b] mx-auto" />
           <h3 className="heading-card text-[var(--text-primary)]">
             No matching private classes found
           </h3>
@@ -135,7 +135,7 @@ export const PrivateClassesView: React.FC<PrivateClassesViewProps> = ({
               setSelectedCategory('All');
               setSearchQuery('');
             }}
-            className="min-h-[40px] px-4 py-2 rounded-xl bg-[#FF7F32] text-white text-xs font-bold cursor-pointer"
+            className="min-h-[40px] px-4 py-2 rounded-xl bg-[#f59e0b] text-white text-xs font-bold cursor-pointer"
           >
             Reset Filters
           </button>
@@ -151,7 +151,7 @@ export const PrivateClassesView: React.FC<PrivateClassesViewProps> = ({
                 key={item.id}
                 type="button"
                 onClick={() => setSelectedClass(item)}
-                className="group w-[260px] sm:w-[300px] shrink-0 snap-start text-left rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[#FF7F32] transition-all flex flex-col overflow-hidden shadow-xs cursor-pointer"
+                className="group w-[260px] sm:w-[300px] shrink-0 snap-start text-left rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[#f59e0b] transition-all flex flex-col overflow-hidden shadow-xs cursor-pointer"
               >
                 <div className="w-full h-40 sm:h-44 bg-[#002147] overflow-hidden shrink-0">
                   <img
@@ -166,7 +166,7 @@ export const PrivateClassesView: React.FC<PrivateClassesViewProps> = ({
                 </div>
 
                 <div className="p-4 space-y-2.5 flex-1 flex flex-col justify-between w-full">
-                  <h3 className="text-sm sm:text-base font-extrabold text-[var(--text-primary)] leading-snug line-clamp-2 group-hover:text-[#FF7F32] transition-colors">
+                  <h3 className="text-sm sm:text-base font-extrabold text-[var(--text-primary)] leading-snug line-clamp-2 group-hover:text-[#f59e0b] transition-colors">
                     {item.title}
                   </h3>
 

@@ -56,7 +56,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
     <div className="w-full flex flex-col space-y-6 sm:space-y-8 py-6 sm:py-8 px-4 sm:px-6 md:px-8 max-w-5xl mx-auto text-left pb-44 sm:pb-48">
       {/* Title & Introduction */}
       <div className="space-y-1">
-        <span className="text-xs font-bold uppercase tracking-wider text-[#FF7F32]">
+        <span className="text-xs font-bold uppercase tracking-wider text-[#f59e0b]">
           Academic &amp; Research
         </span>
         <h1 className="heading-display text-[var(--text-primary)]">
@@ -75,7 +75,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-elevated)]'
           }`}
         >
-          <BookOpen className="w-4 h-4 text-[#FF7F32]" />
+          <BookOpen className="w-4 h-4 text-[#f59e0b]" />
           <span>Research Assistance</span>
         </button>
 
@@ -88,7 +88,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-elevated)]'
           }`}
         >
-          <GraduationCap className="w-4 h-4 text-[#FF7F32]" />
+          <GraduationCap className="w-4 h-4 text-[#f59e0b]" />
           <span>Private Classes</span>
         </button>
 
@@ -97,7 +97,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
           onClick={() => setActiveFormTab('my_requests')}
           className={`flex-1 min-w-[140px] py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center gap-2 cursor-pointer ${
             activeFormTab === 'my_requests'
-              ? 'bg-[#FF7F32] text-white shadow-sm'
+              ? 'bg-[#f59e0b] text-white shadow-sm'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-elevated)]'
           }`}
         >
@@ -141,7 +141,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                 }
                 className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-[#002147] dark:bg-[#1B447A] text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
               >
-                <LogIn className="w-3.5 h-3.5 text-[#FF7F32]" />
+                <LogIn className="w-3.5 h-3.5 text-[#f59e0b]" />
                 <span>Sign In to Cloud Sync</span>
               </button>
             )}
@@ -156,7 +156,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
               <button
                 type="button"
                 onClick={() => setActiveFormTab('research')}
-                className="mt-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FF7F32] hover:bg-[#E86B20] text-white font-bold text-sm cursor-pointer"
+                className="mt-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-sm cursor-pointer"
               >
                 Start Research Request
               </button>
@@ -170,7 +170,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-subtle)]">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-[#FF7F32]">
+                      <span className="font-mono text-xs font-bold text-[#f59e0b]">
                         {req.referenceCode}
                       </span>
                       <span className="text-xs text-[var(--text-muted)]">·</span>
@@ -214,7 +214,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-[var(--text-secondary)]">
                         {req.priceDisplay && (
                           <span>
-                            Price: <strong className="font-mono text-[#FF7F32]">{formatPriceString(req.priceDisplay, currency)}</strong>
+                            Price: <strong className="font-mono text-[#f59e0b]">{formatPriceString(req.priceDisplay, currency)}</strong>
                           </span>
                         )}
                         {req.assignedRepPhone && (
@@ -233,7 +233,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                     {req.category === 'private_class' && typeof (req as any).amountNGN === 'number' && (
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-[var(--text-secondary)]">
                         <span>
-                          Fee: <strong className="font-mono text-[#FF7F32]">{formatMoney((req as any).amountNGN, currency, (req as any).amountUSD)}</strong>
+                          Fee: <strong className="font-mono text-[#f59e0b]">{formatMoney((req as any).amountNGN, currency, (req as any).amountUSD)}</strong>
                         </span>
                         {(req as any).startDate && (
                           <span>
@@ -252,7 +252,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                   {/* Status Note from coordinator */}
                   {req.statusNotes && (
                     <div className="p-3 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] flex items-start gap-2">
-                      <ShieldCheck className="w-4 h-4 text-[#FF7F32] shrink-0 mt-0.5" />
+                      <ShieldCheck className="w-4 h-4 text-[#f59e0b] shrink-0 mt-0.5" />
                       <span><strong>Update:</strong> {req.statusNotes}</span>
                     </div>
                   )}
@@ -262,7 +262,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                     <button
                       type="button"
                       onClick={() => setSelectedDetailRequest(req)}
-                      className="min-h-[36px] font-bold text-[#FF7F32] hover:underline flex items-center gap-1 cursor-pointer"
+                      className="min-h-[36px] font-bold text-[#f59e0b] hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       <span>View Full Submission Details</span>
@@ -296,7 +296,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
           >
             <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
               <div>
-                <span className="font-mono text-xs font-bold text-[#FF7F32]">
+                <span className="font-mono text-xs font-bold text-[#f59e0b]">
                   {selectedDetailRequest.referenceCode}
                 </span>
                 <h3 className="heading-card text-[var(--text-primary)]">
@@ -331,7 +331,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <span className="text-xs font-bold text-[var(--text-muted)] block">Current Status</span>
-                  <span className="font-bold text-[#FF7F32]">{selectedDetailRequest.status}</span>
+                  <span className="font-bold text-[#f59e0b]">{selectedDetailRequest.status}</span>
                 </div>
                 {selectedDetailRequest.category === 'research' && selectedDetailRequest.academicLevel && (
                   <div>
@@ -353,7 +353,7 @@ export const ServicesTab: React.FC<ServicesTabProps> = () => {
                     {selectedDetailRequest.priceDisplay && (
                       <div>
                         <span className="text-xs font-bold text-[var(--text-muted)] block">Displayed Price</span>
-                        <span className="font-mono font-bold text-[#FF7F32]">{formatPriceString(selectedDetailRequest.priceDisplay, currency)}</span>
+                        <span className="font-mono font-bold text-[#f59e0b]">{formatPriceString(selectedDetailRequest.priceDisplay, currency)}</span>
                       </div>
                     )}
                   </div>

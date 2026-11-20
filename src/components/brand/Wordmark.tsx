@@ -22,15 +22,15 @@ export const Wordmark: React.FC<WordmarkProps> = ({
     hero: 'text-6xl tracking-tighter font-extrabold',
   };
 
-  // On light backgrounds: Studi is Oxford Blue (#002147), Rad is Light Orange (#FF7F32)
-  // On dark/Oxford backgrounds: Studi is crisp bright white (#FFFFFF), Rad is Light Orange (#FF7F32)
+  // On light backgrounds: Studi is Oxford Blue (#002147), Rad is Amber Gold (#f59e0b)
+  // On dark/Oxford backgrounds: Studi is crisp bright white (#FFFFFF), Rad is Amber Gold (#f59e0b)
   const studiColor =
     theme === 'onOxford' || theme === 'dark'
       ? 'text-white'
       : theme === 'light'
       ? 'text-[#002147]'
       : 'text-[#002147] dark:text-white';
-  const radColor = 'text-[#FF7F32]';
+  const radColor = 'text-brand-accent';
 
   return (
     <div className={`flex flex-col items-center ${className}`}>

@@ -190,7 +190,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                   G
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#FF7F32]">Welcome Guest</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#f59e0b]">Welcome Guest</span>
                   <h2 className="text-xl sm:text-2xl font-extrabold text-white">Join StudiRad</h2>
                 </div>
               </div>
@@ -200,7 +200,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
               <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
                 <button
                   onClick={() => setScreen('auth')}
-                  className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs sm:text-sm shadow-sm transition-all text-center cursor-pointer"
+                  className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs sm:text-sm shadow-sm transition-all text-center cursor-pointer"
                 >
                   Create Free Account
                 </button>
@@ -217,11 +217,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
             <div className="w-full bg-gradient-to-br from-[#002147] via-[#0A3266] to-[#002147] text-white rounded-3xl p-6 sm:p-7 border border-slate-700 shadow-sm space-y-3.5 text-left">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-orange-500/20 text-[#FF7F32] flex items-center justify-center shrink-0">
+                  <div className="w-11 h-11 rounded-2xl bg-amber-500/20 text-[#f59e0b] flex items-center justify-center shrink-0">
                     <GraduationCap className="w-6 h-6" />
                   </div>
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#FF7F32]">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#f59e0b]">
                       Teaching Faculty
                     </span>
                     <h3 className="text-base sm:text-lg font-extrabold text-white">
@@ -229,7 +229,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                     </h3>
                   </div>
                 </div>
-                <span className="px-2.5 py-1 rounded-full bg-orange-500/20 text-[#FF7F32] text-[10px] font-bold border border-orange-500/30">
+                <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-[#f59e0b] text-[10px] font-bold border border-amber-500/30">
                   Join Faculty
                 </span>
               </div>
@@ -241,7 +241,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
               <button
                 type="button"
                 onClick={() => setShowTutorAppModal(true)}
-                className="w-full py-3 px-4 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 <GraduationCap className="w-4 h-4" />
                 <span>Be a Tutor / Instructor</span>
@@ -256,7 +256,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
               </h3>
               <div className="grid grid-cols-1 gap-3.5">
                 <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-[#1A2234] border border-slate-100 dark:border-slate-800">
-                  <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-[#FF7F32] flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-[#f59e0b] flex items-center justify-center shrink-0 mt-0.5">
                     <BookOpen className="w-4 h-4" />
                   </div>
                   <div>
@@ -298,7 +298,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                 className="w-full py-3 px-4 rounded-xl hover:bg-slate-50 dark:hover:bg-[#1E293B] text-slate-700 dark:text-slate-300 font-semibold text-xs flex items-center justify-between transition-colors cursor-pointer border border-slate-100 dark:border-slate-800"
               >
                 <div className="flex items-center gap-2.5">
-                  <Smartphone className="w-4 h-4 text-[#FF7F32]" />
+                  <Smartphone className="w-4 h-4 text-[#f59e0b]" />
                   <span>Download App on Android</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -317,7 +317,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
             {currentUser?.isInstructor || currentUser?.role === 'Clinical Instructor / Tutor' ? (
               <div className="w-full bg-gradient-to-r from-[#002147] via-[#0A3266] to-[#002147] text-white rounded-2xl p-4 sm:p-5 border border-slate-700 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-xl bg-orange-500/20 text-[#FF7F32] flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-[#f59e0b] flex items-center justify-center shrink-0">
                     <GraduationCap className="w-6 h-6" />
                   </div>
                   <div>
@@ -337,7 +337,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                 <button
                   type="button"
                   onClick={() => setShowInstructorStudioModal(true)}
-                  className="py-2.5 px-5 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
+                  className="py-2.5 px-5 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
                 >
                   <GraduationCap className="w-4 h-4" />
                   <span>Open Instructor Studio</span>
@@ -353,7 +353,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
             ) : currentUser?.instructorStatus === 'pending' ? (
               <div className="w-full bg-amber-50 dark:bg-amber-950/30 rounded-2xl p-4 sm:p-5 border border-amber-200 dark:border-amber-800/60 flex items-center gap-3.5">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <Clock className="w-5 h-5 text-[#FF7F32]" />
+                  <Clock className="w-5 h-5 text-[#f59e0b]" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200">
@@ -367,11 +367,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
             ) : (
               <div className="w-full bg-gradient-to-r from-[#002147] via-[#0A3266] to-[#002147] text-white rounded-2xl p-4 sm:p-5 border border-slate-700 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-xl bg-orange-500/20 text-[#FF7F32] flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-[#f59e0b] flex items-center justify-center shrink-0">
                     <GraduationCap className="w-6 h-6" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF7F32]">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#f59e0b]">
                       Clinical Faculty & Mentorship
                     </span>
                     <h3 className="text-sm sm:text-base font-extrabold text-white">
@@ -385,7 +385,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                 <button
                   type="button"
                   onClick={() => setShowTutorAppModal(true)}
-                  className="py-2.5 px-5 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
+                  className="py-2.5 px-5 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
                 >
                   <GraduationCap className="w-4 h-4" />
                   <span>Be a Tutor / Instructor</span>
@@ -436,11 +436,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                 <div className="w-full bg-gradient-to-br from-[#002147] via-[#0A3266] to-[#002147] text-white rounded-2xl p-5 border border-slate-700 shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-10 h-10 rounded-xl bg-orange-500/20 text-[#FF7F32] flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-[#f59e0b] flex items-center justify-center shrink-0">
                         <GraduationCap className="w-5 h-5" />
                       </div>
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF7F32]">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#f59e0b]">
                           Teaching Faculty
                         </span>
                         <h3 className="text-sm font-extrabold text-white">
@@ -460,7 +460,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                   <button
                     type="button"
                     onClick={() => setShowInstructorStudioModal(true)}
-                    className="w-full py-2.5 px-4 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <span>Open Instructor Studio</span>
                     {unreadNotificationCount > 0 && (
@@ -475,7 +475,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
               ) : currentUser?.instructorStatus === 'pending' ? (
                 <div className="w-full bg-amber-50 dark:bg-amber-950/30 rounded-2xl p-5 border border-amber-200 dark:border-amber-800/60 space-y-2.5 text-left">
                   <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
-                    <Clock className="w-4 h-4 text-[#FF7F32]" />
+                    <Clock className="w-4 h-4 text-[#f59e0b]" />
                     <h3 className="text-xs font-bold uppercase tracking-wider">
                       Instructor Application Under Review
                     </h3>
@@ -487,11 +487,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
               ) : (
                 <div className="w-full bg-gradient-to-br from-[#002147] to-[#0A3266] text-white rounded-2xl p-5 border border-slate-700 shadow-xs space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-orange-500/20 text-[#FF7F32] flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-[#f59e0b] flex items-center justify-center shrink-0">
                       <GraduationCap className="w-5 h-5" />
                     </div>
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF7F32]">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#f59e0b]">
                         Clinical Faculty
                       </span>
                       <h3 className="text-sm font-extrabold text-white">
@@ -507,7 +507,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                   <button
                     type="button"
                     onClick={() => setShowTutorAppModal(true)}
-                    className="w-full py-2.5 px-4 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <span>Be a Tutor / Instructor</span>
                     <ChevronRight className="w-4 h-4" />
@@ -520,7 +520,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#002147] dark:text-[#38BDF8] flex items-center justify-center">
-                    <Award className="w-5 h-5 text-[#FF7F32]" />
+                    <Award className="w-5 h-5 text-[#f59e0b]" />
                   </div>
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -548,7 +548,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
             <div className="w-full bg-white dark:bg-[#121824] rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3.5">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/12 text-[#FF7F32] flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/12 text-[#f59e0b] flex items-center justify-center shrink-0">
                     <Gamepad2 className="w-5 h-5" />
                   </div>
                   <div>
@@ -563,7 +563,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                 <button
                   type="button"
                   onClick={() => setActiveTab('game')}
-                  className="px-3 py-1.5 rounded-xl bg-[#FF7F32] hover:bg-[#E56A22] text-white text-xs font-bold cursor-pointer transition-colors shrink-0"
+                  className="px-3 py-1.5 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-bold cursor-pointer transition-colors shrink-0"
                 >
                   Play Games
                 </button>
@@ -623,7 +623,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                 </div>
                 <button
                   onClick={onEditTopics}
-                  className="text-xs font-bold text-[#FF7F32] hover:underline cursor-pointer"
+                  className="text-xs font-bold text-[#f59e0b] hover:underline cursor-pointer"
                 >
                   Edit
                 </button>
@@ -718,7 +718,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                 className="w-full py-2.5 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-[#1E293B] text-slate-700 dark:text-slate-300 font-semibold text-xs flex items-center justify-between transition-colors cursor-pointer border border-slate-100 dark:border-slate-800"
               >
                 <div className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-[#FF7F32]" />
+                  <Smartphone className="w-4 h-4 text-[#f59e0b]" />
                   <span>Google Play & App Install</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -761,7 +761,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                     className="w-full py-2.5 px-3 rounded-xl bg-[#002147] hover:bg-[#001733] text-white font-bold text-xs flex items-center justify-between transition-colors cursor-pointer shadow-xs"
                   >
                     <span>Sign In or Register</span>
-                    <ChevronRight className="w-4 h-4 text-[#FF7F32]" />
+                    <ChevronRight className="w-4 h-4 text-[#f59e0b]" />
                   </button>
                 )}
               </div>
@@ -783,7 +783,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                   onClick={() => {
                     setActiveTab('learn');
                   }}
-                  className="text-xs font-bold text-[#FF7F32] hover:underline"
+                  className="text-xs font-bold text-[#f59e0b] hover:underline"
                 >
                   Browse
                 </button>
@@ -800,7 +800,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                   </p>
                   <button
                     onClick={() => setActiveTab('learn')}
-                    className="mt-2 px-4 py-2 rounded-xl bg-[#002147] hover:bg-[#002e63] dark:bg-[#FF7F32] dark:hover:bg-[#ff8f4a] text-white font-bold text-xs transition-colors"
+                    className="mt-2 px-4 py-2 rounded-xl bg-[#002147] hover:bg-[#002e63] dark:bg-[#f59e0b] dark:hover:bg-[#ff8f4a] text-white font-bold text-xs transition-colors"
                   >
                     Explore Courses
                   </button>
@@ -856,11 +856,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                         <div className="space-y-1">
                           <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
                             <span>Course Progress</span>
-                            <span className="font-bold text-[#FF7F32]">{enr.progressPercent}%</span>
+                            <span className="font-bold text-[#f59e0b]">{enr.progressPercent}%</span>
                           </div>
                           <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                             <div 
-                              className="h-full rounded-full bg-[#FF7F32] transition-all duration-300"
+                              className="h-full rounded-full bg-[#f59e0b] transition-all duration-300"
                               style={{ width: `${Math.max(5, enr.progressPercent)}%` }}
                             />
                           </div>
@@ -916,7 +916,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
             <div className="w-full bg-white dark:bg-[#121824] rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-[#FF7F32]" />
+                  <Clock className="w-4 h-4 text-[#f59e0b]" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Scheduled 1-on-1 Sessions ({scheduledSessions.length})
                   </h3>
@@ -954,7 +954,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
             <div className="w-full bg-white dark:bg-[#121824] rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Bookmark className="w-4 h-4 text-[#FF7F32]" />
+                  <Bookmark className="w-4 h-4 text-[#f59e0b]" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Saved Opportunities ({savedOpportunitiesList.length})
                   </h3>
@@ -983,7 +983,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ onEditTopics, onOpenPlay
                         <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate">
                           {opp.title}
                         </h4>
-                        <span className="text-[10px] font-bold text-[#FF7F32] shrink-0">
+                        <span className="text-[10px] font-bold text-[#f59e0b] shrink-0">
                           {opp.type}
                         </span>
                       </div>
