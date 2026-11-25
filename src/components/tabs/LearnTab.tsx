@@ -203,9 +203,18 @@ export const LearnTab: React.FC<LearnTabProps> = ({
   // --- Filtered Classes (matching web app ClassesPage) ---
   const filteredClasses = useMemo(() => {
     return classesList.filter((cls) => {
-      // Category match
-      const clsCat = cls.category || (cls.modality === 'xray' ? 'X-ray' : cls.modality === 'ct' ? 'CT' : cls.modality === 'mri' ? 'MRI' : cls.modality === 'ultrasound' ? 'Ultrasound' : 'All');
-      const matchesCategory = selectedClassCategory === 'All' || clsCat.toLowerCase().includes(selectedClassCategory.toLowerCase());
+      // Category match (match both explicit category label and normalized modality)
+      const clsCat = (cls.category || '').toLowerCase();
+      const clsMod = String(cls.modality || '').toLowerCase();
+      const selectedLower = selectedClassCategory.toLowerCase();
+      const matchesCategory =
+        selectedClassCategory === 'All' ||
+        clsCat.includes(selectedLower) ||
+        (selectedLower === 'x-ray' && (clsMod === 'xray' || clsCat.includes('xray') || clsCat.includes('radiograph') || clsCat.includes('chest'))) ||
+        (selectedLower === 'ultrasound' && (clsMod === 'ultrasound' || clsCat.includes('uss') || clsCat.includes('sono'))) ||
+        (selectedLower === 'mri' && clsMod === 'mri') ||
+        (selectedLower === 'ct' && clsMod === 'ct') ||
+        (selectedLower === 'nuclear medicine' && (clsMod.includes('nuclear') || clsCat.includes('nuclear')));
 
       // Status match (Upcoming vs Completed)
       const isCompleted = cls.cohortStatus === 'completed' || cls.status === 'completed';
@@ -223,6 +232,14 @@ export const LearnTab: React.FC<LearnTabProps> = ({
         (cls.instructor && cls.instructor.toLowerCase().includes(classSearchTerm.toLowerCase()));
 
       return matchesCategory && matchesStatus && matchesSearch;
+    }).sort((a, b) => {
+      const rank = (c: LiveClass) =>
+        c.cohortStatus === 'completed' || c.status === 'completed'
+          ? 2
+          : c.cohortStatus === 'coming-soon' || c.status === 'coming-soon'
+          ? 1
+          : 0;
+      return rank(a) - rank(b);
     });
   }, [classesList, selectedClassCategory, classStatusFilter, classSearchTerm]);
 
@@ -381,13 +398,9 @@ export const LearnTab: React.FC<LearnTabProps> = ({
                   return (
                     <div
                       key={cls.id}
-                      onClick={() => {
-                        if (!isCompleted) handleClassClick(cls);
-                      }}
-                      className={`w-[calc(50%-6px)] min-w-[145px] max-w-[185px] sm:w-[210px] shrink-0 bg-white dark:bg-[#121824] rounded-2xl p-2.5 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between overflow-hidden transition-all ${
-                        isCompleted
-                          ? 'opacity-85 cursor-default'
-                          : 'cursor-pointer hover:border-[#002147] dark:hover:border-slate-600 group'
+                      onClick={() => handleClassClick(cls)}
+                      className={`w-[calc(50%-6px)] min-w-[145px] max-w-[185px] sm:w-[210px] shrink-0 bg-white dark:bg-[#121824] rounded-2xl p-2.5 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between overflow-hidden transition-all cursor-pointer hover:border-[#002147] dark:hover:border-slate-600 group ${
+                        isCompleted ? 'opacity-90' : ''
                       }`}
                     >
                       <div>

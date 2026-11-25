@@ -366,9 +366,6 @@ export const COMING_SOON_CLASSES: LiveClass[] = [];
 export const OFFICIAL_CLASSES: LiveClass[] = [];
 
 const SEEDED_DUMMY_CLASS_IDS = new Set([
-  'artifacts-abdominal-ultrasound-2026',
-  'chest-critique-2026',
-  'cs-class-1',
   'live_pediatric_nai',
   'live_ct_contrast_emergency',
   'live_mri_safety_implants',
@@ -379,19 +376,42 @@ const SEEDED_DUMMY_CLASS_IDS = new Set([
 ]);
 
 /**
- * Real-time listener for classes
- * Reads strictly from appletDb (ai-studio-studiradmobileap-6f5d2912-b23e-4c44-828e-081071b478b2)
- * without dummy, seeded, or external legacy classes.
+ * Real-time listener for classes (upcoming, coming-soon, and completed cohorts)
+ * Synchronized across appletDb, db (studirad-platform-new), and adminDb (studirad-admin-portal)
+ * while excluding legacy mock placeholders and deleted docs.
  */
 export function subscribeClasses(
   onUpdate: (classes: LiveClass[]) => void,
   onError?: (error: unknown) => void
 ): () => void {
-  const parseClassDoc = (docSnap: any): LiveClass & { _deleted?: boolean } => {
-    const data = docSnap.data();
+  const classesMap = new Map<string, LiveClass & { updatedAt?: any; createdAt?: any; _deleted?: boolean }>();
+
+  const emit = () => {
+    const list = Array.from(classesMap.values()).filter((cls) => !cls._deleted);
+    onUpdate(list);
+  };
+
+  const parseClassDoc = (docSnap: any): LiveClass & { updatedAt?: any; createdAt?: any; _deleted?: boolean } => {
+    const data = docSnap.data() || {};
     const rawCategory = data.category || data.modality || 'X-ray';
-    const isCompleted = data.status === 'completed' || data.cohortStatus === 'completed';
-    const isComingSoon = data.status === 'coming-soon' || data.cohortStatus === 'coming-soon';
+    const rawStatus = String(data.status || '').toLowerCase().trim();
+    const rawCohortStatus = String(data.cohortStatus || '').toLowerCase().trim();
+    const isCompleted =
+      rawStatus === 'completed' ||
+      rawStatus === 'past' ||
+      rawStatus === 'ended' ||
+      rawStatus === 'archived' ||
+      rawCohortStatus === 'completed' ||
+      rawCohortStatus === 'past' ||
+      rawCohortStatus === 'ended' ||
+      data.completed === true ||
+      data.isCompleted === true;
+    const isComingSoon =
+      !isCompleted &&
+      (rawStatus === 'coming-soon' ||
+        rawStatus === 'coming_soon' ||
+        rawCohortStatus === 'coming-soon' ||
+        rawCohortStatus === 'coming_soon');
 
     return {
       id: docSnap.id,
@@ -403,7 +423,7 @@ export function subscribeClasses(
       duration: data.duration || 'Session',
       isLiveNow: !!data.isLiveNow,
       isRegistered: false,
-      cpdCredits: '',
+      cpdCredits: data.cpdCredits || '',
       description: data.description || '',
       requirements: Array.isArray(data.requirements) ? data.requirements : [],
       relatedMaterials: Array.isArray(data.relatedMaterials) ? data.relatedMaterials : [],
@@ -422,7 +442,7 @@ export function subscribeClasses(
       customConfirmationMessage: data.customConfirmationMessage || '',
       features: Array.isArray(data.features) ? data.features : [],
       technologies: Array.isArray(data.technologies) ? data.technologies : [],
-      status: data.status || (isCompleted ? 'completed' : isComingSoon ? 'coming-soon' : 'published'),
+      status: isCompleted ? 'completed' : isComingSoon ? 'coming-soon' : (data.status || 'published'),
       cohortStatus: isCompleted ? 'completed' : isComingSoon ? 'coming-soon' : 'upcoming',
       whatYouWillLearn: Array.isArray(data.whatYouWillLearn) ? data.whatYouWillLearn : [],
       rating: typeof data.rating === 'number' ? data.rating : 0,
@@ -430,42 +450,74 @@ export function subscribeClasses(
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
       _deleted: !!data._deleted,
-    } as LiveClass & { _deleted?: boolean };
+    };
   };
 
   const isVisibleClass = (docSnap: any) => {
     if (SEEDED_DUMMY_CLASS_IDS.has(docSnap.id)) return false;
     const data = docSnap.data();
-    if (data?._deleted) return false;
-    return !data.status || data.status === 'published' || data.status === 'completed' || data.status === 'coming-soon' || data.status === 'upcoming';
+    if (!data || data._deleted) return false;
+    const rawStatus = String(data.status || '').toLowerCase().trim();
+    const rawCohortStatus = String(data.cohortStatus || '').toLowerCase().trim();
+    if ((rawStatus === 'draft' || rawStatus === 'rejected') && rawCohortStatus !== 'completed') {
+      return false;
+    }
+    return true;
   };
 
-  if (!appletDb) {
+  const unsubs: (() => void)[] = [];
+  const dbs = [
+    { name: 'applet' as const, instance: appletDb },
+    { name: 'client' as const, instance: db },
+    { name: 'admin' as const, instance: adminDb },
+  ].filter((d) => Boolean(d.instance));
+
+  if (dbs.length === 0) {
     onUpdate([]);
     return () => {};
   }
 
-  try {
-    const appletCollRef = collection(appletDb, 'classes');
-    return onSnapshot(
-      appletCollRef,
-      (snapshot) => {
-        const list = snapshot.docs
-          .filter(isVisibleClass)
-          .map(parseClassDoc);
-        onUpdate(list);
-      },
-      (error) => {
-        console.warn('AppletDb Classes subscription notice:', error);
-        onError?.(error);
-        onUpdate([]);
-      }
-    );
-  } catch (error) {
-    console.warn('Classes subscription error:', error);
-    onUpdate([]);
-    return () => {};
-  }
+  dbs.forEach(({ name, instance }) => {
+    const prio = name === 'applet' ? 'applet' : 'secondary';
+    try {
+      const collRef = collection(instance, 'classes');
+      const unsub = onSnapshot(
+        collRef,
+        (snapshot) => {
+          snapshot.docs.forEach((docSnap) => {
+            if (SEEDED_DUMMY_CLASS_IDS.has(docSnap.id)) return;
+            const rawData = docSnap.data();
+            if (rawData?._deleted) {
+              classesMap.set(docSnap.id, {
+                ...(classesMap.get(docSnap.id) || parseClassDoc(docSnap)),
+                _deleted: true,
+                updatedAt: rawData.updatedAt || Date.now(),
+              });
+              return;
+            }
+            if (!isVisibleClass(docSnap)) return;
+            const parsed = parseClassDoc(docSnap);
+            classesMap.set(docSnap.id, mergeStatusDoc(classesMap.get(docSnap.id), parsed, prio));
+          });
+          emit();
+        },
+        (error: any) => {
+          if (error?.code === 'permission-denied') return;
+          console.warn(`${name}Db Classes subscription notice:`, error);
+          if (name === 'applet') {
+            onError?.(error);
+          }
+        }
+      );
+      unsubs.push(unsub);
+    } catch (error) {
+      console.warn(`Classes subscription error (${name}):`, error);
+    }
+  });
+
+  return () => {
+    unsubs.forEach((u) => u());
+  };
 }
 
 /**

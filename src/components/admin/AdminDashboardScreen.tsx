@@ -425,6 +425,7 @@ export const AdminDashboardScreen: React.FC = () => {
     instructor: currentUser?.fullName || 'Dr. David Chen',
     instructorRole: 'Consultant Clinical Educator',
     modality: 'xray' as ClinicalModality,
+    cohortStatus: 'upcoming' as 'upcoming' | 'coming-soon' | 'completed',
     date: 'Thursday, Nov 12',
     time: '6:00 PM BST',
     duration: '50 minutes',
@@ -576,8 +577,13 @@ export const AdminDashboardScreen: React.FC = () => {
       description: classForm.description.trim() || 'Live interactive cohort session with real clinical case clearing.',
       isLiveNow: false,
       isRegistered: false,
-      status: 'published',
-      cohortStatus: 'upcoming',
+      status:
+        classForm.cohortStatus === 'completed'
+          ? 'completed'
+          : classForm.cohortStatus === 'coming-soon'
+          ? 'coming-soon'
+          : 'published',
+      cohortStatus: classForm.cohortStatus || 'upcoming',
       price: 'Free',
       image: finalClassImage,
       thumbnail: finalClassImage,
@@ -796,127 +802,145 @@ export const AdminDashboardScreen: React.FC = () => {
   return (
     <div className="min-h-screen w-full bg-[#0B0F17] text-slate-100 flex flex-col font-sans selection:bg-[#f59e0b] selection:text-white">
       {/* Top Navbar */}
-      <header className="w-full bg-[#121824] border-b border-slate-800 sticky top-0 z-30 px-4 sm:px-6 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Wordmark size="sm" theme="dark" />
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="hidden sm:inline">Firebase Sync Active: studirad-platform-new</span>
-            <span className="sm:hidden">Live Sync</span>
+      <header className="w-full bg-[#121824] border-b border-slate-800 sticky top-0 z-30">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
+          <div className="flex items-center min-w-0 shrink-0">
+            <Wordmark size="sm" theme="dark" />
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          {/* Currency Toggle */}
-          <button
-            type="button"
-            onClick={toggleCurrency}
-            className="h-9 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-extrabold text-slate-100 flex items-center gap-1 cursor-pointer"
-            title={`Switch currency (currently ${appCurrency})`}
-          >
-            <span className="text-[#f59e0b] font-mono">{appCurrency === 'NGN' ? '₦' : '$'}</span>
-            <span>{appCurrency}</span>
-          </button>
-
-          {/* Notification Bell */}
-          <div className="relative">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* Currency Toggle */}
             <button
               type="button"
-              onClick={() => setShowNotificationsDropdown((prev) => !prev)}
-              className="relative p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors cursor-pointer flex items-center justify-center"
-              title="Admin Notifications"
+              onClick={toggleCurrency}
+              className="h-9 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-extrabold text-slate-100 flex items-center justify-center gap-1 cursor-pointer shrink-0"
+              title={`Switch currency (currently ${appCurrency})`}
             >
-              <Bell className="w-4 h-4 text-[#f59e0b]" />
-              {adminNotifications.filter((n) => !n.read).length > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white font-bold text-[10px] flex items-center justify-center animate-pulse">
-                  {adminNotifications.filter((n) => !n.read).length}
-                </span>
-              )}
+              <span className="text-[#f59e0b] font-mono">{appCurrency === 'NGN' ? '₦' : '$'}</span>
+              <span>{appCurrency}</span>
             </button>
 
-            {/* Notifications Dropdown */}
-            {showNotificationsDropdown && (
-              <div 
-                className="absolute right-0 mt-2 w-80 sm:w-96 bg-[#161F30] rounded-2xl shadow-2xl border border-slate-700 p-3 z-50 text-left space-y-2 animate-scaleIn max-h-[80vh] flex flex-col"
-                onClick={(e) => e.stopPropagation()}
+            {/* Notification Bell */}
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowNotificationsDropdown((prev) => !prev)}
+                className="relative h-9 w-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/70 text-slate-200 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                title="Admin Notifications"
+                aria-label="Admin Notifications"
               >
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800 px-1">
-                  <div className="flex items-center gap-1.5">
-                    <Bell className="w-3.5 h-3.5 text-[#f59e0b]" />
-                    <span className="font-bold text-xs text-white">Admin Notifications</span>
-                  </div>
-                  <span className="text-[10px] font-semibold text-slate-400">
-                    {adminNotifications.filter((n) => !n.read).length} unread
+                <Bell className="w-4 h-4 text-[#f59e0b]" />
+                {adminNotifications.filter((n) => !n.read).length > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-red-600 text-white font-bold text-[10px] flex items-center justify-center shadow-sm">
+                    {adminNotifications.filter((n) => !n.read).length}
                   </span>
-                </div>
+                )}
+              </button>
 
-                <div className="overflow-y-auto space-y-2 flex-1 max-h-72 no-scrollbar">
-                  {adminNotifications.length === 0 ? (
-                    <p className="text-xs text-slate-500 text-center py-6">
-                      No notifications yet
-                    </p>
-                  ) : (
-                    adminNotifications.map((n) => (
-                      <div
-                        key={n.id}
-                        onClick={async () => {
-                          await markNotificationAsRead(n.id);
-                          setShowNotificationsDropdown(false);
-                          if (n.linkTab && ['courses', 'classes', 'opportunities', 'materials', 'tutors', 'tutorials', 'research', 'private_classes'].includes(n.linkTab)) {
-                            setActiveTab(n.linkTab as AdminTab);
-                          } else if (n.type === 'research_request') {
-                            setActiveTab('research');
-                          }
-                        }}
-                        className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
-                          n.read
-                            ? 'bg-slate-900/60 border-slate-800 text-slate-400'
-                            : 'bg-slate-800/90 border-[#f59e0b]/40 text-slate-200'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between font-bold text-[11px] mb-0.5">
-                          <span className={n.read ? 'text-slate-300' : 'text-[#f59e0b]'}>
-                            {n.title}
-                          </span>
-                          {!n.read && (
-                            <span className="w-2 h-2 rounded-full bg-[#f59e0b] shrink-0" />
-                          )}
-                        </div>
-                        <p className="text-[11px] leading-relaxed text-slate-300 line-clamp-2">
-                          {n.message}
-                        </p>
-                        <span className="text-[9px] text-slate-500 block mt-1">
-                          {n.createdAt ? formatDateTime12h(n.createdAt) : 'Recently'}
-                        </span>
+              {/* Notifications Modal / Dropdown */}
+              {showNotificationsDropdown && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40 bg-black/50 sm:bg-transparent"
+                    onClick={() => setShowNotificationsDropdown(false)}
+                  />
+                  <div
+                    className="fixed inset-x-4 top-[4.5rem] sm:inset-x-auto sm:top-auto sm:absolute sm:right-0 sm:mt-2 sm:w-96 bg-[#161F30] rounded-2xl shadow-2xl border border-slate-700 p-3.5 sm:p-3 z-50 text-left space-y-2.5 animate-scaleIn max-h-[75vh] sm:max-h-[80vh] flex flex-col"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-800 px-1 shrink-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Bell className="w-3.5 h-3.5 text-[#f59e0b] shrink-0" />
+                        <span className="font-bold text-xs text-white truncate">Admin Notifications</span>
                       </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] font-semibold text-slate-400">
+                          {adminNotifications.filter((n) => !n.read).length} unread
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowNotificationsDropdown(false)}
+                          className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                          aria-label="Close notifications"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="overflow-y-auto space-y-2 flex-1 max-h-[60vh] sm:max-h-72 no-scrollbar pr-0.5">
+                      {adminNotifications.length === 0 ? (
+                        <p className="text-xs text-slate-500 text-center py-6">
+                          No notifications yet
+                        </p>
+                      ) : (
+                        adminNotifications.map((n) => (
+                          <div
+                            key={n.id}
+                            onClick={async () => {
+                              await markNotificationAsRead(n.id);
+                              setShowNotificationsDropdown(false);
+                              if (n.linkTab && ['courses', 'classes', 'opportunities', 'materials', 'tutors', 'tutorials', 'research', 'private_classes'].includes(n.linkTab)) {
+                                setActiveTab(n.linkTab as AdminTab);
+                              } else if (n.type === 'research_request') {
+                                setActiveTab('research');
+                              }
+                            }}
+                            className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                              n.read
+                                ? 'bg-slate-900/60 border-slate-800 text-slate-400'
+                                : 'bg-slate-800/90 border-[#f59e0b]/40 text-slate-200'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2 font-bold text-[11px] mb-0.5">
+                              <span className={`truncate ${n.read ? 'text-slate-300' : 'text-[#f59e0b]'}`}>
+                                {n.title}
+                              </span>
+                              {!n.read && (
+                                <span className="w-2 h-2 rounded-full bg-[#f59e0b] shrink-0" />
+                              )}
+                            </div>
+                            <p className="text-[11px] leading-relaxed text-slate-300 line-clamp-2 break-words">
+                              {n.message}
+                            </p>
+                            <span className="text-[9px] text-slate-500 block mt-1">
+                              {n.createdAt ? formatDateTime12h(n.createdAt) : 'Recently'}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Switch to learner view */}
+            <button
+              type="button"
+              onClick={() => setScreen('app')}
+              className="h-9 w-9 sm:w-auto sm:px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/70 text-xs font-semibold text-slate-200 transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+              title="Preview app as a learner"
+              aria-label="Preview app as a learner"
+            >
+              <Eye className="w-4 h-4 text-[#f59e0b] shrink-0" />
+              <span className="hidden sm:inline">Learner App</span>
+            </button>
+
+            {/* Logout */}
+            <button
+              type="button"
+              onClick={() => {
+                adminSignOut();
+              }}
+              className="h-9 w-9 sm:w-auto sm:px-3 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-800/50 text-xs font-semibold text-red-300 transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+              title="Sign out of Admin Portal"
+              aria-label="Sign out of Admin Portal"
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
           </div>
-
-          {/* Switch to learner view */}
-          <button
-            onClick={() => setScreen('app')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors cursor-pointer"
-            title="Preview app as a learner"
-          >
-            <Eye className="w-4 h-4 text-[#f59e0b]" />
-            <span className="hidden sm:inline">Learner App</span>
-          </button>
-
-          {/* Logout */}
-          <button
-            onClick={() => {
-              adminSignOut();
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-800/50 text-xs font-semibold text-red-300 transition-colors cursor-pointer"
-            title="Sign out of Admin Portal"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Sign Out</span>
-          </button>
         </div>
       </header>
 
@@ -1255,6 +1279,7 @@ export const AdminDashboardScreen: React.FC = () => {
                       instructor: currentUser?.fullName || '',
                       instructorRole: 'Consultant Clinical Educator',
                       modality: 'xray',
+                      cohortStatus: 'upcoming',
                       date: 'Thursday, Nov 12',
                       time: '6:00 PM BST',
                       duration: '50 minutes',
@@ -1547,13 +1572,27 @@ export const AdminDashboardScreen: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredClasses.map((cls) => (
+                {filteredClasses.map((cls) => {
+                  const isCompleted = cls.cohortStatus === 'completed' || cls.status === 'completed';
+                  const isComingSoon = !isCompleted && (cls.cohortStatus === 'coming-soon' || cls.status === 'coming-soon');
+                  return (
                   <div key={cls.id} className="p-4 rounded-2xl bg-[#121824] border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-all">
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
-                          {cls.modality || 'General'}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                            {cls.modality || 'General'}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                            isCompleted
+                              ? 'bg-slate-800 text-slate-300'
+                              : isComingSoon
+                              ? 'bg-blue-500/15 text-blue-300'
+                              : 'bg-[#f59e0b]/15 text-[#f59e0b]'
+                          }`}>
+                            {isCompleted ? 'Completed' : isComingSoon ? 'Coming Soon' : 'Upcoming'}
+                          </span>
+                        </div>
                         <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400">
                           <Clock className="w-3 h-3 text-[#f59e0b]" />
                           <span>{cls.duration}</span>
@@ -1586,6 +1625,7 @@ export const AdminDashboardScreen: React.FC = () => {
                               instructor: cls.instructor || '',
                               instructorRole: cls.instructorRole || '',
                               modality: (cls.modality as ClinicalModality) || 'xray',
+                              cohortStatus: isCompleted ? 'completed' : isComingSoon ? 'coming-soon' : 'upcoming',
                               date: cls.date || '',
                               time: formatTime12h(cls.time || ''),
                               duration: cls.duration || 'Session',
@@ -1611,7 +1651,8 @@ export const AdminDashboardScreen: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -4129,15 +4170,33 @@ export const AdminDashboardScreen: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Session Tag</label>
-                  <input
-                    type="text"
-                    value={classForm.cpdCredits}
-                    onChange={(e) => setClassForm({ ...classForm, cpdCredits: e.target.value })}
-                    placeholder="e.g. Live Clinical Review"
+                  <label className="block font-semibold text-slate-300 mb-1">Cohort Status</label>
+                  <select
+                    value={classForm.cohortStatus}
+                    onChange={(e) =>
+                      setClassForm({
+                        ...classForm,
+                        cohortStatus: e.target.value as 'upcoming' | 'coming-soon' | 'completed',
+                      })
+                    }
                     className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
-                  />
+                  >
+                    <option value="upcoming">Upcoming / Active</option>
+                    <option value="coming-soon">Coming Soon</option>
+                    <option value="completed">Completed</option>
+                  </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">Session Tag</label>
+                <input
+                  type="text"
+                  value={classForm.cpdCredits}
+                  onChange={(e) => setClassForm({ ...classForm, cpdCredits: e.target.value })}
+                  placeholder="e.g. Live Clinical Review"
+                  className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
+                />
               </div>
 
               <div>
@@ -5344,6 +5403,14 @@ export const AdminDashboardScreen: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Bottom Firebase Live Sync Status Footer */}
+      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-6 pt-2 flex items-center justify-center">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          <span>Firebase Sync Active: studirad-platform-new</span>
+        </div>
+      </footer>
     </div>
   );
 };
